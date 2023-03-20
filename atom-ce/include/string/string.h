@@ -8,6 +8,11 @@
 #ifndef STRING_H
 #define STRING_H
 
-char* trim(char* string);
+#include <ctype.h>
+#include <string.h>
+
+#include "include/core/core.h"
+
+char *trim(char *string);
 
 #endif

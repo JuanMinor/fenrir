@@ -11,6 +11,6 @@
 
 void print_fen(const char *fen)
 {
-	printf("FEN: %s\n", fen);
-	return;
+    printf("FEN: %s\n", fen);
+    return;
 }

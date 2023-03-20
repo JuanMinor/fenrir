@@ -8,6 +8,8 @@
 #ifndef FEN_H
 #define FEN_H
 
-void print_fen(const char* fen);
+#include "include/core/core.h"
+
+void print_fen(const char *fen);
 
 #endif
