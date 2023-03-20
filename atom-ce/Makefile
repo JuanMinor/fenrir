@@ -15,7 +15,10 @@ FEN_C 		= src/fen/fen.c
 
 # rules
 atom-ce: main.c string fen
-	${CC} ${C_FLAGS} -o ${BIN}/${BINARY} main.c ${BUILD}/string.o ${BUILD}/fen.o
+	${CC} ${C_FLAGS} -o ${BIN}/${BINARY} main.c \
+		${BUILD}/string.o \
+		${BUILD}/fen.o
+
 
 # string rule
 string: ${STRING_C}
