@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include "include/string/string.h"
+#include "include/fen/fen.h"
 
 int main(int argc, char *argv[])
 {
@@ -21,6 +22,8 @@ int main(int argc, char *argv[])
 		printf("FEN string cannot be empty or null.\n");
 		return 2;
 	}
-	printf("FEN string supplied: %s\n", argv[1]);
+
+	print_fen(argv[1]);
+
 	return 0;
 }

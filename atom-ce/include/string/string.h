@@ -5,8 +5,8 @@
 //  Created by Juan Minor on 3/19/23.
 //
 
-#ifndef H_STRING
-#define H_STRING
+#ifndef STRING_H
+#define STRING_H
 
 char* trim(char* string);
 
