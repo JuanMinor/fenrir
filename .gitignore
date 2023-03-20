@@ -1,5 +1,5 @@
 # binaries
-bin/atom-ce
+atom-ce/bin/atom-ce
 # Prerequisites
 *.d
 
