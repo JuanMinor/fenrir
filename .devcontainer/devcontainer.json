@@ -1,0 +1,15 @@
+{
+	"name": "atom-ce",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			"settings": {},
+			"extensions": [
+				"streetsidesoftware.code-spell-checker"
+			]
+		}
+	}
+}
