@@ -5,8 +5,9 @@
 //  Created by Juan Minor on 3/19/23.
 //
 
-#include "include/string/string.h"
+#include "include/chess/chess.h"
 #include "include/fen/fen.h"
+#include "include/string/string.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,12 +17,21 @@ int main(int argc, char *argv[])
         return 1;
     }
     if (argv[1] && !trim(argv[1])[0])
-    { // check argument passed is not empty or null
+    {
         printf("FEN string cannot be empty or null.\n");
         return 2;
     }
 
-    print_fen(argv[1]);
+    struct Fen *fen = create_fen(argv[1]);
+
+    // Create board.
+    struct Board *board = create_board(fen->placement);
+
+    print_board(board);
+
+    destroy_board(board);
+
+    destroy_fen(fen);
 
     return 0;
 }

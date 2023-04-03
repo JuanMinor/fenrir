@@ -1,31 +1,44 @@
-CC 			= gcc
+CC 				= gcc
 # flags as required by the gcc
-C_FLAGS 	= -I /workspaces/atom-ce/atom-ce
+C_FLAGS 		= -I /workspaces/atom-ce/atom-ce
 
 # binary
-BINARY 		= atom-ce
+BINARY 			= atom-ce
+
+# binary directories
+BIN 			= bin
+BUILD 			= bin/build
 
 # object files
-BIN 		= bin
-BUILD 		= bin/build
+OBJECT_FILES 	= ${BUILD}/string.o \
+				  ${BUILD}/fen.o \
+				  ${BUILD}/piece.o \
+				  ${BUILD}/board.o
 
 # src paths
-STRING_C 	= src/string/string.c
-FEN_C 		= src/fen/fen.c
+STRING	 		= src/string/string.c
+FEN 			= src/fen/fen.c
+# chess
+PIECE			= src/chess/piece/piece.c
+BOARD			= src/chess/board/board.c
 
 # rules
-atom-ce: main.c string fen
-	${CC} ${C_FLAGS} -o ${BIN}/${BINARY} main.c \
-		${BUILD}/string.o \
-		${BUILD}/fen.o
+atom-ce: main.c string fen piece board
+	${CC} ${C_FLAGS} -o ${BIN}/${BINARY} main.c ${OBJECT_FILES}
 
 
 # string rule
-string: ${STRING_C}
-	${CC} -c ${C_FLAGS} -o ${BUILD}/string.o ${STRING_C}
+string: ${STRING}
+	${CC} -c ${C_FLAGS} -o ${BUILD}/string.o ${STRING}
 
-fen: ${FEN_C}
-	${CC} -c ${C_FLAGS} -o ${BUILD}/fen.o ${FEN_C}
+fen: ${FEN}
+	${CC} -c ${C_FLAGS} -o ${BUILD}/fen.o ${FEN}
+
+piece: ${PIECE}
+	${CC} -c ${C_FLAGS} -o ${BUILD}/piece.o ${PIECE}
+
+board: ${BOARD}
+	${CC} -c ${C_FLAGS} -o ${BUILD}/board.o ${BOARD}
 
 clean:
 	rm -rf ${BUILD}/*

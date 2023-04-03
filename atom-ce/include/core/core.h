@@ -8,8 +8,10 @@
 #ifndef CORE_H
 #define CORE_H
 
-#include <stdio.h>
+#define DEBUG 1
 
-char *trim(char *string);
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
 
 #endif

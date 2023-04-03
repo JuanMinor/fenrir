@@ -13,6 +13,8 @@
 
 #include "include/core/core.h"
 
-char *trim(char *string);
+char *trim(char *__string);
+
+char **split(const char *__string, const char *__delimiters, size_t *__size);
 
 #endif

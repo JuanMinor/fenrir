@@ -1,5 +1,16 @@
 {
 	"files.associations": {
-		"string.h": "c"
-	}
+		"string.h": "c",
+		"type_traits": "c",
+		"string_view": "c",
+		"array": "c",
+		"initializer_list": "c",
+		"ranges": "c",
+		"span": "c",
+		"utility": "c"
+	},
+	"C_Cpp.autocompleteAddParentheses": true,
+	"C_Cpp.default.cStandard": "c17",
+	"C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
+	"C_Cpp.errorSquiggles": "enabled"
 }

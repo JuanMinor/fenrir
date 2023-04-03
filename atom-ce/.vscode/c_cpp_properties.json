@@ -3,7 +3,9 @@
         {
             "name": "Linux",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "/workspaces/atom-ce/atom-ce",
+                "${workspaceFolder}"
             ],
             "defines": [],
             "compilerPath": "/usr/local/bin/gcc",
