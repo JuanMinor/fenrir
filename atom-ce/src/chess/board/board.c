@@ -23,19 +23,18 @@ struct Board *create_board(const char *__placement)
         {
             rank++;
             file = 0;
+            continue;
         }
-        else if (isdigit(c))
+        if (isdigit(c))
         {
             uint8_t empty_squares = c - '0';
             for (uint8_t j = 0; j < empty_squares; ++j)
             {
                 board->board[rank][file++] = NULL;
             }
+            continue;
         }
-        else
-        {
-            board->board[rank][file++] = create_piece(&c);
-        }
+        board->board[rank][file++] = create_piece(&c);
     }
 
     return board;
