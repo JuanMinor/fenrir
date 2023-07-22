@@ -34,7 +34,7 @@ struct Board *create_board(const char *__placement)
             }
             continue;
         }
-        board->board[rank][file++] = create_piece(&c);
+        board->board[rank][file++] = create_piece(&c, rank, file);
     }
 
     return board;

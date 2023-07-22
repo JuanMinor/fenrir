@@ -18,11 +18,13 @@ uint8_t __get_piece_value__(const char *__alias)
 }
 
 /* constructor */
-struct Piece *create_piece(const char *__alias)
+struct Piece *create_piece(const char *__alias, uint8_t __rank, uint8_t __file)
 {
     struct Piece *piece = malloc(sizeof(struct Piece));
     piece->alias = strdup(__alias);
     piece->value = __get_piece_value__(__alias);
+    piece->rank = __rank;
+    piece->file = __file;
     return piece;
 }
 

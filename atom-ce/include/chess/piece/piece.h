@@ -14,11 +14,13 @@ struct Piece
 {
     char *alias;
     uint8_t value;
+    uint8_t rank;
+    uint8_t file;
 };
 
 uint8_t __get_piece_value__(const char *__alias);
 
-struct Piece *create_piece(const char *__alias);
+struct Piece *create_piece(const char *__alias, uint8_t rank, uint8_t file);
 
 void destroy_piece(struct Piece *__piece);
 

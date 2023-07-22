@@ -17,17 +17,18 @@ char *trim(char *__string)
 	char *ptr;
 	size_t length = strlen(__string);
 
-    // Remove trailing whitespace
+	// Remove trailing whitespace
 	for (ptr = __string + length - 1; (ptr >= __string) && isspace(*ptr); --ptr)
 		;
 	ptr[1] = '\0';
 
-    // Remove leading whitespace
-    for (ptr = __string; *ptr && isspace(*ptr); ++ptr);
+	// Remove leading whitespace
+	for (ptr = __string; *ptr && isspace(*ptr); ++ptr)
+		;
 
-    // Move trimmed string to beginning of memory block
-    if (ptr != __string)
-        memmove(__string, ptr, strlen(ptr) + 1);
+	// Move trimmed string to beginning of memory block
+	if (ptr != __string)
+		memmove(__string, ptr, strlen(ptr) + 1);
 
 	return __string;
 }

@@ -6,7 +6,6 @@
 //
 
 #include "include/chess/chess.h"
-#include "include/fen/fen.h"
 #include "include/string/string.h"
 
 int main(int argc, char *argv[])
@@ -22,16 +21,7 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    struct Fen *fen = create_fen(argv[1]);
-
-    // Create board.
-    struct Board *board = create_board(fen->placement);
-
-    print_board(board);
-
-    destroy_board(board);
-
-    destroy_fen(fen);
+    draw(trim(argv[1]));
 
     return 0;
 }
