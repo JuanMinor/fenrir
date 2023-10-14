@@ -1,0 +1,76 @@
+{
+    "version": "2.0.0",
+    "presentation": {
+        "echo": false,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated",
+        "showReuseMessage": true,
+        "clear": false
+    },
+    "tasks": [
+        {
+            "label": "Loki Setup",
+            "dependsOn": [
+                "Loki",
+                "Scripts",
+                "Debug",
+                "Extensions"
+            ],
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
+        },
+        {
+            "label": "Loki",
+            "type": "shell",
+            "isBackground": true,
+            "command": "/bin/zsh",
+            "icon": {
+                "id": "rocket",
+                "color": "terminal.ansiRed"
+            }
+        },
+        {
+            "label": "Scripts",
+            "type": "shell",
+            "isBackground": true,
+            "command": [
+                "/bin/zsh",
+            ],
+            "icon": {
+                "id": "code",
+                "color": "terminal.ansiGreen"
+            }
+        },
+        {
+            "label": "Debug",
+            "type": "shell",
+            "isBackground": true,
+            "command": [
+                "/bin/zsh",
+            ],
+            "icon": {
+                "id": "bug",
+                "color": "terminal.ansiCyan"
+            }
+        },
+        {
+            "label": "Extensions",
+            "type": "shell",
+            "isBackground": false,
+            "command": [
+                "code --install-extension streetsidesoftware.code-spell-checker",
+                "code --install-extension ms-vscode.cpptools",
+                "code --install-extension ms-vscode.makefile-tools",
+                "code --install-extension esbenp.prettier-vscode",
+                "code --install-extension Gruntfuggly.todo-tree",
+                "code --install-extension eamodio.gitlens",
+            ],
+            "icon": {
+                "id": "symbol-event",
+                "color": "terminal.ansiYellow"
+            }
+        }
+    ]
+}

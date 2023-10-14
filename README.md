@@ -1,2 +1,2 @@
-# atom-ce
+# loki
 Atom Chess Engine
