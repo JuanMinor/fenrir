@@ -1,10 +1,10 @@
 <<Banner
-    GNU C Compiler (GCC) Docker Development Image
+    GNU C Compiler (gcc) Docker Development Image
 
     Developer: Minor, J.
     
     Synopsis:
-        Installs dependencies for GCC, zsh
+        Installs dependencies for gcc, zsh, gdb
 Banner
 
 set -e

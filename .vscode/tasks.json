@@ -14,7 +14,7 @@
             "dependsOn": [
                 "Loki",
                 "Scripts",
-                "Debug",
+                "gdb",
                 "Extensions"
             ],
             "runOptions": {
@@ -44,7 +44,7 @@
             }
         },
         {
-            "label": "Debug",
+            "label": "gdb",
             "type": "shell",
             "isBackground": true,
             "command": [
