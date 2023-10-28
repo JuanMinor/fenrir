@@ -1,0 +1,22 @@
+{
+	"name": "Loki",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh"
+			},
+			"extensions": [
+				"streetsidesoftware.code-spell-checker",
+				"ms-vscode.cpptools",
+				"ms-vscode.makefile-tools",
+				"esbenp.prettier-vscode",
+				"Gruntfuggly.todo-tree",
+				"eamodio.gitlens"
+			]
+		}
+	}
+}
