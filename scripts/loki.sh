@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 
 <<Banner
     Synopsis:
@@ -13,7 +13,7 @@ _make() {
 }
 
 run() {
-    ./bin/loki.elf "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq e3 0 1"
+    ./bin/loki.elf "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 }
 
 _make

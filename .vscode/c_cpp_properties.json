@@ -8,10 +8,9 @@
                 "${workspaceFolder}"
             ],
             "defines": [],
-            "compilerPath": "/usr/local/bin/gcc",
-            "cStandard": "c17",
-            "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64",
+            "compilerPath": "/usr/local/bin/g++",
+            "cppStandard": "gnu++23",
+            "intelliSenseMode": "${default}",
             "configurationProvider": "ms-vscode.makefile-tools"
         }
     ],
