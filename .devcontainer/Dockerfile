@@ -1,8 +1,17 @@
 FROM gcc:latest
 
-USER root
+# @atom
+ARG UID=1000
+ARG USERNAME="atom"
+RUN groupadd --gid $UID $USERNAME \
+    && useradd --uid $UID --gid $UID -m $USERNAME \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
 
-COPY ./scripts/setup.sh /tmp/setup.sh
+USER atom
 
-RUN chmod +x /tmp/setup.sh \
-    && ./tmp/setup.sh
+COPY --chown=atom:atom ./scripts/setup.sh /tmp/setup.sh
+
+RUN chmod +x /tmp/setup.sh ./tmp/setup.sh

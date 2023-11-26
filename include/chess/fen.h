@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <vector>
 
-namespace Loki
+namespace loki
 {
     class Fen
     {
@@ -21,19 +21,19 @@ namespace Loki
         uint8_t h_moves; // @half
         uint8_t f_moves; // @full
         // @methods
-        std::vector<char *> __split__(char *__fen, const char *__delimiters);
+        std::vector<char *> __split__(char *__fen, const char *__delimiters) noexcept;
 
     public:
         Fen(char *__fen);
         ~Fen();
 
         // @getters
-        char *get_placement();
-        char *get_castling();
-        char *get_en_passant();
-        uint8_t get_color();
-        uint8_t get_h_moves();
-        uint8_t get_f_moves();
+        char *get_placement(void) noexcept;
+        char *get_castling(void) noexcept;
+        char *get_en_passant(void) noexcept;
+        uint8_t get_color(void) noexcept;
+        uint8_t get_h_moves(void) noexcept;
+        uint8_t get_f_moves(void) noexcept;
     };
 }
 

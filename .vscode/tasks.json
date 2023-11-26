@@ -25,7 +25,7 @@
             "label": "Loki",
             "type": "shell",
             "isBackground": true,
-            "command": "/bin/zsh",
+            "command": "/bin/bash",
             "icon": {
                 "id": "rocket",
                 "color": "terminal.ansiRed"
@@ -36,7 +36,7 @@
             "type": "shell",
             "isBackground": true,
             "command": [
-                "/bin/zsh",
+                "/bin/bash",
             ],
             "icon": {
                 "id": "code",
@@ -48,7 +48,7 @@
             "type": "shell",
             "isBackground": true,
             "command": [
-                "/bin/zsh",
+                "/bin/bash",
             ],
             "icon": {
                 "id": "bug",

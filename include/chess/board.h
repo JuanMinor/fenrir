@@ -7,15 +7,19 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+#include <string>
 #include <vector>
 
 #include "include/chess/piece.h"
 
-namespace Loki
+namespace loki
 {
     class Board
     {
         std::vector<std::vector<Piece *>> board;
+
+        // @methods
+        std::string __get_algebraic_notation__(const uint8_t &__rank, const uint8_t &__file);
 
     public:
         Board(const char *__placement);
@@ -23,8 +27,8 @@ namespace Loki
 
         // @methods
         std::vector<std::vector<Piece *>> get_board();
-        void move(Piece *__piece, uint8_t __rank, uint8_t __file);
-        void print();
+        void move(Piece *__piece, const uint8_t &__rank, const uint8_t &__file);
+        void print(void);
     };
 }
 

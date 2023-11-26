@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <ctype.h>
 
-namespace Loki
+namespace loki
 {
     class Piece
     {
@@ -21,17 +21,17 @@ namespace Loki
         uint8_t file;
 
     public:
-        Piece(char __alias, uint8_t __rank, uint8_t __file);
+        Piece(const char &__alias, const uint8_t &__rank, const uint8_t &__file);
         ~Piece();
 
         // @getters
-        char get_alias();
-        uint8_t get_value();
-        uint8_t get_color();
-        uint8_t get_rank();
-        void set_rank(uint8_t __rank);
-        uint8_t get_file();
-        void set_file(uint8_t __file);
+        char get_alias(void) noexcept;
+        uint8_t get_value(void) noexcept;
+        uint8_t get_color(void) noexcept;
+        uint8_t get_rank(void) noexcept;
+        void set_rank(const uint8_t &__rank);
+        uint8_t get_file(void) noexcept;
+        void set_file(const uint8_t &__file);
     };
 }
 

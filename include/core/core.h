@@ -6,9 +6,10 @@
 
 #ifndef CORE_H
 #define CORE_H
-namespace Logger
+
+namespace logger
 {
-#define FILE "logs/loki.log"
+#define L_FILE "logs/loki.log"
 
     // @typedefs
     typedef enum
@@ -22,10 +23,15 @@ namespace Logger
 
 }
 
-namespace Loki
+namespace pgn
+{
+#define P_FILE "pgn/loki.pgn"
+#define P_FILE_STORE "pgn/loki.store.txt"
+}
+
+namespace loki
 {
 #define DEBUG_ENABLED 1
-
 #define BOARD_SIZE 8
 #define WHITE 0
 #define BLACK 1

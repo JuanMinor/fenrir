@@ -13,28 +13,33 @@ BUILD 			= bin/build
 OBJECT_FILES 	= ${BUILD}/fen.o \
 				  ${BUILD}/piece.o \
 				  ${BUILD}/board.o \
-				  ${BUILD}/log.o
+				  ${BUILD}/logger.o \
+				  ${BUILD}/pgn.o
 
 # src
 BOARD			= src/chess/board.cpp
 FEN 			= src/chess/fen.cpp
-LOG				= src/logger/log.cpp
+LOGGER			= src/logger/logger.cpp
+PGN				= src/pgn/pgn.cpp
 PIECE			= src/chess/piece.cpp
 
 # rules
-loki: main.cpp board fen log piece
+loki.bin: main.cpp board.o fen.o logger.o piece.o pgn.o
 	${CC} ${FLAGS} -o ${BIN}/${BINARY} main.cpp ${OBJECT_FILES}
 
-board: ${BOARD}
+board.o: ${BOARD}
 	${CC} -c ${FLAGS} -o ${BUILD}/board.o ${BOARD}
 
-fen: ${FEN}
+fen.o: ${FEN}
 	${CC} -c ${FLAGS} -o ${BUILD}/fen.o ${FEN}
 
-log: ${LOG}
-	${CC} -c ${FLAGS} -o ${BUILD}/log.o ${LOG}
+logger.o: ${LOGGER}
+	${CC} -c ${FLAGS} -o ${BUILD}/logger.o ${LOGGER}
 
-piece: ${PIECE}
+pgn.o: ${PGN}
+	${CC} -c ${FLAGS} -o ${BUILD}/pgn.o ${PGN}
+
+piece.o: ${PIECE}
 	${CC} -c ${FLAGS} -o ${BUILD}/piece.o ${PIECE}
 
 clean:

@@ -5,15 +5,15 @@
 */
 
 #include <cstring>
-#include <string>
-#include <stdint.h>
 #include <iostream>
-#include <string>
+#include <stdint.h>
 
 #include "include/chess/board.h"
-#include "include/logger/log.h"
+#include "include/core/core.h"
+#include "include/logger/logger.h"
+#include "include/pgn/pgn.h"
 
-namespace Loki
+namespace loki
 {
     Board::Board(const char *__placement)
     {
@@ -42,9 +42,9 @@ namespace Loki
             this->board[rank][file++] = new Piece(c, rank, file);
             std::stringstream ss;
             ss << "Created piece with alias '" << c << "' with <rank, file> <" << unsigned(rank) << ", " << unsigned(file) << ">!";
-            Logger::LOG_DEBUG(ss.str());
+            logger::LOG_DEBUG(ss.str());
         }
-        Logger::LOG_INFO("Created chess board!");
+        logger::LOG_INFO("Created chess board!");
     }
 
     Board::~Board()
@@ -58,12 +58,19 @@ namespace Loki
                 {
                     std::stringstream ss;
                     ss << "Destroyed piece with alias '" << piece->get_alias() << "' with <rank, file> <" << unsigned(piece->get_rank()) << ", " << unsigned(piece->get_file()) << ">!";
-                    Logger::LOG_DEBUG(ss.str());
+                    logger::LOG_DEBUG(ss.str());
                     delete piece;
                 }
             }
         }
-        Logger::LOG_INFO("Destroyed chess board and it's components!");
+        logger::LOG_INFO("Destroyed chess board and it's components!");
+    }
+
+    std::string Board::__get_algebraic_notation__(const uint8_t &__rank, const uint8_t &__file)
+    {
+        std::stringstream ss;
+        ss << char(97 + __rank) << unsigned(__file);
+        return ss.str();
     }
 
     std::vector<std::vector<Piece *>> Board::get_board()
@@ -71,21 +78,21 @@ namespace Loki
         return this->board;
     }
 
-    void Board::move(Piece *__piece, uint8_t __rank, uint8_t __file)
+    void Board::move(Piece *__piece, const uint8_t &__rank, const uint8_t &__file)
     {
         std::stringstream ss;
         // @errors
         if (__rank < 0 || __rank >= BOARD_SIZE || __file < 0 || __file >= BOARD_SIZE)
         {
             ss << "Board address <rank, file> <" << unsigned(__rank) << ", " << unsigned(__file) << "> is out of bounds!";
-            Logger::LOG_ERROR(ss.str());
+            logger::LOG_ERROR(ss.str());
             return;
         }
         uint8_t rank = __piece->get_rank(), file = __piece->get_file();
         if (this->board[rank][file] == nullptr)
         {
             ss << "Piece holds invalid address <rank, file> <" << unsigned(rank) << ", " << unsigned(file) << ">!";
-            Logger::LOG_ERROR(ss.str());
+            logger::LOG_ERROR(ss.str());
             return;
         }
 
@@ -99,12 +106,21 @@ namespace Loki
            << "' from <rank, file> <" << unsigned(rank) << ", "
            << unsigned(file) << "> to <" << unsigned(__rank)
            << ", " << unsigned(__file) << ">!";
-        Logger::LOG_INFO(ss.str());
+        logger::LOG_INFO(ss.str());
+
+        // @pgn
+        ss.str("");
+        ss << this->__get_algebraic_notation__(rank, file) << " " << this->__get_algebraic_notation__(__rank, __file);
+        pgn::RECORD(ss.str());
         return;
     }
 
-    void Board::print()
+    void Board::print(void)
     {
+        if (!DEBUG_ENABLED)
+        {
+            return;
+        }
         for (uint8_t i = 0; i < BOARD_SIZE; ++i)
         {
             for (uint8_t j = 0; j < BOARD_SIZE; ++j)

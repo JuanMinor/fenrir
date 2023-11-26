@@ -10,7 +10,7 @@
 #include "include/chess/fen.h"
 #include "include/core/core.h"
 
-namespace Loki
+namespace loki
 {
     Fen::Fen(char *__fen)
     {
@@ -25,7 +25,7 @@ namespace Loki
 
     Fen::~Fen() {}
 
-    std::vector<char *> Fen::__split__(char *__fen, const char *__delimiters)
+    std::vector<char *> Fen::__split__(char *__fen, const char *__delimiters) noexcept
     {
         std::vector<char *> tokens;
         char *token = strtok(__fen, __delimiters);
@@ -37,32 +37,32 @@ namespace Loki
         return tokens;
     }
 
-    char *Fen::get_placement()
+    char *Fen::get_placement(void) noexcept
     {
         return this->placement;
     }
 
-    char *Fen::get_castling()
+    char *Fen::get_castling(void) noexcept
     {
         return this->castling;
     }
 
-    char *Fen::get_en_passant()
+    char *Fen::get_en_passant(void) noexcept
     {
         return this->en_passant;
     }
 
-    uint8_t Fen::get_color()
+    uint8_t Fen::get_color(void) noexcept
     {
         return this->color;
     }
 
-    uint8_t Fen::get_h_moves()
+    uint8_t Fen::get_h_moves(void) noexcept
     {
         return this->h_moves;
     }
 
-    uint8_t Fen::get_f_moves()
+    uint8_t Fen::get_f_moves(void) noexcept
     {
         return this->f_moves;
     }

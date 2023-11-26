@@ -8,6 +8,7 @@
 
 #include "include/chess/board.h"
 #include "include/chess/fen.h"
+#include "include/pgn/pgn.h"
 
 int main(int argc, char *argv[])
 {
@@ -17,15 +18,17 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    Loki::Fen *fen = new Loki::Fen(argv[1]);
+    loki::Fen *fen = new loki::Fen(argv[1]);
 
-    Loki::Board *board = new Loki::Board(fen->get_placement());
+    loki::Board *board = new loki::Board(fen->get_placement());
 
     board->print();
 
     board->move(board->get_board()[0][0], 5, 5);
 
     board->print();
+
+    pgn::CREATE_PGN();
 
     delete board;
 
