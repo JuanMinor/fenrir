@@ -1,8 +1,19 @@
 /*
-    board.cpp
-    Author: M., Juan
-    Date: 10/31/2023
-*/
+ *   Copyright (c) 2025 Juan Minor
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #include <cstring>
 #include <iostream>
@@ -12,6 +23,7 @@
 #include "include/chess/board.h"
 #include "include/core/core.h"
 #include "include/logger/logger.h"
+#include "include/modifier/modifier.h"
 #include "include/pgn/pgn.h"
 
 namespace loki
@@ -91,7 +103,7 @@ namespace loki
     std::string Board::__get_algebraic_notation__(const uint8_t &__rank, const uint8_t &__file) const
     {
         std::stringstream ss;
-        ss << char(97 + __file) << unsigned(__rank);
+        ss << char(97 + __file) << unsigned(__rank + 1);
         return ss.str();
     }
 
@@ -140,10 +152,10 @@ namespace loki
 
         // @pgn
         ss.str("");
-        ss << this->__get_algebraic_notation__(rank + 1, file)
+        ss << this->__get_algebraic_notation__(rank, file)
            << " "
-           << this->__get_algebraic_notation__(__rank + 1, __file);
-        pgn::RECORD(ss.str());
+           << this->__get_algebraic_notation__(__rank, __file);
+        io::PGN_RECORD(ss.str());
         return;
     }
 
@@ -156,29 +168,34 @@ namespace loki
         std::cout << "    ";
         for (uint8_t j = 0; j < BOARD_SIZE; ++j)
         {
-            std::cout << char(97 + j) << " ";
+            std::cout << color::Modifier(color::Color::FG_YELLOW) << char(97 + j) << " ";
         }
-        std::cout << "\n";
+        std::cout << color::Modifier(color::Color::RESET) << std::endl;
         for (int i = BOARD_SIZE - 1; i >= 0; i--) // @cannot be size_t or uint8_t **underflow**
         {
-            std::cout << unsigned(i + 1) << " - ";
+            std::cout << color::Modifier(color::Color::FG_YELLOW) << unsigned(i + 1) << " - "
+                      << color::Modifier(color::Color::RESET);
             for (uint8_t j = 0; j < BOARD_SIZE; ++j)
             {
                 if (this->board.at(i).at(j))
                 {
-                    std::cout << this->board.at(i).at(j)->get_alias() << " ";
+                    std::cout << color::Modifier(this->board.at(i).at(j)->get_color() == BLACK
+                                                     ? color::Color::FG_CYAN
+                                                     : color::Color::RESET)
+                              << this->board.at(i).at(j)->get_alias()
+                              << color::Modifier(color::Color::RESET) << " ";
                     continue;
                 }
                 std::cout << ". ";
             }
-            std::cout << "- " << unsigned(i + 1);
-            std::cout << "\n";
+            std::cout << color::Modifier(color::Color::FG_YELLOW) << "- " << unsigned(i + 1)
+                      << color::Modifier(color::Color::RESET) << std::endl;
         }
         std::cout << "    ";
         for (uint8_t j = 0; j < BOARD_SIZE; ++j)
         {
-            std::cout << char(97 + j) << " ";
+            std::cout << color::Modifier(color::Color::FG_YELLOW) << char(97 + j) << " ";
         }
-        std::cout << std::endl;
+        std::cout << color::Modifier(color::Color::RESET) << std::endl;
     }
 }

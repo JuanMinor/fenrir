@@ -56,7 +56,18 @@
 		"ctime": "cpp",
 		"fstream": "cpp",
 		"iomanip": "cpp",
-		"sstream": "cpp"
+		"sstream": "cpp",
+		"charconv": "cpp",
+		"span": "cpp",
+		"variant": "cpp",
+		"format": "cpp",
+		"text_encoding": "cpp",
+		"condition_variable": "cpp",
+		"ratio": "cpp",
+		"mutex": "cpp",
+		"semaphore": "cpp",
+		"stop_token": "cpp",
+		"thread": "cpp"
 	},
 	"cSpell.words": [
 		"fullmoves",

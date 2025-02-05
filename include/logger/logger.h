@@ -1,14 +1,24 @@
 /*
-    log.h
-    Author: M., Juan
-    Date: 10/31/2023
-*/
+ *   Copyright (c) 2025 Juan Minor
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include <iomanip>
-#include <string>
+#include <mutex>
 #include <stdint.h>
 
 #include "include/core/core.h"
@@ -17,8 +27,7 @@ namespace logger
 {
     class Logger
     {
-        // @methods
-        std::_Put_time<char> __get_timestamp__(void) const;
+        mutable std::mutex log_mutex;
 
     public:
         Logger();

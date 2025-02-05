@@ -15,32 +15,19 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef BOARD_H
-#define BOARD_H
+#include "include/modifier/modifier.h"
 
-#include <string>
-#include <vector>
-
-#include "include/chess/piece.h"
-
-namespace loki
+namespace color
 {
-    class Board
+    Modifier::Modifier(Color __color)
     {
-        std::vector<std::vector<Piece *>> board;
+        this->color = __color;
+    }
 
-        // @methods
-        std::string __get_algebraic_notation__(const uint8_t &__rank, const uint8_t &__file) const;
+    Modifier::~Modifier() {}
 
-    public:
-        Board(const char *__placement);
-        ~Board();
-
-        // @methods
-        std::vector<std::vector<Piece *>> get_board(void) const;
-        void move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file);
-        void print(void) const;
-    };
+    std::ostream &operator<<(std::ostream &__os, const Modifier &__modifier)
+    {
+        return __os << "\033[" << __modifier.color << "m";
+    }
 }
-
-#endif
