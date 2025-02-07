@@ -44,6 +44,24 @@ namespace loki
 
     Moves::~Moves() {}
 
+    void __add_move__(const uint8_t &__rank, const u_int8_t &__file, std::vector<const Move *> &__moves)
+    {
+        __moves.emplace_back(new Move(__rank, __file));
+    }
+
+    void __pawn_capture_and_add_move__(const uint8_t &__rank, const u_int8_t &__file, const Piece *__piece, const Board *__board, std::vector<const Move *> &__moves)
+    {
+        if (__file >= BOARD_MAX_LEFT && __file <= BOARD_MAX_RIGHT)
+        {
+            const Piece *piece = __board->get_board().at(__rank).at(__file);
+            if (piece && piece->get_color() != __piece->get_color())
+            {
+                __add_move__(__rank, __file, __moves);
+            }
+        }
+        return;
+    }
+
     void Moves::__pawn__(const uint8_t &__rank, const u_int8_t &__file, const Board *__board, const Fen *__fen, std::vector<const Move *> &__moves) const
     {
         const Piece *piece = __board->get_board().at(__rank).at(__file);
@@ -59,33 +77,23 @@ namespace loki
             rank = piece->get_color() == BLACK ? __rank - 2 : __rank + 2;
             if (!__board->get_board().at(rank).at(__file))
             {
-                __moves.emplace_back(new Move(rank, __file));
+                __add_move__(rank, __file, __moves);
             }
         }
         rank = piece->get_color() == BLACK ? __rank - 1 : __rank + 1;
         if (!__board->get_board().at(rank).at(__file))
         {
-            __moves.emplace_back(new Move(rank, __file));
+            __add_move__(rank, __file, __moves);
         }
         // @look at right position
-        if (__file < 7)
+        if (__file < BOARD_MAX_RIGHT)
         {
-            file = __file + 1;
-            const Piece *_piece = __board->get_board().at(rank).at(file);
-            if (_piece && piece->get_color() != _piece->get_color())
-            {
-                __moves.emplace_back(new Move(rank, file));
-            }
+            __pawn_capture_and_add_move__(rank, __file + 1, piece, __board, __moves);
         }
         // @look at left position
-        if (__file > 0)
+        if (__file > BOARD_MAX_LEFT)
         {
-            file = __file - 1;
-            const Piece *_piece = __board->get_board().at(rank).at(file);
-            if (_piece && piece->get_color() != _piece->get_color())
-            {
-                __moves.emplace_back(new Move(rank, file));
-            }
+            __pawn_capture_and_add_move__(rank, __file - 1, piece, __board, __moves);
         }
         return;
     }

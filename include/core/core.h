@@ -67,7 +67,11 @@ namespace logger
 namespace loki
 {
 #define DEBUG_ENABLED 1
+// @chess board
 #define BOARD_SIZE 8
+#define BOARD_MAX_LEFT 0
+#define BOARD_MAX_RIGHT 7
+// @chess piece colors
 #define WHITE 0
 #define BLACK 1
 }
