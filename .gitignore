@@ -54,3 +54,4 @@ dkms.conf
 # Logs
 *.log
 *.pgn
+*.store.txt

@@ -5,6 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "/workspaces/loki/",
+                "${workspaceFolder}",
                 "${workspaceFolder}"
             ],
             "defines": [],

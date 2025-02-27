@@ -1,8 +1,19 @@
 /*
-    pgn.h
-    Author: M., Juan
-    Date: 10/31/2023
-*/
+ *   Copyright (c) 2025 Juan Minor
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #ifndef PGN_H
 #define PGN_H
@@ -11,14 +22,13 @@
 #include <iomanip>
 #include <string>
 
-namespace pgn
+namespace io
 {
     class Pgn
     {
         // @methods
-        void __clear_stream_flags__(std::ostream &__os) noexcept;
-        std::_Put_time<char> __get_pgn_date__(void) noexcept;
-        void __set_metadata__(std::ostream &__os) noexcept;
+        void __clear_stream_flags__(std::ostream &__os) const;
+        void __set_metadata__(std::ostream &__os) const;
 
     public:
         Pgn();
@@ -26,14 +36,14 @@ namespace pgn
 
         // @methods
         void update_metadata(const std::string &__tag);
-        void record(const std::string &__move) noexcept;
-        void create_pgn(void) noexcept;
+        void record(const std::string &__move) const;
+        void create(void) const;
     };
 
 #define PGN Pgn()
 
-#define RECORD(MOVE) PGN.record(MOVE);
-#define CREATE_PGN() PGN.create_pgn();
+#define PGN_RECORD(MOVE) PGN.record(MOVE);
+#define PGN_CREATE() PGN.create();
 }
 
 #endif

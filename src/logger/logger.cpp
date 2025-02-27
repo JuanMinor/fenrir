@@ -1,12 +1,24 @@
 /*
-    log.cpp
-    Author: M., Juan
-    Date: 10/31/2023
-*/
+ *   Copyright (c) 2025 Juan Minor
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #include <fstream>
 #include <unordered_map>
 
+#include "include/chrono/chrono.h"
 #include "include/logger/logger.h"
 
 namespace logger
@@ -22,41 +34,34 @@ namespace logger
     Logger::Logger() {}
     Logger::~Logger() {}
 
-    std::_Put_time<char> Logger::__get_timestamp__()
+    void Logger::log(const std::string &__message, const char *__file, const uint8_t &__lineno, const LEVEL &__level) const
     {
-        time_t time = std::time(nullptr);
-        tm *localtime = std::localtime(&time);
-        return std::put_time(localtime, "%a %b %d, %Y @ %H:%M:%S");
-    }
-
-    void Logger::log(const std::string &__message, const char *__file, const uint8_t &__lineno, const LEVEL &__level) noexcept
-    {
-        if (__level == DEBUG)
+        if (__level == DEBUG && !DEBUG_ENABLED)
         {
-            if (!DEBUG_ENABLED)
-            {
-                return;
-            }
+            return;
         }
-        std::_Put_time<char> timestamp = this->__get_timestamp__();
+
+        std::_Put_time<char> timestamp = chrono::Chrono().get_time_with_format("%a %b %d, %Y @ %H:%M:%S");
+
+        std::lock_guard<std::mutex> guard(this->log_mutex);
 
         // @file
-        std::fstream file;
-        file.open(L_FILE, std::ios_base::app);
-        if (!file)
+        std::fstream log_file;
+        log_file.open(LOG_FILE, std::ios_base::app);
+        if (!log_file)
         {
             return;
         }
         try
         {
             const char *type = level_types.at(__level);
-            file << "[" << timestamp << "] [" << __file << " @ Line " << unsigned(__lineno) << "]::" << type << __message << std::endl;
-            file.close();
+            log_file << "[" << timestamp << "] [" << __file << " @ Line " << unsigned(__lineno) << "]::" << type << __message << std::endl;
+            log_file.close();
         }
         catch (...)
         {
             // @close
-            file.close();
+            log_file.close();
         }
     }
 }

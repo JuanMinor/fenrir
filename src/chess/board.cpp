@@ -1,32 +1,53 @@
 /*
-    board.cpp
-    Author: M., Juan
-    Date: 10/31/2023
-*/
+ *   Copyright (c) 2025 Juan Minor
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #include <cstring>
 #include <iostream>
 #include <stdint.h>
+#include <unordered_map>
 
 #include "include/chess/board.h"
 #include "include/core/core.h"
 #include "include/logger/logger.h"
+#include "include/modifier/modifier.h"
 #include "include/pgn/pgn.h"
 
 namespace loki
 {
+    std::unordered_map<char, std::string> piece_names = {
+        {'p', "Pawn"},
+        {'n', "Knight"},
+        {'b', "Bishop"},
+        {'r', "Rook"},
+        {'q', "Queen"},
+        {'k', "King"}};
+
     Board::Board(const char *__placement)
     {
         size_t size = std::strlen(__placement);
-        uint8_t rank = 0, file = 0;
+        uint8_t rank = BOARD_SIZE - 1, file = 0;
         this->board.resize(BOARD_SIZE, std::vector<Piece *>(BOARD_SIZE, nullptr));
 
-        for (size_t i = 0; i < size && rank < BOARD_SIZE; ++i)
+        for (size_t i = 0; i < size && rank >= 0; ++i)
         {
             char c = __placement[i];
             if (c == '/')
             {
-                rank++;
+                rank--;
                 file = 0;
                 continue;
             }
@@ -39,46 +60,59 @@ namespace loki
                 }
                 continue;
             }
-            this->board[rank][file++] = new Piece(c, rank, file);
+            Piece *piece = new Piece(c, rank, file);
+            this->board[rank][file++] = piece;
             std::stringstream ss;
-            ss << "Created piece with alias '" << c << "' with <rank, file> <" << unsigned(rank) << ", " << unsigned(file) << ">!";
+            std::string color = piece->get_color() == WHITE ? "White" : "Black";
+            ss << "Created "
+               << color
+               << " "
+               << piece_names.at(std::tolower(c, std::locale()))
+               << " in position "
+               << this->__get_algebraic_notation__(piece->get_rank(), piece->get_file())
+               << " ✅";
             logger::LOG_DEBUG(ss.str());
         }
-        logger::LOG_INFO("Created chess board!");
     }
 
     Board::~Board()
     {
-        for (uint8_t rank = 0; rank < BOARD_SIZE; ++rank)
+        for (int rank = BOARD_SIZE - 1; rank >= 0; --rank)
         {
             for (uint8_t file = 0; file < BOARD_SIZE; ++file)
             {
-                Piece *piece = this->board[rank][file];
+                Piece *piece = this->board.at(rank).at(file);
                 if (piece != nullptr)
                 {
                     std::stringstream ss;
-                    ss << "Destroyed piece with alias '" << piece->get_alias() << "' with <rank, file> <" << unsigned(piece->get_rank()) << ", " << unsigned(piece->get_file()) << ">!";
+                    std::string color = piece->get_color() == WHITE ? "White" : "Black";
+                    ss << "Destroyed "
+                       << color
+                       << " "
+                       << piece_names.at(std::tolower(piece->get_alias(), std::locale()))
+                       << " in position "
+                       << this->__get_algebraic_notation__(rank, file)
+                       << " ❌";
                     logger::LOG_DEBUG(ss.str());
                     delete piece;
                 }
             }
         }
-        logger::LOG_INFO("Destroyed chess board and it's components!");
     }
 
-    std::string Board::__get_algebraic_notation__(const uint8_t &__rank, const uint8_t &__file)
+    std::string Board::__get_algebraic_notation__(const uint8_t &__rank, const uint8_t &__file) const
     {
         std::stringstream ss;
-        ss << char(97 + __rank) << unsigned(__file);
+        ss << char(97 + __file) << unsigned(__rank + 1);
         return ss.str();
     }
 
-    std::vector<std::vector<Piece *>> Board::get_board()
+    std::vector<std::vector<Piece *>> Board::get_board(void) const
     {
         return this->board;
     }
 
-    void Board::move(Piece *__piece, const uint8_t &__rank, const uint8_t &__file)
+    void Board::move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file)
     {
         std::stringstream ss;
         // @errors
@@ -102,37 +136,66 @@ namespace loki
         this->board[__rank][__file] = __piece;
         this->board[rank][file] = nullptr;
 
-        ss << "Moved piece with alias '" << __piece->get_alias()
-           << "' from <rank, file> <" << unsigned(rank) << ", "
-           << unsigned(file) << "> to <" << unsigned(__rank)
-           << ", " << unsigned(__file) << ">!";
+        std::string color = __piece->get_color() == WHITE ? "White" : "Black";
+
+        ss << "Moved "
+           << color
+           << " "
+           << piece_names.at(std::tolower(__piece->get_alias(), std::locale()))
+           << " from "
+           << this->__get_algebraic_notation__(rank, file)
+           << " to "
+           << this->__get_algebraic_notation__(__rank, __file)
+           << " 🚀";
+
         logger::LOG_INFO(ss.str());
 
         // @pgn
         ss.str("");
-        ss << this->__get_algebraic_notation__(rank, file) << " " << this->__get_algebraic_notation__(__rank, __file);
-        pgn::RECORD(ss.str());
+        ss << this->__get_algebraic_notation__(rank, file)
+           << " "
+           << this->__get_algebraic_notation__(__rank, __file);
+        io::PGN_RECORD(ss.str());
         return;
     }
 
-    void Board::print(void)
+    void Board::print(void) const
     {
         if (!DEBUG_ENABLED)
         {
             return;
         }
-        for (uint8_t i = 0; i < BOARD_SIZE; ++i)
+        std::cout << "    ";
+        for (uint8_t j = 0; j < BOARD_SIZE; ++j)
         {
+            std::cout << color::Modifier(color::Color::FG_YELLOW) << char(97 + j) << " ";
+        }
+        std::cout << color::Modifier(color::Color::RESET) << std::endl;
+        for (int i = BOARD_SIZE - 1; i >= 0; i--) // @cannot be size_t or uint8_t **underflow**
+        {
+            std::cout << color::Modifier(color::Color::FG_YELLOW) << unsigned(i + 1) << " - "
+                      << color::Modifier(color::Color::RESET);
             for (uint8_t j = 0; j < BOARD_SIZE; ++j)
             {
-                if (this->board[i][j])
+                if (this->board.at(i).at(j))
                 {
-                    std::cout << this->board[i][j]->get_alias() << " ";
+                    std::cout << color::Modifier(this->board.at(i).at(j)->get_color() == BLACK
+                                                     ? color::Color::FG_CYAN
+                                                     : color::Color::RESET)
+                              << this->board.at(i).at(j)->get_alias()
+                              << color::Modifier(color::Color::RESET) << " ";
                     continue;
                 }
                 std::cout << ". ";
             }
-            std::cout << std::endl;
+            std::cout << color::Modifier(color::Color::FG_YELLOW) << "- " << unsigned(i + 1)
+                      << color::Modifier(color::Color::RESET) << std::endl;
         }
+        std::cout << "    ";
+        for (uint8_t j = 0; j < BOARD_SIZE; ++j)
+        {
+            std::cout << color::Modifier(color::Color::FG_YELLOW) << char(97 + j) << " ";
+        }
+        std::cout << color::Modifier(color::Color::RESET) << std::endl;
     }
 }

@@ -1,8 +1,19 @@
 /*
-    piece.cpp
-    Author: M., Juan
-    Date: 10/31/2023
-*/
+ *   Copyright (c) 2025 Juan Minor
+
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 
 #include <unordered_map>
 
@@ -33,28 +44,39 @@ namespace loki
         this->color = isupper(__alias) ? WHITE : BLACK;
         this->rank = __rank;
         this->file = __file;
+        this->moved = this->__has_piece_moved__();
     }
 
     Piece::~Piece()
     {
     }
 
-    char Piece::get_alias(void) noexcept
+    // @methods
+    bool Piece::__has_piece_moved__(void) const
+    {
+        if ((this->alias == 'p' && this->rank == 6) || (this->alias == 'P' && this->rank == 1))
+        {
+            return false;
+        }
+        return true;
+    }
+
+    char Piece::get_alias(void) const
     {
         return this->alias;
     }
 
-    uint8_t Piece::get_value(void) noexcept
+    uint8_t Piece::get_value(void) const
     {
         return this->value;
     }
 
-    uint8_t Piece::get_color(void) noexcept
+    uint8_t Piece::get_color(void) const
     {
         return this->color;
     }
 
-    uint8_t Piece::get_rank(void) noexcept
+    uint8_t Piece::get_rank(void) const
     {
         return this->rank;
     }
@@ -62,9 +84,10 @@ namespace loki
     void Piece::set_rank(const uint8_t &__rank)
     {
         this->rank = __rank;
+        this->moved = this->__has_piece_moved__();
     }
 
-    uint8_t Piece::get_file(void) noexcept
+    uint8_t Piece::get_file(void) const
     {
         return this->file;
     }
@@ -72,5 +95,15 @@ namespace loki
     void Piece::set_file(const uint8_t &__file)
     {
         this->file = __file;
+    }
+
+    bool Piece::get_moved(void) const
+    {
+        return this->moved;
+    }
+
+    void Piece::set_moved(const bool &__moved)
+    {
+        this->moved = __moved;
     }
 }
