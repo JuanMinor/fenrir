@@ -15,40 +15,45 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PIECE_H
-#define PIECE_H
+#ifndef MOVES_H
+#define MOVES_H
 
 #include <ctype.h>
 #include <stdint.h>
+#include <vector>
+
+#include "include/chess/board.h"
+#include "include/chess/fen.h"
+#include "include/chess/piece.h"
 
 namespace loki
 {
-    class Piece
+    class Move
     {
-        char alias;
-        uint8_t value;
-        uint8_t color;
         uint8_t rank;
         uint8_t file;
-        bool moved;
-
-        // @methods
-        bool __has_piece_moved__(void) const;
 
     public:
-        Piece(const char &__alias, const uint8_t &__rank, const uint8_t &__file);
-        ~Piece();
+        Move(const uint8_t &__rank, const uint8_t &__file);
+        ~Move();
 
         // @methods
-        char get_alias(void) const;
-        uint8_t get_value(void) const;
-        uint8_t get_color(void) const;
         uint8_t get_rank(void) const;
-        void set_rank(const uint8_t &__rank);
         uint8_t get_file(void) const;
-        void set_file(const uint8_t &__file);
-        bool get_moved(void) const;
-        void set_moved(const bool &__moved);
+    };
+
+    class Moves
+    {
+        // @methods
+        void __pawn_old__(const Piece *__piece, const Board *__board, const Fen *__fen, std::vector<const Move *> &__moves) const;
+        void __pawn__(const uint8_t &__rank, const u_int8_t &__file, const Board *__board, const Fen *__fen, std::vector<const Move *> &__moves) const;
+
+    public:
+        Moves();
+        ~Moves();
+
+        // @methods
+        const std::vector<const Move *> generate(const uint8_t &__rank, const u_int8_t &__file, const Board *__board, const Fen *__fen) const;
     };
 }
 

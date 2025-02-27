@@ -15,31 +15,29 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef BOARD_H
-#define BOARD_H
+#ifndef CHRONO_H
+#define CHRONO_H
 
+#include <iomanip>
 #include <string>
-#include <vector>
 
-#include "include/chess/piece.h"
-
-namespace loki
+namespace chrono
 {
-    class Board
-    {
-        std::vector<std::vector<Piece *>> board;
 
-        // @methods
-        std::string __get_algebraic_notation__(const uint8_t &__rank, const uint8_t &__file) const;
+    class Chrono
+    {
+        tm *__get_local_time__(time_t *__timer) noexcept(true);
+        time_t __get_raw_time__(void) noexcept(true);
+        std::_Put_time<char> __get_time_with_format__(const char *__format);
 
     public:
-        Board(const char *__placement);
-        ~Board();
+        Chrono();
+        ~Chrono();
 
         // @methods
-        std::vector<std::vector<Piece *>> get_board(void) const;
-        void move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file);
-        void print(void) const;
+        tm *get_local_time(time_t *__timer) noexcept(true);
+        time_t get_raw_time(void) noexcept(true);
+        std::_Put_time<char> get_time_with_format(const char *__format);
     };
 }
 

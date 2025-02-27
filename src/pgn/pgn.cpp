@@ -1,33 +1,38 @@
 /*
-    pgn.cpp
-    Author: M., Juan
-    Date: 10/31/2023
-*/
+ *   Copyright (c) 2025 Juan Minor
 
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "include/chrono/chrono.h"
 #include "include/logger/logger.h"
 #include "include/pgn/pgn.h"
 
-namespace pgn
+namespace io
 {
     Pgn::Pgn() {}
     Pgn::~Pgn() {}
 
-    void Pgn::__clear_stream_flags__(std::ostream &__os) noexcept
+    void Pgn::__clear_stream_flags__(std::ostream &__os) const
     {
         __os.seekp(std::ios_base::beg);
         __os.clear();
     }
 
-    std::_Put_time<char> Pgn::__get_pgn_date__(void) noexcept
+    void Pgn::__set_metadata__(std::ostream &__os) const
     {
-        time_t time = std::time(nullptr);
-        tm *localtime = std::localtime(&time);
-        return std::put_time(localtime, "%Y.%m.%d");
-    }
-
-    void Pgn::__set_metadata__(std::ostream &__os) noexcept
-    {
-        std::_Put_time<char> date = this->__get_pgn_date__();
+        std::_Put_time<char> date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
         std::stringstream ss;
         ss << "[Event \"User vs. Loki\"]" << std::endl
            << "[Site \"Remote server - atom\"]" << std::endl
@@ -42,14 +47,14 @@ namespace pgn
         return;
     }
 
-    void Pgn::record(const std::string &__move) noexcept
+    void Pgn::record(const std::string &__move) const
     {
         std::fstream file;
-        file.open(P_FILE_STORE, std::ios_base::app);
+        file.open(PGN_FILE_STORE, std::ios_base::app);
         if (!file)
         {
             std::stringstream ss;
-            ss << "Cannot open file: '" << P_FILE_STORE << "'" << std::endl;
+            ss << "Cannot open file: '" << PGN_FILE_STORE << "'" << std::endl;
             logger::LOG_ERROR(ss.str());
             return;
         }
@@ -57,22 +62,22 @@ namespace pgn
         file.close();
     }
 
-    void Pgn::create_pgn(void) noexcept
+    void Pgn::create(void) const
     {
         std::fstream pgnFile, storeFile;
-        pgnFile.open(P_FILE, std::ios::out);
-        storeFile.open(P_FILE_STORE, std::ios::in);
+        pgnFile.open(PGN_FILE, std::ios::out);
+        storeFile.open(PGN_FILE_STORE, std::ios::in);
         if (!pgnFile)
         {
             std::stringstream ss;
-            ss << "Cannot open file: '" << P_FILE << "'" << std::endl;
+            ss << "Cannot open file: '" << PGN_FILE << "'" << std::endl;
             logger::LOG_ERROR(ss.str());
             return;
         }
         if (!storeFile)
         {
             std::stringstream ss;
-            ss << "Cannot open file: '" << P_FILE_STORE << "'" << std::endl;
+            ss << "Cannot open file: '" << PGN_FILE_STORE << "'" << std::endl;
             logger::LOG_ERROR(ss.str());
             return;
         }
