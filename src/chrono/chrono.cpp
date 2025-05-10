@@ -16,43 +16,46 @@
  */
 
 #include "include/chrono/chrono.h"
+#include <ctime>
+#include <iomanip>
 
 namespace chrono
 {
     Chrono::Chrono() {}
-
     Chrono::~Chrono() {}
 
-    tm *Chrono::__get_local_time__(time_t *__timer) noexcept(true)
+    tm *Chrono::__get_local_time__(time_t *__timer) noexcept
     {
         if (!__timer)
         {
-            time_t __timer__ = std::time(nullptr);
-            __timer = &__timer__;
+            time_t current_time = std::time(nullptr);
+            __timer = &current_time;
         }
         return std::localtime(__timer);
     }
 
-    time_t Chrono::__get_raw_time__(void) noexcept(true)
+    time_t Chrono::__get_raw_time__(void) noexcept
     {
         return std::time(nullptr);
     }
 
     std::_Put_time<char> Chrono::__get_time_with_format__(const char *__format)
     {
-        tm *localtime = this->__get_local_time__(nullptr);
-        return std::put_time(localtime, __format);
+        tm *local_time = this->__get_local_time__(nullptr);
+        return std::put_time(local_time, __format);
     }
 
-    // public
-    tm *Chrono::get_local_time(time_t *__timer) noexcept(true)
+    // Public methods
+    tm *Chrono::get_local_time(time_t *__timer) noexcept
     {
         return this->__get_local_time__(__timer);
     }
-    time_t Chrono::get_raw_time(void) noexcept(true)
+
+    time_t Chrono::get_raw_time(void) noexcept
     {
         return this->__get_raw_time__();
     }
+
     std::_Put_time<char> Chrono::get_time_with_format(const char *__format)
     {
         return this->__get_time_with_format__(__format);

@@ -18,23 +18,23 @@
 #ifndef MODIFIER_H
 #define MODIFIER_H
 
-#include "ostream"
-
+#include <ostream>
 #include "include/core/core.h"
 
 namespace color
 {
     class Modifier
     {
+    private:
         Color color;
 
     public:
         Modifier(Color __color);
         ~Modifier();
 
-        // @methods
+        // Overloaded stream insertion operator
         friend std::ostream &operator<<(std::ostream &__os, const Modifier &__modifier);
     };
 }
 
-#endif
+#endif // MODIFIER_H

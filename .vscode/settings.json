@@ -67,10 +67,16 @@
 		"mutex": "cpp",
 		"semaphore": "cpp",
 		"stop_token": "cpp",
-		"thread": "cpp"
+		"thread": "cpp",
+		"any": "cpp",
+		"bitset": "cpp",
+		"codecvt": "cpp",
+		"map": "cpp",
+		"set": "cpp",
+		"regex": "cpp",
+		"ranges": "cpp",
+		"cinttypes": "cpp"
 	},
-	"cSpell.words": [
-		"fullmoves",
-		"halfmove"
-	]
+	"editor.fontLigatures": true,
+	"editor.fontFamily": "'JetBrains Mono Thin', 'Source Code Pro', Consolas, 'Courier New', monospace"
 }

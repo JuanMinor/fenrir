@@ -20,27 +20,27 @@
 
 #include <string>
 #include <vector>
-
 #include "include/chess/piece.h"
 
 namespace loki
 {
     class Board
     {
+    private:
         std::vector<std::vector<Piece *>> board;
 
-        // @methods
+        // Helper method to get algebraic notation for a position
         std::string __get_algebraic_notation__(const uint8_t &__rank, const uint8_t &__file) const;
 
     public:
         Board(const char *__placement);
         ~Board();
 
-        // @methods
+        // Accessors and mutators
         std::vector<std::vector<Piece *>> get_board(void) const;
         void move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file);
         void print(void) const;
     };
 }
 
-#endif
+#endif // BOARD_H

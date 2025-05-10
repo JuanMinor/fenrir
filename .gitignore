@@ -55,3 +55,11 @@ dkms.conf
 *.log
 *.pgn
 *.store.txt
+
+# Gtest
+*.gcda
+*.gcno
+/bint/**
+
+# Coverage
+/.coverage
