@@ -18,13 +18,13 @@
 #ifndef PIECE_H
 #define PIECE_H
 
-#include <ctype.h>
 #include <stdint.h>
 
 namespace loki
 {
     class Piece
     {
+    private:
         char alias;
         uint8_t value;
         uint8_t color;
@@ -32,14 +32,14 @@ namespace loki
         uint8_t file;
         bool moved;
 
-        // @methods
+        // Helper method to check if the piece has moved
         bool __has_piece_moved__(void) const;
 
     public:
         Piece(const char &__alias, const uint8_t &__rank, const uint8_t &__file);
         ~Piece();
 
-        // @methods
+        // Accessors and mutators
         char get_alias(void) const;
         uint8_t get_value(void) const;
         uint8_t get_color(void) const;
@@ -52,4 +52,4 @@ namespace loki
     };
 }
 
-#endif
+#endif // PIECE_H

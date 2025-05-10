@@ -15,15 +15,17 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "include/logger/logger.h"
+#include "include/chrono/chrono.h"
+#include "include/core/core.h"
 #include <fstream>
 #include <unordered_map>
-
-#include "include/chrono/chrono.h"
-#include "include/logger/logger.h"
+#include <sstream>
+#include <filesystem>
 
 namespace logger
 {
-
+    // Mapping of log levels to their string representations
     std::unordered_map<uint8_t, const char *> level_types = {
         {DEBUG, "[DEBUG] - "},
         {INFO, "[INFO] - "},
@@ -31,37 +33,51 @@ namespace logger
         {ERROR, "[ERROR] - "},
         {CRITICAL, "[CRITICAL] - "}};
 
+    void rotate_logs()
+    {
+        namespace fs = std::filesystem;
+
+        if (fs::exists(LOG_FILE) && fs::file_size(LOG_FILE) > MAX_LOG_SIZE)
+        {
+            std::string backup_file = std::string(LOG_FILE) + ".1";
+            if (fs::exists(backup_file))
+            {
+                fs::remove(backup_file);
+            }
+            fs::rename(LOG_FILE, backup_file);
+        }
+    }
+
     Logger::Logger() {}
     Logger::~Logger() {}
 
     void Logger::log(const std::string &__message, const char *__file, const uint8_t &__lineno, const LEVEL &__level) const
     {
-        if (__level == DEBUG && !DEBUG_ENABLED)
+        if (__level == DEBUG && !loki::DEBUG_ENABLED)
         {
             return;
         }
 
-        std::_Put_time<char> timestamp = chrono::Chrono().get_time_with_format("%a %b %d, %Y @ %H:%M:%S");
+        auto timestamp = chrono::Chrono().get_time_with_format("%a %b %d, %Y @ %H:%M:%S");
 
         std::lock_guard<std::mutex> guard(this->log_mutex);
 
-        // @file
-        std::fstream log_file;
-        log_file.open(LOG_FILE, std::ios_base::app);
+        rotate_logs();
+
+        std::ofstream log_file(LOG_FILE, std::ios_base::app);
         if (!log_file)
         {
             return;
         }
+
         try
         {
             const char *type = level_types.at(__level);
             log_file << "[" << timestamp << "] [" << __file << " @ Line " << unsigned(__lineno) << "]::" << type << __message << std::endl;
-            log_file.close();
         }
-        catch (...)
+        catch (const std::exception &e)
         {
-            // @close
-            log_file.close();
+            // Handle any exceptions that occur during logging
         }
     }
 }

@@ -20,24 +20,25 @@
 
 #include <mutex>
 #include <stdint.h>
-
+#include <string>
 #include "include/core/core.h"
 
 namespace logger
 {
     class Logger
     {
+    private:
         mutable std::mutex log_mutex;
 
     public:
         Logger();
         ~Logger();
 
-        // @methods
+        // Logging method
         void log(const std::string &__message, const char *__file, const uint8_t &__lineno, const LEVEL &__level) const;
     };
 
-    // @macros
+    // Macros for logging
 #define LOG Logger()
 
 #define LOG_DEBUG(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::DEBUG);
@@ -47,4 +48,4 @@ namespace logger
 #define LOG_CRITICAL(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::CRITICAL);
 }
 
-#endif
+#endif // LOGGER_H

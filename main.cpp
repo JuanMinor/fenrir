@@ -17,77 +17,51 @@
 
 #include <iostream>
 #include <vector>
-
 #include "include/chess/board.h"
 #include "include/chess/fen.h"
 #include "include/modifier/modifier.h"
-#include "include/chess/moves.h"
 #include "include/pgn/pgn.h"
 
 int main(int argc, char *argv[])
 {
+    // Validate input arguments
     if (argc < 2)
     {
-        std::cout << "No arguments found. Supply a valid FEN string" << std::endl;
-        return 1;
+        std::cerr << "Error: No arguments found. Supply a valid FEN string." << std::endl;
+        return EXIT_FAILURE;
     }
 
-    const loki::Fen *fen = new loki::Fen(argv[1]);
-
-    loki::Board *board = new loki::Board(fen->get_placement());
-
-    std::cout << color::Modifier(color::Color::FG_RED)
-              << color::Modifier(color::Color::BG_WHITE)
-              << "Black pieces are represented in cyan!"
-              << color::Modifier(color::Color::RESET) << std::endl;
-
-    board->print();
-
-    std::cout << color::Modifier(color::Color::FG_MAGENTA) << "-----------------------"
-              << color::Modifier(color::Color::RESET) << std::endl;
-
-    board->move(board->get_board().at(1).at(1), 3, 1);
-    board->move(board->get_board().at(7).at(1), 5, 2);
-    board->move(board->get_board().at(1).at(3), 2, 3);
-    board->move(board->get_board().at(6).at(0), 4, 0);
-
-    board->print();
-
-    std::vector<const loki::Move *> moves = loki::Moves().generate(
-        3, 1, board, fen);
-
-    std::cout << color::Modifier(color::Color::FG_GREEN)
-              << "Moves we can make"
-              << color::Modifier(color::Color::RESET) << std::endl;
-
-    for (const loki::Move *move : moves)
+    try
     {
-        std::cout << color::Modifier(color::Color::FG_YELLOW)
-                  << "Move: (" << int(move->get_rank()) << ", "
-                  << int(move->get_file()) << ") 🚀"
+        // Initialize FEN and Board
+        const loki::Fen fen(argv[1]);
+        std::cout << color::Modifier(color::Color::FG_BLUE)
+                  << "FEN: " << fen.get_placement()
                   << color::Modifier(color::Color::RESET) << std::endl;
+
+        loki::Board board(fen.get_placement());
+
+        board.print();
+
+        std::cout << color::Modifier(color::Color::FG_MAGENTA) << "-----------------------"
+                  << color::Modifier(color::Color::RESET) << std::endl;
+
+        // Perform some moves
+        board.move(board.get_board().at(1).at(1), 3, 1);
+        board.move(board.get_board().at(7).at(1), 5, 2);
+        board.move(board.get_board().at(1).at(3), 2, 3);
+        board.move(board.get_board().at(6).at(0), 4, 0);
+
+        board.print();
+
+        // Create PGN file
+        io::PGN_CREATE();
     }
-
-    moves.clear();
-
-    moves = loki::Moves().generate(
-        6, 1, board, fen);
-
-    std::cout << color::Modifier(color::Color::FG_GREEN)
-              << "Moves we can make"
-              << color::Modifier(color::Color::RESET) << std::endl;
-
-    for (const loki::Move *move : moves)
+    catch (const std::exception &e)
     {
-        std::cout << color::Modifier(color::Color::FG_YELLOW)
-                  << "Move: (" << int(move->get_rank()) << ", "
-                  << int(move->get_file()) << ") 🚀"
-                  << color::Modifier(color::Color::RESET) << std::endl;
+        std::cerr << "Error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
     }
 
-    io::PGN_CREATE();
-
-    delete board;
-
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -15,9 +15,11 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "include/pgn/pgn.h"
 #include "include/chrono/chrono.h"
 #include "include/logger/logger.h"
-#include "include/pgn/pgn.h"
+#include <sstream>
+#include <fstream>
 
 namespace io
 {
@@ -32,65 +34,54 @@ namespace io
 
     void Pgn::__set_metadata__(std::ostream &__os) const
     {
-        std::_Put_time<char> date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
+        auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
         std::stringstream ss;
-        ss << "[Event \"User vs. Loki\"]" << std::endl
-           << "[Site \"Remote server - atom\"]" << std::endl
-           << "[Date \"" << date << "\"]" << std::endl
-           << "[Round \"1\"]" << std::endl
-           << "[White \"User\"]" << std::endl
-           << "[Black \"Loki\"]" << std::endl
-           << "[Result \"-\"]" << std::endl;
+        ss << "[Event \"User vs. Loki\"]\n"
+           << "[Site \"Remote server - atom\"]\n"
+           << "[Date \"" << date << "\"]\n"
+           << "[Round \"1\"]\n"
+           << "[White \"User\"]\n"
+           << "[Black \"Loki\"]\n"
+           << "[Result \"-\"]\n";
 
         this->__clear_stream_flags__(__os);
         __os << ss.str();
-        return;
     }
 
     void Pgn::record(const std::string &__move) const
     {
-        std::fstream file;
-        file.open(PGN_FILE_STORE, std::ios_base::app);
+        std::ofstream file(PGN_FILE_STORE, std::ios_base::app);
         if (!file)
         {
-            std::stringstream ss;
-            ss << "Cannot open file: '" << PGN_FILE_STORE << "'" << std::endl;
-            logger::LOG_ERROR(ss.str());
+            logger::LOG_ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
             return;
         }
-        file << __move << std::endl;
-        file.close();
+        file << __move << '\n';
     }
 
     void Pgn::create(void) const
     {
-        std::fstream pgnFile, storeFile;
-        pgnFile.open(PGN_FILE, std::ios::out);
-        storeFile.open(PGN_FILE_STORE, std::ios::in);
+        std::ifstream storeFile(PGN_FILE_STORE);
+        std::ofstream pgnFile(PGN_FILE);
+
         if (!pgnFile)
         {
-            std::stringstream ss;
-            ss << "Cannot open file: '" << PGN_FILE << "'" << std::endl;
-            logger::LOG_ERROR(ss.str());
+            logger::LOG_ERROR("Cannot open file: '" + std::string(PGN_FILE) + "'");
             return;
         }
         if (!storeFile)
         {
-            std::stringstream ss;
-            ss << "Cannot open file: '" << PGN_FILE_STORE << "'" << std::endl;
-            logger::LOG_ERROR(ss.str());
+            logger::LOG_ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
             return;
         }
+
         this->__set_metadata__(pgnFile);
-        // write moves to file
+
         std::string move;
-        unsigned long long moves = 0;
+        unsigned long long moveCount = 0;
         while (std::getline(storeFile, move))
         {
-            pgnFile << ++moves << ". " << move << " ";
+            pgnFile << ++moveCount << ". " << move << " ";
         }
-        pgnFile.close();
-        storeFile.close();
     }
-
 }

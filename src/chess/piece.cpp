@@ -15,50 +15,32 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <unordered_map>
-
-#include "include/chess/piece.h"
 #include "include/core/core.h"
+#include "include/chess/piece.h"
+#include "include/logger/logger.h"
+#include <unordered_map>
+#include <cctype>
+#include <locale>
 
 namespace loki
 {
-    std::unordered_map<char, uint8_t>
-        values = {
-            {'P', 1},
-            {'p', 1},
-            {'N', 3},
-            {'n', 3},
-            {'B', 3},
-            {'b', 3},
-            {'R', 5},
-            {'r', 5},
-            {'Q', 9},
-            {'q', 9},
-            {'K', 25},
-            {'k', 25}};
+    // Mapping of piece aliases to their values
+    std::unordered_map<char, uint8_t> values = {
+        {'P', 1}, {'p', 1}, {'N', 3}, {'n', 3}, {'B', 3}, {'b', 3}, {'R', 5}, {'r', 5}, {'Q', 9}, {'q', 9}, {'K', 25}, {'k', 25}};
 
     Piece::Piece(const char &__alias, const uint8_t &__rank, const uint8_t &__file)
-    {
-        this->alias = __alias;
-        this->value = values.at(__alias);
-        this->color = isupper(__alias) ? WHITE : BLACK;
-        this->rank = __rank;
-        this->file = __file;
-        this->moved = this->__has_piece_moved__();
-    }
+        : alias(__alias),
+          value(values.at(__alias)),
+          color(std::isupper(__alias, std::locale()) ? WHITE : BLACK),
+          rank(__rank),
+          file(__file),
+          moved(this->__has_piece_moved__()) {}
 
-    Piece::~Piece()
-    {
-    }
+    Piece::~Piece() {}
 
-    // @methods
     bool Piece::__has_piece_moved__(void) const
     {
-        if ((this->alias == 'p' && this->rank == 6) || (this->alias == 'P' && this->rank == 1))
-        {
-            return false;
-        }
-        return true;
+        return !((this->alias == 'p' && this->rank == 6) || (this->alias == 'P' && this->rank == 1));
     }
 
     char Piece::get_alias(void) const
@@ -83,6 +65,12 @@ namespace loki
 
     void Piece::set_rank(const uint8_t &__rank)
     {
+        if (__rank < 0 || __rank > 7)
+        {
+            const char *error = "Rank must be between 1 and 8";
+            throw std::out_of_range(error);
+            logger::LOG_ERROR(error);
+        }
         this->rank = __rank;
         this->moved = this->__has_piece_moved__();
     }
@@ -94,6 +82,12 @@ namespace loki
 
     void Piece::set_file(const uint8_t &__file)
     {
+        if (__file < 0 || __file > 7)
+        {
+            const char *error = "File must be between 1 and 8";
+            throw std::out_of_range(error);
+            logger::LOG_ERROR(error);
+        }
         this->file = __file;
     }
 

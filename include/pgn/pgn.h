@@ -26,7 +26,8 @@ namespace io
 {
     class Pgn
     {
-        // @methods
+    private:
+        // Helper methods
         void __clear_stream_flags__(std::ostream &__os) const;
         void __set_metadata__(std::ostream &__os) const;
 
@@ -34,16 +35,16 @@ namespace io
         Pgn();
         ~Pgn();
 
-        // @methods
+        // Public methods
         void update_metadata(const std::string &__tag);
         void record(const std::string &__move) const;
         void create(void) const;
     };
 
+    // Macros for PGN operations
 #define PGN Pgn()
-
 #define PGN_RECORD(MOVE) PGN.record(MOVE);
 #define PGN_CREATE() PGN.create();
 }
 
-#endif
+#endif // PGN_H

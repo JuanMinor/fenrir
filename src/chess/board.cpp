@@ -17,9 +17,8 @@
 
 #include <cstring>
 #include <iostream>
-#include <stdint.h>
+#include <sstream>
 #include <unordered_map>
-
 #include "include/chess/board.h"
 #include "include/core/core.h"
 #include "include/logger/logger.h"
@@ -39,14 +38,21 @@ namespace loki
     Board::Board(const char *__placement)
     {
         size_t size = std::strlen(__placement);
-        uint8_t rank = BOARD_SIZE - 1, file = 0;
+        uint8_t rank = BOARD_SIZE - 1, file = 0, squares = 0;
+
         this->board.resize(BOARD_SIZE, std::vector<Piece *>(BOARD_SIZE, nullptr));
 
-        for (size_t i = 0; i < size && rank >= 0; ++i)
+        for (size_t i = 0; i < size && rank < BOARD_SIZE; ++i)
         {
             char c = __placement[i];
             if (c == '/')
             {
+                if (file != BOARD_SIZE)
+                {
+                    const char *error = "Invalid FEN string: Rank does not have 8 squares";
+                    logger::LOG_ERROR(error);
+                    throw std::invalid_argument(error);
+                }
                 rank--;
                 file = 0;
                 continue;
@@ -54,12 +60,19 @@ namespace loki
             if (std::isdigit(c))
             {
                 uint8_t empties = c - '0';
+                squares += empties;
+
                 for (uint8_t j = 0; j < empties; ++j)
                 {
                     this->board[rank][file++] = nullptr;
                 }
                 continue;
             }
+            if (piece_names.find(std::tolower(c, std::locale())) == piece_names.end())
+            {
+                throw std::invalid_argument("Invalid FEN string: Unknown piece character");
+            }
+            squares++;
             Piece *piece = new Piece(c, rank, file);
             this->board[rank][file++] = piece;
             std::stringstream ss;
@@ -72,6 +85,27 @@ namespace loki
                << this->__get_algebraic_notation__(piece->get_rank(), piece->get_file())
                << " ✅";
             logger::LOG_DEBUG(ss.str());
+        }
+
+        if (file != BOARD_SIZE)
+        {
+            const char *error = "Invalid FEN string: Rank does not have 8 squares";
+            logger::LOG_ERROR(error);
+            throw std::invalid_argument(error);
+        }
+
+        if (rank != 0)
+        {
+            const char *error = "Invalid FEN string: Board does not have 8 ranks";
+            logger::LOG_ERROR(error);
+            throw std::invalid_argument(error);
+        }
+
+        if (squares != 64)
+        {
+            const char *error = "Invalid FEN string: Board does not have 64 squares";
+            logger::LOG_ERROR(error);
+            throw std::invalid_argument(error);
         }
     }
 
@@ -115,8 +149,7 @@ namespace loki
     void Board::move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file)
     {
         std::stringstream ss;
-        // @errors
-        if (__rank < 0 || __rank >= BOARD_SIZE || __file < 0 || __file >= BOARD_SIZE)
+        if (__rank >= BOARD_SIZE || __file >= BOARD_SIZE)
         {
             ss << "Board address <rank, file> <" << unsigned(__rank) << ", " << unsigned(__file) << "> is out of bounds!";
             logger::LOG_ERROR(ss.str());
@@ -130,7 +163,15 @@ namespace loki
             return;
         }
 
-        // @move
+        if (this->board[__rank][__file] != nullptr &&
+            this->board[__rank][__file]->get_color() == __piece->get_color())
+        {
+            ss << "Cannot move to <rank, file> <" << unsigned(__rank) << ", " << unsigned(__file)
+               << "> because it is occupied by a piece of the same color!";
+            logger::LOG_ERROR(ss.str());
+            return;
+        }
+
         __piece->set_rank(__rank);
         __piece->set_file(__file);
         this->board[__rank][__file] = __piece;
@@ -150,13 +191,11 @@ namespace loki
 
         logger::LOG_INFO(ss.str());
 
-        // @pgn
         ss.str("");
         ss << this->__get_algebraic_notation__(rank, file)
            << " "
            << this->__get_algebraic_notation__(__rank, __file);
         io::PGN_RECORD(ss.str());
-        return;
     }
 
     void Board::print(void) const
@@ -171,7 +210,7 @@ namespace loki
             std::cout << color::Modifier(color::Color::FG_YELLOW) << char(97 + j) << " ";
         }
         std::cout << color::Modifier(color::Color::RESET) << std::endl;
-        for (int i = BOARD_SIZE - 1; i >= 0; i--) // @cannot be size_t or uint8_t **underflow**
+        for (int i = BOARD_SIZE - 1; i >= 0; i--)
         {
             std::cout << color::Modifier(color::Color::FG_YELLOW) << unsigned(i + 1) << " - "
                       << color::Modifier(color::Color::RESET);

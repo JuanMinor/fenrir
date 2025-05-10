@@ -10,53 +10,20 @@
     },
     "tasks": [
         {
-            "label": "Loki Setup",
+            "label": "Loki setup",
             "dependsOn": [
-                "Loki",
-                "Scripts",
+                "extensions",
+                "git",
                 "gdb",
-                "Extensions"
+                "scripts",
+                "loki"
             ],
             "runOptions": {
                 "runOn": "folderOpen"
             }
         },
         {
-            "label": "Loki",
-            "type": "shell",
-            "isBackground": true,
-            "command": "/bin/bash",
-            "icon": {
-                "id": "rocket",
-                "color": "terminal.ansiRed"
-            }
-        },
-        {
-            "label": "Scripts",
-            "type": "shell",
-            "isBackground": true,
-            "command": [
-                "/bin/bash",
-            ],
-            "icon": {
-                "id": "code",
-                "color": "terminal.ansiGreen"
-            }
-        },
-        {
-            "label": "gdb",
-            "type": "shell",
-            "isBackground": true,
-            "command": [
-                "/bin/bash",
-            ],
-            "icon": {
-                "id": "bug",
-                "color": "terminal.ansiCyan"
-            }
-        },
-        {
-            "label": "Extensions",
+            "label": "extensions",
             "type": "shell",
             "isBackground": false,
             "command": [
@@ -66,11 +33,59 @@
                 "code --install-extension esbenp.prettier-vscode",
                 "code --install-extension Gruntfuggly.todo-tree",
                 "code --install-extension eamodio.gitlens",
+                "code --install-extension ms-vscode.cpptools-extension-pack"
             ],
             "icon": {
                 "id": "symbol-event",
                 "color": "terminal.ansiYellow"
             }
-        }
+        },
+        {
+            "label": "gdb",
+            "type": "shell",
+            "isBackground": true,
+            "command": [
+                "/bin/zsh",
+            ],
+            "icon": {
+                "id": "bug",
+                "color": "terminal.ansiCyan"
+            }
+        },
+        {
+            "label": "git",
+            "type": "shell",
+            "isBackground": true,
+            "command": [
+                "/bin/zsh",
+            ],
+            "icon": {
+                "id": "github",
+                "color": "terminal.ansiWhite"
+            }
+        },
+        {
+            "label": "loki",
+            "type": "shell",
+            "isBackground": true,
+            "command": "/bin/zsh",
+            "icon": {
+                "id": "rocket",
+                "color": "terminal.ansiRed"
+            }
+        },
+        {
+            "label": "scripts",
+            "type": "shell",
+            "isBackground": true,
+            "command": "/bin/zsh",
+            "options": {
+                "cwd": "/workspaces/loki/scripts"
+            },
+            "icon": {
+                "id": "code",
+                "color": "terminal.ansiGreen"
+            }
+        },
     ]
 }
