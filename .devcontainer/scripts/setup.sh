@@ -16,6 +16,14 @@ system() {
 
     # Change shell
     chsh -s /bin/zsh atom
+
+    # Install zsh plugins
+    cp /root/.zshrc /home/atom/.zshrc
+    cp -r /root/.oh-my-zsh /home/atom/.oh-my-zsh
+
+    # Change ownership of the .zshrc and .oh-my-zsh directories
+    chown -R atom:atom /home/atom/.zshrc
+    chown -R atom:atom /home/atom/.oh-my-zsh
 }
 
 # @gdb
@@ -23,5 +31,16 @@ install_gdb() {
     apt-get install -y gdb
 }
 
+# gtest & lcov
+install_gtest() {
+    apt-get install -y libgtest-dev cmake lcov
+    cd /usr/src/gtest
+    cmake .
+    make
+    cp lib/*.a /usr/lib
+}
+
+# Call the gtest installation function
 system
 install_gdb
+install_gtest

@@ -4,11 +4,13 @@
 		"dockerfile": "Dockerfile"
 	},
 	"customizations": {
-		// Configure properties specific to VS Code.
 		"vscode": {
 			"settings": {
-				"terminal.integrated.defaultProfile.linux": "bash"
+				"terminal.integrated.defaultProfile.linux": "zsh"
 			}
 		}
-	}
+	},
+	"mounts": [
+		"source=${env:HOME}/.ssh,target=/home/atom/.ssh,type=bind,readonly"
+	]
 }

@@ -16,13 +16,11 @@
  */
 
 #include "include/modifier/modifier.h"
+#include <ostream>
 
 namespace color
 {
-    Modifier::Modifier(Color __color)
-    {
-        this->color = __color;
-    }
+    Modifier::Modifier(Color __color) : color(__color) {}
 
     Modifier::~Modifier() {}
 
