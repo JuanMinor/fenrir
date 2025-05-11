@@ -25,7 +25,8 @@ build_project() {
 # Function to run the Loki engine with the default FEN string
 run_engine() {
     echo "Running the Loki engine..."
-    "$PROJECT_ROOT/bin/loki.elf" "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    (cd "$PROJECT_ROOT" && g++ -g -I /workspaces/loki -fPIC -DLOKI_BUILD_DLL -o bin/mainh main.cpp -Lbin/lib -lloki)
+    (cd "$PROJECT_ROOT" && LD_LIBRARY_PATH=bin/lib ./bin/mainh)
 }
 
 # Main execution

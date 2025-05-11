@@ -16,7 +16,6 @@
  */
 
 #include <gtest/gtest.h>
-#include <iostream>
 #include <regex>
 #include "include/chess/board.h"
 #include "include/chess/piece.h"
@@ -27,9 +26,6 @@ class BoardTest : public ::testing::Test
 protected:
     static void SetUpTestSuite()
     {
-        std::cout << "****************************************************" << std::endl
-                  << "Board tests are running..." << std::endl
-                  << "****************************************************" << std::endl;
         valid_fen_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
         empty_fen_position = "8/8/8/8/8/8/8/8";
     }
@@ -138,34 +134,24 @@ TEST_F(BoardTest, MoveOutOfBounds)
 /* Edge cases */
 TEST_F(BoardTest, InvalidFENThrows)
 {
-    EXPECT_THROW(loki::Board("invalid_fen_position_string"), std::invalid_argument);
-    EXPECT_THROW(loki::Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/8"), std::invalid_argument);
-    EXPECT_THROW(loki::Board("rnbqkbnr/pppppppp/8/8/8/7/PPPPPPPP/RNBQKBN"), std::invalid_argument);
+    EXPECT_THROW(loki::Board("invalid_fen_position_string"), std::runtime_error);
+    EXPECT_THROW(loki::Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/8"), std::runtime_error);
+    EXPECT_THROW(loki::Board("rnbqkbnr/pppppppp/8/8/8/7/PPPPPPPP/RNBQKBN"), std::runtime_error);
 }
 
 TEST_F(BoardTest, PrintBoard)
 {
     loki::Board board(valid_fen_position);
 
-    /* Redirect std::cout to a stringstream */
-    std::stringstream buffer;
-    std::streambuf *old_cout = std::cout.rdbuf(buffer.rdbuf());
-
+    testing::internal::CaptureStdout();
     board.print();
+    std::string output = testing::internal::GetCapturedStdout();
 
-    /* Restore std::cout */
-    std::cout.rdbuf(old_cout);
-
-    std::string output = buffer.str();
-
-    /* Remove ANSI escape sequences using a regex */
+    /* Remove ANSI escape sequences using regex */
     std::regex ansi_escape_regex("\033\\[[0-9;]*m");
     std::string stripped_output = std::regex_replace(output, ansi_escape_regex, "");
 
-    /* Verify output */
-    /* Black pieces should be at ranks 7, 8 */
     EXPECT_NE(stripped_output.find("r n b q k b n r"), std::string::npos);
-    /* White pieces should be at ranks 1, 2 */
     EXPECT_NE(stripped_output.find("R N B Q K B N R"), std::string::npos);
 }
 

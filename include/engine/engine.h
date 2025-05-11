@@ -15,29 +15,31 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include "include/engine/engine.h"
+#ifndef ENGINE_H
+#define ENGINE_H
 
-int main(int argc, char *argv[])
+#include "include/chess/board.h"
+#include "include/core/core.h"
+#include "include/chess/fen.h"
+
+namespace loki
 {
-    try
-    {
-        loki::Engine engine = loki::Engine();
-        engine.print_board();
-        engine.make_move(1, 1, 3, 1);
-        engine.make_move(7, 1, 5, 2);
-        engine.make_move(1, 3, 2, 3);
-        engine.make_move(6, 0, 4, 0);
-        engine.print_board();
 
-        engine.reset();
-        engine.print_board();
-    }
-    catch (const std::exception &e)
+    class LOKI_API Engine
     {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
-    }
+        static constexpr const char *default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        Fen fen;
+        Board board;
 
-    return EXIT_SUCCESS;
+    public:
+        Engine(const char *__fen = default_fen);
+        ~Engine();
+
+        void make_move(const uint8_t &__from_rank, const uint8_t &__from_file,
+                       const uint8_t &__to_rank, const uint8_t &__to_file);
+        void print_board(void) const;
+        void reset();
+    };
 }
+
+#endif

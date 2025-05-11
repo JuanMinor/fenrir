@@ -16,28 +16,35 @@
  */
 
 #include <iostream>
-#include "include/engine/engine.h"
+#include <include/engine/engine.h>
 
-int main(int argc, char *argv[])
+namespace loki
 {
-    try
-    {
-        loki::Engine engine = loki::Engine();
-        engine.print_board();
-        engine.make_move(1, 1, 3, 1);
-        engine.make_move(7, 1, 5, 2);
-        engine.make_move(1, 3, 2, 3);
-        engine.make_move(6, 0, 4, 0);
-        engine.print_board();
 
-        engine.reset();
-        engine.print_board();
-    }
-    catch (const std::exception &e)
+    Engine::Engine(const char *__fen) : fen(__fen), board(fen.get_placement())
     {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return EXIT_FAILURE;
     }
 
-    return EXIT_SUCCESS;
+    Engine::~Engine() {}
+
+    void Engine::make_move(const uint8_t &__from_rank, const uint8_t &__from_file,
+                           const uint8_t &__to_rank, const uint8_t &__to_file)
+    {
+        Piece *piece = board.get_board().at(__from_rank).at(__from_file);
+        if (piece != nullptr)
+        {
+            board.move(piece, __to_rank, __to_file);
+        }
+    }
+
+    void Engine::print_board(void) const
+    {
+        board.print();
+    }
+
+    void Engine::reset()
+    {
+        board.~Board();
+        new (&board) Board(fen.get_placement());
+    }
 }
