@@ -59,6 +59,7 @@ dkms.conf
 # Gtest
 *.gcda
 *.gcno
+/bin/**
 /bint/**
 
 # Coverage

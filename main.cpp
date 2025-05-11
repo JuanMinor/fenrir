@@ -16,46 +16,22 @@
  */
 
 #include <iostream>
-#include <vector>
-#include "include/chess/board.h"
-#include "include/chess/fen.h"
-#include "include/modifier/modifier.h"
-#include "include/pgn/pgn.h"
+#include "include/engine/engine.h"
 
 int main(int argc, char *argv[])
 {
-    // Validate input arguments
-    if (argc < 2)
-    {
-        std::cerr << "Error: No arguments found. Supply a valid FEN string." << std::endl;
-        return EXIT_FAILURE;
-    }
-
     try
     {
-        // Initialize FEN and Board
-        const loki::Fen fen(argv[1]);
-        std::cout << color::Modifier(color::Color::FG_BLUE)
-                  << "FEN: " << fen.get_placement()
-                  << color::Modifier(color::Color::RESET) << std::endl;
+        loki::Engine engine = loki::Engine();
+        engine.print_board();
+        engine.make_move(1, 1, 3, 1);
+        engine.make_move(7, 1, 5, 2);
+        engine.make_move(1, 3, 2, 3);
+        engine.make_move(6, 0, 4, 0);
+        engine.print_board();
 
-        loki::Board board(fen.get_placement());
-
-        board.print();
-
-        std::cout << color::Modifier(color::Color::FG_MAGENTA) << "-----------------------"
-                  << color::Modifier(color::Color::RESET) << std::endl;
-
-        // Perform some moves
-        board.move(board.get_board().at(1).at(1), 3, 1);
-        board.move(board.get_board().at(7).at(1), 5, 2);
-        board.move(board.get_board().at(1).at(3), 2, 3);
-        board.move(board.get_board().at(6).at(0), 4, 0);
-
-        board.print();
-
-        // Create PGN file
-        io::PGN_CREATE();
+        engine.reset();
+        engine.print_board();
     }
     catch (const std::exception &e)
     {

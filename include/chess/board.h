@@ -31,6 +31,8 @@ namespace loki
 
         // Helper method to get algebraic notation for a position
         std::string __get_algebraic_notation__(const uint8_t &__rank, const uint8_t &__file) const;
+        void __log_piece_action__(const char *__action, const Piece *__piece, const char *__position, const char *__emoji);
+        void __log_throw_error__(const char *__error, const bool &__throw = false);
 
     public:
         Board(const char *__placement);

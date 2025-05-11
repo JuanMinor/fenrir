@@ -26,11 +26,6 @@ class FenTest : public ::testing::Test
 protected:
     static void SetUpTestSuite()
     {
-        std::cout << color::Modifier(color::Color::FG_CYAN) << std::endl
-                  << "****************************************************" << std::endl
-                  << "Forsyth-Edwards Notation (FEN) tests are running..." << std::endl
-                  << "****************************************************" << std::endl
-                  << color::Modifier(color::Color::RESET) << std::endl;
         test_fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     }
 
