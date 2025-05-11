@@ -27,6 +27,12 @@ namespace loki
 {
     Fen::Fen(const char *__fen)
     {
+        if (__fen == nullptr)
+        {
+            const char *error = "FEN string cannot be null";
+            logger::LOG_ERROR(error);
+            throw std::invalid_argument(error);
+        }
         const std::regex fen_regex(
             "^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+) [wb] (-|[KQkq]+) (-|[a-h][36]) (\\d+) (\\d+)$");
         if (!std::regex_match(__fen, fen_regex))

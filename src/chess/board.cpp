@@ -28,12 +28,12 @@
 namespace loki
 {
     std::unordered_map<char, std::string> piece_names = {
-        {'p', "Pawn"},
-        {'n', "Knight"},
-        {'b', "Bishop"},
-        {'r', "Rook"},
-        {'q', "Queen"},
-        {'k', "King"}};
+        {'p', "pawn"},
+        {'n', "knight"},
+        {'b', "bishop"},
+        {'r', "rook"},
+        {'q', "queen"},
+        {'k', "king"}};
 
     Board::Board(const char *__placement)
     {
@@ -49,9 +49,7 @@ namespace loki
             {
                 if (file != BOARD_SIZE)
                 {
-                    const char *error = "Invalid FEN string: Rank does not have 8 squares";
-                    logger::LOG_ERROR(error);
-                    throw std::invalid_argument(error);
+                    this->__log_throw_error__("Invalid FEN string: Rank does not have 8 squares", true);
                 }
                 rank--;
                 file = 0;
@@ -60,52 +58,26 @@ namespace loki
             if (std::isdigit(c))
             {
                 uint8_t empties = c - '0';
-                squares += empties;
-
                 for (uint8_t j = 0; j < empties; ++j)
                 {
                     this->board[rank][file++] = nullptr;
+                    squares++;
                 }
                 continue;
             }
             if (piece_names.find(std::tolower(c, std::locale())) == piece_names.end())
             {
-                throw std::invalid_argument("Invalid FEN string: Unknown piece character");
+                this->__log_throw_error__("Invalid FEN string: Unknown piece character", true);
             }
             squares++;
             Piece *piece = new Piece(c, rank, file);
             this->board[rank][file++] = piece;
-            std::stringstream ss;
-            std::string color = piece->get_color() == WHITE ? "White" : "Black";
-            ss << "Created "
-               << color
-               << " "
-               << piece_names.at(std::tolower(c, std::locale()))
-               << " in position "
-               << this->__get_algebraic_notation__(piece->get_rank(), piece->get_file())
-               << " ✅";
-            logger::LOG_DEBUG(ss.str());
+            this->__log_piece_action__("Created", piece, this->__get_algebraic_notation__(rank, file - 1).c_str(), "✅");
         }
 
-        if (file != BOARD_SIZE)
+        if (file != BOARD_SIZE || rank != 0 || squares != 64)
         {
-            const char *error = "Invalid FEN string: Rank does not have 8 squares";
-            logger::LOG_ERROR(error);
-            throw std::invalid_argument(error);
-        }
-
-        if (rank != 0)
-        {
-            const char *error = "Invalid FEN string: Board does not have 8 ranks";
-            logger::LOG_ERROR(error);
-            throw std::invalid_argument(error);
-        }
-
-        if (squares != 64)
-        {
-            const char *error = "Invalid FEN string: Board does not have 64 squares";
-            logger::LOG_ERROR(error);
-            throw std::invalid_argument(error);
+            this->__log_throw_error__("Invalid FEN string: Board could not be created correctly.", true);
         }
     }
 
@@ -118,16 +90,7 @@ namespace loki
                 Piece *piece = this->board.at(rank).at(file);
                 if (piece != nullptr)
                 {
-                    std::stringstream ss;
-                    std::string color = piece->get_color() == WHITE ? "White" : "Black";
-                    ss << "Destroyed "
-                       << color
-                       << " "
-                       << piece_names.at(std::tolower(piece->get_alias(), std::locale()))
-                       << " in position "
-                       << this->__get_algebraic_notation__(rank, file)
-                       << " ❌";
-                    logger::LOG_DEBUG(ss.str());
+                    this->__log_piece_action__("Destroyed", piece, this->__get_algebraic_notation__(rank, file).c_str(), "❌");
                     delete piece;
                 }
             }
@@ -151,24 +114,23 @@ namespace loki
         std::stringstream ss;
         if (__rank >= BOARD_SIZE || __file >= BOARD_SIZE)
         {
-            ss << "Board address <rank, file> <" << unsigned(__rank) << ", " << unsigned(__file) << "> is out of bounds!";
-            logger::LOG_ERROR(ss.str());
+            this->__log_throw_error__(
+                ("Address <" + std::to_string(unsigned(__rank)) + ", " + std::to_string(unsigned(__file)) + "> is out of bounds!").c_str());
             return;
         }
         uint8_t rank = __piece->get_rank(), file = __piece->get_file();
         if (this->board[rank][file] == nullptr)
         {
-            ss << "Piece holds invalid address <rank, file> <" << unsigned(rank) << ", " << unsigned(file) << ">!";
-            logger::LOG_ERROR(ss.str());
+            this->__log_throw_error__(
+                ("Piece at board address <" + std::to_string(unsigned(rank)) + ", " + std::to_string(unsigned(file)) + "> is invalid").c_str());
             return;
         }
 
         if (this->board[__rank][__file] != nullptr &&
             this->board[__rank][__file]->get_color() == __piece->get_color())
         {
-            ss << "Cannot move to <rank, file> <" << unsigned(__rank) << ", " << unsigned(__file)
-               << "> because it is occupied by a piece of the same color!";
-            logger::LOG_ERROR(ss.str());
+            this->__log_throw_error__(
+                ("Cannot move to address <" + std::to_string(unsigned(__rank)) + ", " + std::to_string(unsigned(__file)) + ">").c_str());
             return;
         }
 
@@ -177,25 +139,26 @@ namespace loki
         this->board[__rank][__file] = __piece;
         this->board[rank][file] = nullptr;
 
-        std::string color = __piece->get_color() == WHITE ? "White" : "Black";
+        this->__log_piece_action__("Moved", __piece, this->__get_algebraic_notation__(__rank, __file).c_str(), "🚀");
+        io::PGN_RECORD((this->__get_algebraic_notation__(rank, file) + " " + this->__get_algebraic_notation__(__rank, __file)).c_str());
+    }
 
-        ss << "Moved "
-           << color
-           << " "
-           << piece_names.at(std::tolower(__piece->get_alias(), std::locale()))
-           << " from "
-           << this->__get_algebraic_notation__(rank, file)
-           << " to "
-           << this->__get_algebraic_notation__(__rank, __file)
-           << " 🚀";
+    void Board::__log_piece_action__(const char *__action, const Piece *__piece, const char *__position, const char *__emoji)
+    {
+        const char *color = __piece->get_color() == WHITE ? "white" : "black";
+        std::stringstream ss;
+        ss << __action << " " << color << " " << piece_names.at(std::tolower(__piece->get_alias(), std::locale()))
+           << " in position " << __position << " " << __emoji;
+        logger::LOG_DEBUG(ss.str());
+    }
 
-        logger::LOG_INFO(ss.str());
-
-        ss.str("");
-        ss << this->__get_algebraic_notation__(rank, file)
-           << " "
-           << this->__get_algebraic_notation__(__rank, __file);
-        io::PGN_RECORD(ss.str());
+    void Board::__log_throw_error__(const char *__error, const bool &__throw)
+    {
+        logger::LOG_ERROR(__error);
+        if (__throw)
+        {
+            throw std::runtime_error(__error);
+        }
     }
 
     void Board::print(void) const

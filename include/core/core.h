@@ -20,6 +20,19 @@
 
 #include <cstdlib>
 
+/* Export dll symbols */
+#if defined(_WIN32) || defined(_WIN64)
+#ifdef LOKI_BUILD_DLL
+#define LOKI_API __declspec(dllexport)
+#else
+#define LOKI_API __declspec(dllimport)
+#endif
+#elif defined(__GNUC__) && __GNUC__ >= 4
+#define LOKI_API __attribute__((visibility("default")))
+#else
+#define LOKI_API
+#endif
+
 // Namespace for color-related constants
 namespace color
 {
