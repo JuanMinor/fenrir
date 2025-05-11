@@ -53,12 +53,14 @@ dkms.conf
 
 # Logs
 *.log
+*.log.*
 *.pgn
 *.store.txt
 
 # Gtest
 *.gcda
 *.gcno
+/bin/**
 /bint/**
 
 # Coverage
