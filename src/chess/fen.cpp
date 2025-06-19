@@ -15,10 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <regex>
-#include "include/core/core.h"
 #include "include/chess/fen.h"
-#include "include/utils/utils.h"
 
 namespace fenrir
 {
@@ -53,6 +50,8 @@ namespace fenrir
         this->en_passant = tokens[3];
         this->halfmove_clock = static_cast<uint8_t>(std::stoi(tokens[4]));
         this->fullmoves = static_cast<uint8_t>(std::stoi(tokens[5]));
+
+        logger::INFO("FEN initialized with: " + __fen);
     }
 
     Fen::~Fen() {}

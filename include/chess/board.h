@@ -20,6 +20,13 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
+#include <sstream>
+#include "include/core/core.h"
+#include "include/chess/fen.h"
+#include "include/logger/logger.h"
+#include "include/modifier/modifier.h"
+#include "include/pgn/pgn.h"
 #include "include/chess/piece.h"
 #include "include/utils/utils.h"
 
@@ -29,13 +36,18 @@ namespace fenrir
     {
     private:
         std::vector<std::vector<Piece *>> board;
+        std::string castling;
         std::string en_passant;
+        uint8_t color;
+        uint8_t halfmove_clock;
+        uint8_t fullmoves;
+        Fen fen;
 
-        // Helper method to get algebraic notation for a position
+        void __build_board__(const std::string &__placement);
         void __log_piece_action__(const std::string &__action, const Piece *__piece, const std::string &__position, const std::string &__emoji);
 
     public:
-        Board(const std::string &__placement, const std::string &__en_passant = "");
+        Board(const std::string &__fen);
         ~Board();
 
         // Accessors and mutators

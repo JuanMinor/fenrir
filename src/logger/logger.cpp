@@ -16,12 +16,6 @@
  */
 
 #include "include/logger/logger.h"
-#include "include/chrono/chrono.h"
-#include "include/core/core.h"
-#include <fstream>
-#include <unordered_map>
-#include <sstream>
-#include <filesystem>
 
 namespace logger
 {
@@ -53,7 +47,7 @@ namespace logger
 
     void Logger::log(const std::string &__message, const char *__file, const uint8_t &__lineno, const LEVEL &__level) const
     {
-        if (__level == DEBUG && !fenrir::DEBUG_ENABLED)
+        if (__level == DEBUG && !fenrir::DEBUG)
         {
             return;
         }

@@ -15,21 +15,45 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-#include <sstream>
-#include <unordered_map>
 #include "include/chess/board.h"
-#include "include/core/core.h"
-#include "include/logger/logger.h"
-#include "include/modifier/modifier.h"
-#include "include/pgn/pgn.h"
 
 namespace fenrir
 {
-    Board::Board(const std::string &__placement, const std::string &__en_passant)
+    Board::Board(const std::string &__fen)
+        : fen(__fen)
+    {
+        this->castling = fen.get_castling();
+        this->en_passant = fen.get_en_passant() == "-" ? "" : fen.get_en_passant();
+        this->color = fen.get_color();
+        this->halfmove_clock = fen.get_halfmove_clock();
+        this->fullmoves = fen.get_fullmoves();
+
+        this->__build_board__(fen.get_placement());
+
+        logger::INFO("Board initialized with FEN: " + fen.get_placement());
+    }
+
+    Board::~Board()
+    {
+        for (int rank = BOARD_SIZE - 1; rank >= 0; --rank)
+        {
+            for (uint8_t file = 0; file < BOARD_SIZE; ++file)
+            {
+                Piece *piece = this->board.at(rank).at(file);
+                if (piece != nullptr)
+                {
+                    this->__log_piece_action__("Destroyed", piece, utils::get_algebraic_notation(rank, file), "❌");
+                    delete piece;
+                }
+            }
+        }
+        logger::INFO("Board destroyed and all pieces cleaned up.");
+    }
+
+    /* Private */
+    void Board::__build_board__(const std::string &__placement)
     {
         size_t size = __placement.size();
-        this->en_passant = __en_passant;
         uint8_t rank = BOARD_SIZE - 1, file = 0, squares = 0;
 
         this->board.resize(BOARD_SIZE, std::vector<Piece *>(BOARD_SIZE, nullptr));
@@ -73,20 +97,13 @@ namespace fenrir
         }
     }
 
-    Board::~Board()
+    void Board::__log_piece_action__(const std::string &__action, const Piece *__piece, const std::string &__position, const std::string &__emoji)
     {
-        for (int rank = BOARD_SIZE - 1; rank >= 0; --rank)
-        {
-            for (uint8_t file = 0; file < BOARD_SIZE; ++file)
-            {
-                Piece *piece = this->board.at(rank).at(file);
-                if (piece != nullptr)
-                {
-                    this->__log_piece_action__("Destroyed", piece, utils::get_algebraic_notation(rank, file), "❌");
-                    delete piece;
-                }
-            }
-        }
+        const std::string color = __piece->get_color() == WHITE ? "white" : "black";
+        std::stringstream ss;
+        ss << __action << " " << color << " " << PIECE_NAMES.at(std::tolower(__piece->get_alias(), std::locale()))
+           << " in position " << __position << " " << __emoji;
+        logger::DEBUG(ss.str());
     }
 
     std::vector<std::vector<Piece *>> Board::get_board(void) const
@@ -113,7 +130,6 @@ namespace fenrir
 
     void Board::move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file)
     {
-        std::stringstream ss;
         if (__rank >= BOARD_SIZE || __file >= BOARD_SIZE)
         {
             LOG_THROW_ERROR(
@@ -157,18 +173,9 @@ namespace fenrir
         io::PGN_RECORD(std::string(utils::get_algebraic_notation(rank, file)) + " " + utils::get_algebraic_notation(__rank, __file));
     }
 
-    void Board::__log_piece_action__(const std::string &__action, const Piece *__piece, const std::string &__position, const std::string &__emoji)
-    {
-        const std::string color = __piece->get_color() == WHITE ? "white" : "black";
-        std::stringstream ss;
-        ss << __action << " " << color << " " << PIECE_NAMES.at(std::tolower(__piece->get_alias(), std::locale()))
-           << " in position " << __position << " " << __emoji;
-        logger::LOG_DEBUG(ss.str());
-    }
-
     void Board::print(void) const
     {
-        if (!DEBUG_ENABLED)
+        if (!DEBUG)
         {
             return;
         }

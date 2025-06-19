@@ -24,7 +24,7 @@ namespace utils
         if (__rank >= fenrir::BOARD_SIZE || __rank < 0 || __file >= fenrir::BOARD_SIZE || __file < 0)
         {
             LOG_THROW_ERROR("Cannot get algebraic notation for invalid board address", true);
-            return nullptr;
+            return "";
         }
         return ((char(97 + __file)) + std::to_string(unsigned(__rank + 1))).c_str();
     }
