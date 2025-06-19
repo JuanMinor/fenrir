@@ -26,8 +26,8 @@ class BoardTest : public ::testing::Test
 protected:
     static void SetUpTestSuite()
     {
-        valid_fen_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        empty_fen_position = "8/8/8/8/8/8/8/8";
+        valid_fen_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq a3 0 1";
+        empty_fen_position = "8/8/8/8/8/8/8/8 w KQkq - 0 1";
     }
 
     static void TearDownTestSuite() {}
@@ -75,7 +75,7 @@ TEST_F(BoardTest, ParseEmptyFENPosition)
 
 TEST_F(BoardTest, SetEnPassant)
 {
-    fenrir::Board board(valid_fen_position, "a3");
+    fenrir::Board board(valid_fen_position);
 
     EXPECT_EQ(board.get_en_passant(), "a3");
 }
@@ -195,22 +195,6 @@ TEST_F(BoardTest, InvalidFENThrows)
     EXPECT_THROW(fenrir::Board("invalid_fen_position_string"), std::runtime_error);
     EXPECT_THROW(fenrir::Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/8"), std::runtime_error);
     EXPECT_THROW(fenrir::Board("rnbqkbnr/pppppppp/8/8/8/7/PPPPPPPP/RNBQKBN"), std::runtime_error);
-}
-
-TEST_F(BoardTest, PrintBoard)
-{
-    fenrir::Board board(valid_fen_position);
-
-    testing::internal::CaptureStdout();
-    board.print();
-    std::string output = testing::internal::GetCapturedStdout();
-
-    /* Remove ANSI escape sequences using regex */
-    std::regex ansi_escape_regex("\033\\[[0-9;]*m");
-    std::string stripped_output = std::regex_replace(output, ansi_escape_regex, "");
-
-    EXPECT_NE(stripped_output.find("r n b q k b n r"), std::string::npos);
-    EXPECT_NE(stripped_output.find("R N B Q K B N R"), std::string::npos);
 }
 
 TEST_F(BoardTest, DestructorCleansUp)

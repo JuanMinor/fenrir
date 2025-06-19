@@ -16,8 +16,6 @@
  */
 
 #include "include/chrono/chrono.h"
-#include <ctime>
-#include <iomanip>
 
 namespace chrono
 {

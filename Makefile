@@ -1,9 +1,17 @@
 # Compiler settings
 CC = g++
 COVERAGE_FLAGS = -fprofile-arcs -ftest-coverage
-COMMON_FLAGS = -g -I /workspaces/fenrir -fPIC -DLOKI_BUILD_DLL
-CXXFLAGS = $(COMMON_FLAGS)
-CXXFLAGST = $(COMMON_FLAGS) $(COVERAGE_FLAGS)
+COMMON_FLAGS = -I /workspaces/fenrir -fPIC -DFENRIR_BUILD_DLL
+
+# Build mode settings (default: debug)
+BUILD_MODE ?= debug
+ifeq ($(BUILD_MODE),release)
+	CXXFLAGS = $(COMMON_FLAGS) -O2 -DNDEBUG
+else
+	CXXFLAGS = $(COMMON_FLAGS) -g
+endif
+
+CXXFLAGST = $(CXXFLAGS) $(COVERAGE_FLAGS)
 
 # Paths
 BIN = bin
@@ -32,7 +40,7 @@ SRC_FILES = src/chess/board.cpp \
 OBJECT_FILES = $(SRC_FILES:src/%.cpp=$(BUILD)/%.o)
 
 # Shared library
-SHARED_LIB = $(LIB)/libloki.so
+SHARED_LIB = $(LIB)/libfenrir.so
 
 # Test settings
 UNIT_TEST_BIN_DIR = $(BIN_TEST)/unit
@@ -46,6 +54,27 @@ TEST_LIBS = -lgtest -lgtest_main -lpthread
 
 # Default target
 all: $(SHARED_LIB)
+
+# Help target
+help:
+	@echo "Available targets:"
+	@echo "  all     - Build the shared library (default: debug mode)"
+	@echo "  debug   - Build in debug mode (with -g, no NDEBUG)"
+	@echo "  release - Build in release mode (with -O2 -DNDEBUG)"
+	@echo "  test    - Run unit tests (debug mode only)"
+	@echo "  coverage- Run tests with coverage report"
+	@echo "  clean   - Clean all build artifacts"
+	@echo ""
+	@echo "Build modes:"
+	@echo "  Debug mode   : Testing methods available, debug symbols included"
+	@echo "  Release mode : Testing methods stripped, optimized for production"
+
+# Debug and release targets
+debug:
+	$(MAKE) BUILD_MODE=debug all
+
+release:
+	$(MAKE) BUILD_MODE=release all
 
 # Build shared library
 $(SHARED_LIB): $(OBJECT_FILES)
@@ -88,4 +117,4 @@ clean:
 	rm -rf $(UNIT_TEST_BIN_DIR) $(OBJECT_FILES) $(COVERAGE_DIR) $(BIN_TEST)
 
 # Phony targets
-.PHONY: clean test coverage
+.PHONY: clean test coverage debug release help

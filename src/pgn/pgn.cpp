@@ -16,15 +16,22 @@
  */
 
 #include "include/pgn/pgn.h"
-#include "include/chrono/chrono.h"
-#include "include/logger/logger.h"
-#include <sstream>
-#include <fstream>
 
 namespace io
 {
-    Pgn::Pgn() {}
+    Pgn::Pgn()
+    {
+        logger::INFO("Portable Game Notation (PGN) initialized");
+    }
+
     Pgn::~Pgn() {}
+
+    Pgn &Pgn::get_instance()
+    {
+        static Pgn instance;
+        logger::DEBUG("PGN instance created and returned. Only one instance will be used throughout the application.");
+        return instance;
+    }
 
     void Pgn::__clear_stream_flags__(std::ostream &__os) const
     {
@@ -53,7 +60,7 @@ namespace io
         std::ofstream file(PGN_FILE_STORE, std::ios_base::app);
         if (!file)
         {
-            logger::LOG_ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
             return;
         }
         file << __move << '\n';
@@ -66,12 +73,12 @@ namespace io
 
         if (!pgnFile)
         {
-            logger::LOG_ERROR("Cannot open file: '" + std::string(PGN_FILE) + "'");
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE) + "'");
             return;
         }
         if (!storeFile)
         {
-            logger::LOG_ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
             return;
         }
 

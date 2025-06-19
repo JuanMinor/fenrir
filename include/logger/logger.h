@@ -18,10 +18,16 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
+#include <filesystem>
+#include <fstream>
 #include <mutex>
 #include <stdint.h>
 #include <string>
+#include <sstream>
+#include <unordered_map>
 #include "include/core/core.h"
+#include "include/chrono/chrono.h"
+#include "include/logger/logger.h"
 
 namespace logger
 {
@@ -41,11 +47,11 @@ namespace logger
     // Macros for logging
 #define LOG Logger()
 
-#define LOG_DEBUG(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::DEBUG);
-#define LOG_INFO(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::INFO);
-#define LOG_WARN(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::WARN);
-#define LOG_ERROR(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::ERROR);
-#define LOG_CRITICAL(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::CRITICAL);
+#define DEBUG(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::DEBUG);
+#define INFO(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::INFO);
+#define WARN(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::WARN);
+#define ERROR(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::ERROR);
+#define CRITICAL(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::CRITICAL);
 }
 
 #endif // LOGGER_H

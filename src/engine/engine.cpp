@@ -15,36 +15,49 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
 #include "include/engine/engine.h"
-#include "include/chess/moves.h"
-#include "include/utils/utils.h"
 
 namespace fenrir
 {
 
-    Engine::Engine(const std::string &__fen) : fen(__fen), board(fen.get_placement(), fen.get_en_passant())
+    Engine::Engine(const std::string &__fen) : fen(__fen), board(__fen)
     {
+        logger::INFO("Engine initialized with FEN: " + __fen);
     }
 
     Engine::~Engine() {}
 
-    std::vector<std::pair<const std::string, const std::string>> Engine::generate_moves(const std::string &__board_address) const
+#ifndef NDEBUG
+    char Engine::get_piece(const std::string &__algebraic_address) const
+    {
+        uint8_t rank, file;
+        utils::parse_algebraic_notation(__algebraic_address, rank, file);
+
+        const Piece *piece = board.get_piece(rank, file);
+        if (piece == nullptr)
+        {
+            return '.'; // Empty square
+        }
+        return piece->get_alias();
+    }
+#endif
+
+    std::vector<std::pair<const std::string, const std::string>> Engine::generate_moves(const std::string &__algebraic_address) const
     {
         std::vector<std::pair<const std::string, const std::string>> moves;
         u_int8_t rank, file;
-        utils::parse_algebraic_notation(__board_address, rank, file);
+        utils::parse_algebraic_notation(__algebraic_address, rank, file);
         if (rank < 0 || rank >= BOARD_SIZE || file < 0 || file >= BOARD_SIZE)
         {
             LOG_THROW_ERROR(
-                (std::string("Board address ") + __board_address + " is invalid").c_str(),
+                (std::string("Board address ") + __algebraic_address + " is invalid").c_str(),
                 false);
             return moves;
         }
         if (!board.get_board().at(rank).at(file))
         {
             LOG_THROW_ERROR(
-                (std::string("Board address ") + __board_address + " does not contain a piece").c_str(),
+                (std::string("Board address ") + __algebraic_address + " does not contain a piece").c_str(),
                 false);
             return moves;
         }
@@ -52,17 +65,26 @@ namespace fenrir
 
         Moves::get_instance().generate_moves(piece, &board, moves);
 
+        logger::DEBUG("Generated moves for piece at address: " + __algebraic_address);
+
         return moves;
     }
 
-    void Engine::make_move(const uint8_t &__from_rank, const uint8_t &__from_file,
-                           const uint8_t &__to_rank, const uint8_t &__to_file)
+    void Engine::make_move(const std::string &__from_algebraic_address, const std::string &__to_algebraic_address)
     {
+        u_int8_t __from_rank, __from_file, __to_rank, __to_file;
+        utils::parse_algebraic_notation(__from_algebraic_address, __from_rank, __from_file);
+        utils::parse_algebraic_notation(__to_algebraic_address, __to_rank, __to_file);
+
         Piece *piece = board.get_board().at(__from_rank).at(__from_file);
-        if (piece != nullptr)
+        if (!piece)
         {
-            board.move(piece, __to_rank, __to_file);
+            logger::ERROR("No piece found at " + __from_algebraic_address);
+            return;
         }
+        board.move(piece, __to_rank, __to_file);
+
+        logger::DEBUG("Made move from " + __from_algebraic_address + " to " + __to_algebraic_address);
     }
 
     void Engine::print_board(void) const
@@ -73,6 +95,7 @@ namespace fenrir
     void Engine::reset()
     {
         board.~Board();
-        new (&board) Board(fen.get_placement());
+        new (&board) Board(fen);
+        logger::INFO("Reset the board to the initial state with FEN: " + fen);
     }
 }

@@ -26,9 +26,9 @@ class MovesTest : public ::testing::Test
 protected:
     static void SetUpTestSuite()
     {
-        standard_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-        pawn_position = "8/8/8/8/3p4/4P3/8/8";
-        en_passant_position = "rnbqkbnr/1ppppppp/8/pP6/8/8/P1PPPPPP/RNBQKBNR";
+        standard_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        pawn_position = "8/8/8/8/3p4/4P3/8/8 w KQkq - 0 1";
+        en_passant_position = "rnbqkbnr/1ppppppp/8/pP6/8/8/P1PPPPPP/RNBQKBNR w KQkq a6 0 1";
     }
 
     static void TearDownTestSuite() {}
@@ -130,7 +130,7 @@ TEST_F(MovesTest, BlackPawnDoubleMove)
 TEST_F(MovesTest, PawnCapture)
 {
 
-    fenrir::Board board("8/8/8/3p4/2P5/8/8/8");
+    fenrir::Board board("8/8/8/3p4/2P5/8/8/8 w KQkq - 0 1");
     std::vector<std::pair<const std::string, const std::string>> moves;
     const fenrir::Piece *pawn = board.get_piece(3, 2); // c4 white pawn
 
@@ -144,7 +144,7 @@ TEST_F(MovesTest, PawnCapture)
 
 TEST_F(MovesTest, EnPassantCapture)
 {
-    fenrir::Board board(en_passant_position, "a6");
+    fenrir::Board board(en_passant_position);
     EXPECT_EQ(board.get_en_passant(), "a6");
 
     std::vector<std::pair<const std::string, const std::string>> moves;
@@ -161,7 +161,7 @@ TEST_F(MovesTest, EnPassantCapture)
 TEST_F(MovesTest, BlockedPawn)
 {
 
-    fenrir::Board board("8/8/8/3p4/3P4/8/8/8");
+    fenrir::Board board("8/8/8/3p4/3P4/8/8/8 w KQkq - 0 1");
     std::vector<std::pair<const std::string, const std::string>> moves;
 
     const fenrir::Piece *pawn = board.get_piece(3, 3);
@@ -177,7 +177,7 @@ TEST_F(MovesTest, BlockedPawn)
 TEST_F(MovesTest, PawnAtEdge)
 {
 
-    fenrir::Board board("P7/8/8/8/8/8/8/8");
+    fenrir::Board board("P7/8/8/8/8/8/8/8 w KQkq - 0 1");
     std::vector<std::pair<const std::string, const std::string>> moves;
 
     const fenrir::Piece *pawn = board.get_piece(7, 0);

@@ -18,10 +18,13 @@
 #ifndef MOVES_H
 #define MOVES_H
 
-#include <vector>
 #include <string>
-#include "include/chess/piece.h"
+#include <sstream>
+#include <vector>
 #include "include/chess/board.h"
+#include "include/logger/logger.h"
+#include "include/chess/piece.h"
+#include "include/utils/utils.h"
 
 namespace fenrir
 {

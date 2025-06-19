@@ -18,9 +18,13 @@
 #ifndef FEN_H
 #define FEN_H
 
+#include <regex>
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include "include/core/core.h"
+#include "include/logger/logger.h"
+#include "include/utils/utils.h"
 
 namespace fenrir
 {

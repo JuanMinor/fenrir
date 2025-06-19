@@ -19,6 +19,10 @@
 #define PIECE_H
 
 #include <stdint.h>
+#include <unordered_map>
+#include <locale>
+#include "include/core/core.h"
+#include "include/utils/utils.h"
 
 namespace fenrir
 {
