@@ -5,6 +5,7 @@ A modular C++ chess engine with FEN support, move generation, and comprehensive 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/w/cpp/17)
 [![Build](https://img.shields.io/badge/Build-Make-green.svg)](https://www.gnu.org/software/make/)
+[![Testing](https://img.shields.io/badge/Testing-Google%20Test-red.svg)](https://github.com/google/googletest)
 
 ## Quick Start
 
@@ -23,7 +24,7 @@ make test coverage
 
 - **Chess Logic**: Board representation, move generation, and validation
 - **FEN Support**: Parse and generate Forsyth-Edwards Notation strings
-- **Shared Library**: `libloki.so` for integration into other projects
+- **Shared Library**: `libfenrir.so` for integration into other projects
 - **PGN Handling**: Game recording and replay functionality
 - **Comprehensive Testing**: Unit tests with 100% code coverage requirement
 - **Development Tools**: VS Code integration, debugging support, and automation scripts
@@ -53,7 +54,7 @@ engine.reset();
 
 | Target | Description |
 |--------|-------------|
-| `make` | Build shared library (`bin/lib/libloki.so`) |
+| `make` | Build shared library (`bin/lib/libfenrir.so`) |
 | `make test` | Run unit tests with Google Test |
 | `make coverage` | Generate coverage report (requires 100% coverage) |
 | `make clean` | Clean build artifacts |

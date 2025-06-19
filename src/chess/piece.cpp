@@ -15,11 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <unordered_map>
-#include <locale>
-#include "include/core/core.h"
 #include "include/chess/piece.h"
-#include "include/utils/utils.h"
 
 namespace fenrir
 {
@@ -33,7 +29,9 @@ namespace fenrir
           color(std::isupper(__alias, std::locale()) ? WHITE : BLACK),
           rank(__rank),
           file(__file),
-          moved(this->__has_piece_moved__()) {}
+          moved(this->__has_piece_moved__())
+    {
+    }
 
     Piece::~Piece() {}
 

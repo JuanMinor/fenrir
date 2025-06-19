@@ -26,10 +26,10 @@ int main(int argc, char *argv[])
     {
         fenrir::Engine engine = fenrir::Engine();
         engine.print_board();
-        engine.make_move(1, 1, 3, 1);
-        engine.make_move(7, 1, 5, 2);
-        engine.make_move(1, 3, 2, 3);
-        engine.make_move(6, 0, 4, 0);
+        engine.make_move("b2", "b4");
+        engine.make_move("b8", "c6");
+        engine.make_move("d2", "d3");
+        engine.make_move("a7", "a5");
         engine.print_board();
 
         engine.reset();

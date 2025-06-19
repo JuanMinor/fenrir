@@ -20,26 +20,31 @@
 
 #include "include/chess/board.h"
 #include "include/core/core.h"
-#include "include/chess/fen.h"
+#include "include/logger/logger.h"
+#include "include/chess/moves.h"
+#include "include/utils/utils.h"
 
 namespace fenrir
 {
 
-    class LOKI_API Engine
+    class FENRIR_API Engine final
     {
         static constexpr const char *default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        Fen fen;
+        std::string fen;
         Board board;
 
     public:
         Engine(const std::string &__fen = default_fen);
         ~Engine();
 
-        std::vector<std::pair<const std::string, const std::string>> generate_moves(const std::string &__board_address) const;
-        void make_move(const uint8_t &__from_rank, const uint8_t &__from_file,
-                       const uint8_t &__to_rank, const uint8_t &__to_file);
+        std::vector<std::pair<const std::string, const std::string>> generate_moves(const std::string &__algebraic_address) const;
+        void make_move(const std::string &__from_algebraic_address, const std::string &__to_algebraic_address);
         void print_board(void) const;
         void reset();
+
+#ifndef NDEBUG
+        char get_piece(const std::string &__algebraic_address) const;
+#endif
     };
 }
 

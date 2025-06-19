@@ -25,7 +25,7 @@ build_project() {
 # Function to run the Fenrir engine with the default FEN string
 run_engine() {
     echo "Running the Fenrir engine..."
-    (cd "$PROJECT_ROOT" && g++ -g -I /workspaces/fenrir -fPIC -DLOKI_BUILD_DLL -o bin/mainh main.cpp -Lbin/lib -lloki)
+    (cd "$PROJECT_ROOT" && g++ -O2 -DNDEBUG -I /workspaces/fenrir -fPIC -DFENRIR_BUILD_DLL -o bin/mainh main.cpp -Lbin/lib -lfenrir)
     (cd "$PROJECT_ROOT" && LD_LIBRARY_PATH=bin/lib ./bin/mainh)
 }
 

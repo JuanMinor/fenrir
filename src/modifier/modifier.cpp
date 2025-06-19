@@ -16,7 +16,6 @@
  */
 
 #include "include/modifier/modifier.h"
-#include <ostream>
 
 namespace color
 {

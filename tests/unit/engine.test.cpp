@@ -16,59 +16,61 @@
  */
 
 #include <gtest/gtest.h>
-#include <regex>
 #include "include/engine/engine.h"
 
 class EngineTest : public ::testing::Test
 {
 protected:
     fenrir::Engine engine;
+
+    // Helper method for testing
+    char get_piece(const std::string &square)
+    {
+#ifndef NDEBUG
+        return engine.get_piece(square);
+#else
+        // Stub this out for release builds
+        return '.';
+#endif
+    }
 };
 
 TEST_F(EngineTest, DefaultBoardSetup)
 {
-    testing::internal::CaptureStdout();
-    engine.print_board();
-    std::string output = testing::internal::GetCapturedStdout();
+    EXPECT_EQ(get_piece("a1"), 'R');
+    EXPECT_EQ(get_piece("e1"), 'K');
+    EXPECT_EQ(get_piece("a8"), 'r');
+    EXPECT_EQ(get_piece("e8"), 'k');
 
-    /* Remove ANSI escape sequences using regex */
-    std::regex ansi_escape_regex("\033\\[[0-9;]*m");
-    std::string stripped_output = std::regex_replace(output, ansi_escape_regex, "");
+    EXPECT_EQ(get_piece("a2"), 'P');
+    EXPECT_EQ(get_piece("h7"), 'p');
 
-    EXPECT_NE(stripped_output.find("r n b q k b n r"), std::string::npos);
-    EXPECT_NE(stripped_output.find("R N B Q K B N R"), std::string::npos);
+    EXPECT_EQ(get_piece("e4"), '.');
+    EXPECT_EQ(get_piece("d5"), '.');
 }
 
 TEST_F(EngineTest, MakeMove)
 {
-    engine.make_move(1, 1, 3, 1); // Move white pawn from b2 to b4
-    testing::internal::CaptureStdout();
-    engine.print_board();
-    std::string output = testing::internal::GetCapturedStdout();
+    engine.make_move("b2", "b4");
 
-    /* Remove ANSI escape sequences using regex */
-    std::regex ansi_escape_regex("\033\\[[0-9;]*m");
-    std::string stripped_output = std::regex_replace(output, ansi_escape_regex, "");
+    EXPECT_EQ(get_piece("b2"), '.');
+    EXPECT_EQ(get_piece("b4"), 'P');
 
-    EXPECT_NE(stripped_output.find("4 - . P . . . . . . - 4"), std::string::npos);
-    EXPECT_NE(stripped_output.find("2 - P . P P P P P P - 2"), std::string::npos);
+    EXPECT_EQ(get_piece("a1"), 'R');
+    EXPECT_EQ(get_piece("c2"), 'P');
 }
 
 TEST_F(EngineTest, ResetBoard)
 {
-    engine.make_move(1, 1, 3, 1);
+    engine.make_move("b2", "b4");
+    EXPECT_EQ(get_piece("b4"), 'P');
+
     engine.reset();
 
-    testing::internal::CaptureStdout();
-    engine.print_board();
-    std::string output = testing::internal::GetCapturedStdout();
-
-    /* Remove ANSI escape sequences using regex */
-    std::regex ansi_escape_regex("\033\\[[0-9;]*m");
-    std::string stripped_output = std::regex_replace(output, ansi_escape_regex, "");
-
-    ASSERT_NE(stripped_output.find("r n b q k b n r"), std::string::npos);
-    ASSERT_NE(stripped_output.find("P P P P P P P P"), std::string::npos);
+    EXPECT_EQ(get_piece("b2"), 'P');
+    EXPECT_EQ(get_piece("b4"), '.');
+    EXPECT_EQ(get_piece("e1"), 'K');
+    EXPECT_EQ(get_piece("e8"), 'k');
 }
 
 TEST_F(EngineTest, StressTestManyMovesAndResets)
@@ -82,22 +84,14 @@ TEST_F(EngineTest, StressTestManyMovesAndResets)
 
     for (int i = 0; i < num_iterations; ++i)
     {
-        engine.make_move(1, 1, 3, 1);
-        engine.make_move(3, 1, 1, 1);
+        engine.make_move("b2", "b4");
+        engine.make_move("b4", "b2");
 
         engine.reset();
 
-        testing::internal::CaptureStdout();
-        engine.print_board();
-        std::string output = testing::internal::GetCapturedStdout();
-
-        /* Remove ANSI escape sequences using regex */
-        std::regex ansi_escape_regex("\033\\[[0-9;]*m");
-        std::string stripped_output = std::regex_replace(output, ansi_escape_regex, "");
-
-        ASSERT_NE(stripped_output.find("r n b q k b n r"), std::string::npos);
-        ASSERT_NE(stripped_output.find("p p p p p p p p"), std::string::npos);
-        ASSERT_NE(stripped_output.find("P P P P P P P P"), std::string::npos);
-        ASSERT_NE(stripped_output.find("R N B Q K B N R"), std::string::npos);
+        ASSERT_EQ(get_piece("b2"), 'P');
+        ASSERT_EQ(get_piece("e1"), 'K');
+        ASSERT_EQ(get_piece("e8"), 'k');
+        ASSERT_EQ(get_piece("e4"), '.');
     }
 }

@@ -22,15 +22,15 @@
 
 /* Export dll symbols */
 #if defined(_WIN32) || defined(_WIN64)
-#ifdef LOKI_BUILD_DLL
-#define LOKI_API __declspec(dllexport)
+#ifdef FENRIR_BUILD_DLL
+#define FENRIR_API __declspec(dllexport)
 #else
-#define LOKI_API __declspec(dllimport)
+#define FENRIR_API __declspec(dllimport)
 #endif
 #elif defined(__GNUC__) && __GNUC__ >= 4
-#define LOKI_API __attribute__((visibility("default")))
+#define FENRIR_API __attribute__((visibility("default")))
 #else
-#define LOKI_API
+#define FENRIR_API
 #endif
 
 // Namespace for color-related constants
@@ -84,7 +84,7 @@ namespace logger
 // Namespace for Fenrir engine constants
 namespace fenrir
 {
-    constexpr bool DEBUG_ENABLED = true;
+    constexpr bool DEBUG = true;
 
     constexpr int BOARD_SIZE = 8;
     constexpr int BOARD_MAX_LEFT = 0;

@@ -18,6 +18,7 @@
 #ifndef CHRONO_H
 #define CHRONO_H
 
+#include <ctime>
 #include <iomanip>
 #include <string>
 

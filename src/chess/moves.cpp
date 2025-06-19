@@ -15,13 +15,14 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <sstream>
 #include "include/chess/moves.h"
-#include "include/utils/utils.h"
 
 namespace fenrir
 {
-    Moves::Moves() {}
+    Moves::Moves()
+    {
+        logger::INFO("Moves instance created");
+    }
 
     Moves::~Moves() {}
 
@@ -29,12 +30,15 @@ namespace fenrir
     {
         if (__piece == nullptr || __target_piece == nullptr)
         {
+            logger::WARN(!__piece ? "Piece is null 😢 and capture is not possible" : "Target piece is null 😢 and capture is not possible");
             return;
         }
         if (__piece->get_color() != __target_piece->get_color())
         {
             __moves.emplace_back(std::make_pair(utils::get_algebraic_notation(__piece->get_rank(), __piece->get_file()),
                                                 utils::get_algebraic_notation(__target_piece->get_rank(), __target_piece->get_file())));
+            logger::DEBUG("Capture move generated from " + utils::get_algebraic_notation(__piece->get_rank(), __piece->get_file()) +
+                          " to " + utils::get_algebraic_notation(__target_piece->get_rank(), __target_piece->get_file()));
         }
     }
 
@@ -42,10 +46,7 @@ namespace fenrir
     {
         if (!__piece)
         {
-            if (DEBUG_ENABLED)
-            {
-                logger::LOG_DEBUG("Piece is null. Generated moves cannot be logged 😢");
-            }
+            logger::ERROR("Piece is null. Generated moves cannot be logged 😢");
             return;
         }
         std::stringstream ss;
@@ -69,10 +70,7 @@ namespace fenrir
                 ss << ", ";
             }
         }
-        if (DEBUG_ENABLED)
-        {
-            logger::LOG_DEBUG(ss.str());
-        }
+        logger::DEBUG(ss.str());
     }
 
     void Moves::__pawn__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves)
@@ -89,8 +87,16 @@ namespace fenrir
                                                 utils::get_algebraic_notation(_rank, file)));
         }
 
-        this->__capture__(__piece, __board->get_piece(_rank, file - 1), __moves);
-        this->__capture__(__piece, __board->get_piece(_rank, file + 1), __moves);
+        // Left diagonal capture
+        if (file > 0)
+        {
+            this->__capture__(__piece, __board->get_piece(_rank, file - 1), __moves);
+        }
+        // Right diagonal capture
+        if (file < BOARD_SIZE - 1)
+        {
+            this->__capture__(__piece, __board->get_piece(_rank, file + 1), __moves);
+        }
 
         if (!__piece->get_moved())
         {
@@ -128,6 +134,7 @@ namespace fenrir
     Moves &Moves::get_instance()
     {
         static Moves instance;
+        logger::DEBUG("Moves instance created and returned. Only one instance will be used throughout the application.");
         return instance;
     }
 
@@ -135,8 +142,10 @@ namespace fenrir
     {
         if (__piece == nullptr)
         {
+            logger::ERROR("Piece is null. Moves cannot be generated 😢");
             return;
         }
+        logger::DEBUG("Generating moves for piece at " + utils::get_algebraic_notation(__piece->get_rank(), __piece->get_file()));
         switch (std::tolower(__piece->get_alias()))
         {
         case 'p':
