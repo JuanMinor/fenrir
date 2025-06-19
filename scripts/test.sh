@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # -----------------------------------------------------------------------------
-# Loki Chess Engine Test Runner Script
+# Fenrir Chess Engine Test Runner Script
 # -----------------------------------------------------------------------------
-# This script automates the process of running the test suite for the Loki chess engine.
+# This script automates the process of running the test suite for the Fenrir chess engine.
 # It performs the following steps:
 #   1. Navigates to the project root directory.
 #   2. Executes the `make test` command to run the unit tests.

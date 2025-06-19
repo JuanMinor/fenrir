@@ -15,14 +15,13 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <unordered_map>
+#include <locale>
 #include "include/core/core.h"
 #include "include/chess/piece.h"
-#include "include/logger/logger.h"
-#include <unordered_map>
-#include <cctype>
-#include <locale>
+#include "include/utils/utils.h"
 
-namespace loki
+namespace fenrir
 {
     // Mapping of piece aliases to their values
     std::unordered_map<char, uint8_t> values = {
@@ -67,9 +66,7 @@ namespace loki
     {
         if (__rank < 0 || __rank > 7)
         {
-            const char *error = "Rank must be between 1 and 8";
-            throw std::out_of_range(error);
-            logger::LOG_ERROR(error);
+            LOG_THROW_ERROR("Rank must be between 1 and 8", true);
         }
         this->rank = __rank;
         this->moved = this->__has_piece_moved__();
@@ -84,9 +81,7 @@ namespace loki
     {
         if (__file < 0 || __file > 7)
         {
-            const char *error = "File must be between 1 and 8";
-            throw std::out_of_range(error);
-            logger::LOG_ERROR(error);
+            LOG_THROW_ERROR("File must be between 1 and 8", true);
         }
         this->file = __file;
     }

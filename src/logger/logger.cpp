@@ -53,7 +53,7 @@ namespace logger
 
     void Logger::log(const std::string &__message, const char *__file, const uint8_t &__lineno, const LEVEL &__level) const
     {
-        if (__level == DEBUG && !loki::DEBUG_ENABLED)
+        if (__level == DEBUG && !fenrir::DEBUG_ENABLED)
         {
             return;
         }

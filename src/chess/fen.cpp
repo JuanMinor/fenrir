@@ -15,81 +15,65 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cstring>
-#include <cstddef>
-#include <cstdlib>
 #include <regex>
 #include "include/core/core.h"
 #include "include/chess/fen.h"
-#include "include/logger/logger.h"
+#include "include/utils/utils.h"
 
-namespace loki
+namespace fenrir
 {
-    Fen::Fen(const char *__fen)
+    Fen::Fen(const std::string &__fen)
     {
-        if (__fen == nullptr)
+        if (__fen.empty())
         {
-            const char *error = "FEN string cannot be null";
-            logger::LOG_ERROR(error);
-            throw std::invalid_argument(error);
+            LOG_THROW_ERROR("FEN string cannot be empty", true);
         }
         const std::regex fen_regex(
             "^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+) [wb] (-|[KQkq]+) (-|[a-h][36]) (\\d+) (\\d+)$");
         if (!std::regex_match(__fen, fen_regex))
         {
-            const char *error = "Invalid FEN string";
-            logger::LOG_ERROR(error);
-            throw std::invalid_argument(error);
+            LOG_THROW_ERROR("Invalid FEN string", true);
         }
 
         // Split the FEN string into components
-        std::vector<char *> tokens = std::vector<char *>();
+        std::vector<std::string> tokens;
         this->__split__(__fen, " ", tokens);
         if (tokens.size() != 6)
         {
-            const char *error = "Invalid FEN string";
-            logger::LOG_ERROR(error);
-            throw std::invalid_argument(error);
+            LOG_THROW_ERROR("Invalid FEN string", true);
         }
 
         // Validate the placement section
         this->__validate_placement__(tokens[0]);
 
         // Assign components to member variables
-        this->placement = strdup(tokens[0]);
-        this->color = (*tokens[1] == 'w' || *tokens[1] == 'W') ? WHITE : BLACK;
-        this->castling = strdup(tokens[2]);
-        this->en_passant = strdup(tokens[3]);
+        this->placement = tokens[0];
+        this->color = (tokens[1] == "w" || tokens[1] == "W") ? WHITE : BLACK;
+        this->castling = tokens[2];
+        this->en_passant = tokens[3];
         this->halfmove_clock = static_cast<uint8_t>(std::stoi(tokens[4]));
         this->fullmoves = static_cast<uint8_t>(std::stoi(tokens[5]));
-
-        // Free temporary tokens
-        for (char *token : tokens)
-        {
-            free(token);
-        }
     }
 
     Fen::~Fen() {}
 
-    void Fen::__split__(const char *__fen, const char *__delimiters, std::vector<char *> &__tokens) const
+    void Fen::__split__(const std::string &__fen, const std::string &__delimiters, std::vector<std::string> &__tokens) const
     {
         __tokens.clear();
-        char *fen_copy = strdup(__fen);
-        char *token = strtok(fen_copy, __delimiters);
-        while (token != nullptr)
+        std::istringstream iss(__fen);
+        std::string token;
+
+        while (std::getline(iss, token, __delimiters[0])) // Assuming delimiter is a single char
         {
-            __tokens.emplace_back(strdup(token));
-            token = strtok(nullptr, __delimiters);
+            __tokens.emplace_back(token);
         }
-        free(fen_copy);
         return;
     }
 
-    void Fen::__validate_placement__(const char *__placement) const
+    void Fen::__validate_placement__(const std::string &__placement) const
     {
         int squares = 0;
-        for (char c : std::string(__placement))
+        for (char c : __placement)
         {
             if (isdigit(c))
             {
@@ -102,23 +86,21 @@ namespace loki
         }
         if (squares != 64)
         {
-            const char *error = "Invalid FEN string: placement section does not represent 64 squares";
-            logger::LOG_ERROR(error);
-            throw std::invalid_argument(error);
+            LOG_THROW_ERROR("Invalid FEN string: placement section does not represent 64 squares", true);
         }
     }
 
-    char *Fen::get_placement(void) const
+    std::string Fen::get_placement(void) const
     {
         return this->placement;
     }
 
-    char *Fen::get_castling(void) const
+    std::string Fen::get_castling(void) const
     {
         return this->castling;
     }
 
-    char *Fen::get_en_passant(void) const
+    std::string Fen::get_en_passant(void) const
     {
         return this->en_passant;
     }
