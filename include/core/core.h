@@ -18,7 +18,7 @@
 #ifndef CORE_H
 #define CORE_H
 
-#include <cstdlib>
+#include <unordered_map>
 
 /* Export dll symbols */
 #if defined(_WIN32) || defined(_WIN64)
@@ -61,14 +61,14 @@ namespace color
 // Namespace for input/output-related constants
 namespace io
 {
-    constexpr const char *PGN_FILE = "pgn/loki.pgn";
-    constexpr const char *PGN_FILE_STORE = "pgn/loki.store.txt";
+    constexpr const char *PGN_FILE = "pgn/fenrir.pgn";
+    constexpr const char *PGN_FILE_STORE = "pgn/fenrir.store.txt";
 }
 
 // Namespace for logger-related constants
 namespace logger
 {
-    constexpr const char *LOG_FILE = "logs/loki.log";
+    constexpr const char *LOG_FILE = "logs/fenrir.log";
     constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024; // 5 MB
 
     typedef enum
@@ -81,8 +81,8 @@ namespace logger
     } LEVEL;
 }
 
-// Namespace for Loki engine constants
-namespace loki
+// Namespace for Fenrir engine constants
+namespace fenrir
 {
     constexpr bool DEBUG_ENABLED = true;
 
@@ -92,6 +92,14 @@ namespace loki
 
     constexpr int WHITE = 0;
     constexpr int BLACK = 1;
+
+    const std::unordered_map<char, const char *> PIECE_NAMES = {
+        {'p', "pawn"},
+        {'n', "knight"},
+        {'b', "bishop"},
+        {'r', "rook"},
+        {'q', "queen"},
+        {'k', "king"}};
 }
 
 namespace test

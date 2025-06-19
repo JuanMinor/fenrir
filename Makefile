@@ -1,7 +1,7 @@
 # Compiler settings
 CC = g++
 COVERAGE_FLAGS = -fprofile-arcs -ftest-coverage
-COMMON_FLAGS = -g -I /workspaces/loki -fPIC -DLOKI_BUILD_DLL
+COMMON_FLAGS = -g -I /workspaces/fenrir -fPIC -DLOKI_BUILD_DLL
 CXXFLAGS = $(COMMON_FLAGS)
 CXXFLAGST = $(COMMON_FLAGS) $(COVERAGE_FLAGS)
 
@@ -10,8 +10,8 @@ BIN = bin
 BIN_TEST = bint
 BUILD = $(BIN)/build
 LIB = $(BIN)/lib
-LOGS = logs/loki.log
-PGN_FILES = pgn/loki.pgn pgn/loki.store.txt
+LOGS = logs/fenrir.log
+PGN_FILES = pgn/fenrir.pgn pgn/fenrir.store.txt
 
 # Coverage settings
 COVERAGE_DIR = .coverage
@@ -25,8 +25,10 @@ SRC_FILES = src/chess/board.cpp \
 			src/chess/fen.cpp \
 			src/logger/logger.cpp \
 			src/modifier/modifier.cpp \
+			src/chess/moves.cpp \
 			src/pgn/pgn.cpp \
-			src/chess/piece.cpp
+			src/chess/piece.cpp \
+			src/utils/utils.cpp
 OBJECT_FILES = $(SRC_FILES:src/%.cpp=$(BUILD)/%.o)
 
 # Shared library
@@ -37,7 +39,9 @@ UNIT_TEST_BIN_DIR = $(BIN_TEST)/unit
 UNIT_TEST_SRC = tests/unit/fen.test.cpp \
 				tests/unit/board.test.cpp \
 				tests/unit/piece.test.cpp \
-				tests/unit/engine.test.cpp
+				tests/unit/engine.test.cpp \
+				tests/unit/utils.test.cpp \
+				tests/unit/moves.test.cpp
 TEST_LIBS = -lgtest -lgtest_main -lpthread
 
 # Default target
@@ -66,11 +70,11 @@ coverage: test
 	genhtml $(COVERAGE_INFO) --output-directory $(COVERAGE_REPORT)
 	@echo "Coverage report generated in $(COVERAGE_REPORT)"
 	@echo "Per-file coverage breakdown:"
-	@lcov --list $(COVERAGE_INFO) | awk '/^\/workspaces\/loki/ {printf "%-60s %s\n", $$1, $$2}'
+	@lcov --list $(COVERAGE_INFO) | awk '/^\/workspaces\/fenrir/ {printf "%-60s %s\n", $$1, $$2}'
 	@echo ""
 	@echo "Uncovered lines per file:"
 	@lcov --list $(COVERAGE_INFO) | awk 'BEGIN{file=""} \
-		/^\/workspaces\/loki/ {file=$$1} \
+		/^\/workspaces\/fenrir/ {file=$$1} \
 		/^[ ]*[0-9]+/ && $$2=="#####:" && file!="" {printf "%s: line %s is not covered\n", file, $$1}'
 	@total_cov=$$(lcov --summary $(COVERAGE_INFO) | grep 'lines\.*:' | awk '{print $$2}' | tr -d '%'); \
 	if [ "$$total_cov" != "100.0" ]; then \

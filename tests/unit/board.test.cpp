@@ -32,59 +32,84 @@ protected:
 
     static void TearDownTestSuite() {}
 
-    static const char *valid_fen_position;
-    static const char *empty_fen_position;
+    static std::string valid_fen_position;
+    static std::string empty_fen_position;
 };
 
-const char *BoardTest::valid_fen_position = nullptr;
-const char *BoardTest::empty_fen_position = nullptr;
+std::string BoardTest::valid_fen_position = "";
+std::string BoardTest::empty_fen_position = "";
 
 /* Parsing tests */
 TEST_F(BoardTest, ParseValidFENPosition)
 {
-    loki::Board board(valid_fen_position);
-    std::vector<std::vector<loki::Piece *>> board_state = board.get_board();
+    fenrir::Board board(valid_fen_position);
+    std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
 
-    ASSERT_EQ(board_state.size(), loki::BOARD_SIZE);
+    ASSERT_EQ(board_state.size(), fenrir::BOARD_SIZE);
 
     /* Check pieces */
     /* White rook */
     EXPECT_NE(board_state[0][0], nullptr);
     EXPECT_EQ(board_state[0][0]->get_alias(), 'R');
-    EXPECT_EQ(board_state[0][0]->get_color(), loki::WHITE);
+    EXPECT_EQ(board_state[0][0]->get_color(), fenrir::WHITE);
 
     /* Black king */
     EXPECT_NE(board_state[7][4], nullptr);
     EXPECT_EQ(board_state[7][4]->get_alias(), 'k');
-    EXPECT_EQ(board_state[7][4]->get_color(), loki::BLACK);
+    EXPECT_EQ(board_state[7][4]->get_color(), fenrir::BLACK);
 }
 
 TEST_F(BoardTest, ParseEmptyFENPosition)
 {
-    loki::Board board(empty_fen_position);
-    std::vector<std::vector<loki::Piece *>> board_state = board.get_board();
+    fenrir::Board board(empty_fen_position);
+    std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
 
-    for (const std::vector<loki::Piece *> &rank : board_state)
+    for (const std::vector<fenrir::Piece *> &rank : board_state)
     {
-        for (const loki::Piece *const &square : rank)
+        for (const fenrir::Piece *const &square : rank)
         {
             EXPECT_EQ(square, nullptr);
         }
     }
 }
 
+TEST_F(BoardTest, SetEnPassant)
+{
+    fenrir::Board board(valid_fen_position, "a3");
+
+    EXPECT_EQ(board.get_en_passant(), "a3");
+}
+
+TEST_F(BoardTest, GetPiece_AtValidPosition)
+{
+    fenrir::Board board(valid_fen_position);
+    fenrir::Piece *piece = board.get_piece(0, 0);
+
+    ASSERT_NE(piece, nullptr);
+    EXPECT_EQ(piece->get_alias(), 'R');
+    EXPECT_EQ(piece->get_color(), fenrir::WHITE);
+}
+
+TEST_F(BoardTest, GetPiece_AtInvalidPosition)
+{
+    fenrir::Board board(valid_fen_position);
+    fenrir::Piece *piece = board.get_piece(8, 0);
+
+    EXPECT_EQ(piece, nullptr);
+}
+
 /* Move tests */
 TEST_F(BoardTest, MovePiece)
 {
-    loki::Board board(valid_fen_position);
-    std::vector<std::vector<loki::Piece *>> board_state = board.get_board();
+    fenrir::Board board(valid_fen_position);
+    std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
 
     /* White pawn @ a2 */
-    loki::Piece *pawn = board_state[1][0];
+    fenrir::Piece *pawn = board_state[1][0];
 
     ASSERT_NE(pawn, nullptr);
     EXPECT_EQ(pawn->get_alias(), 'P');
-    EXPECT_EQ(pawn->get_color(), loki::WHITE);
+    EXPECT_EQ(pawn->get_color(), fenrir::WHITE);
 
     /* Move the pawn from a2 to a4 */
     board.move(pawn, 3, 0);
@@ -98,11 +123,11 @@ TEST_F(BoardTest, MovePiece)
 
 TEST_F(BoardTest, MoveToOccupiedSquare)
 {
-    loki::Board board(valid_fen_position);
-    std::vector<std::vector<loki::Piece *>> board_state = board.get_board();
+    fenrir::Board board(valid_fen_position);
+    std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
 
     /* White pawn @ a2 */
-    loki::Piece *pawn = board_state[1][0];
+    fenrir::Piece *pawn = board_state[1][0];
     ASSERT_NE(pawn, nullptr);
 
     /* Attempt to move the pawn to an occupied square (a1) */
@@ -116,11 +141,11 @@ TEST_F(BoardTest, MoveToOccupiedSquare)
 
 TEST_F(BoardTest, MoveOutOfBounds)
 {
-    loki::Board board(valid_fen_position);
-    std::vector<std::vector<loki::Piece *>> board_state = board.get_board();
+    fenrir::Board board(valid_fen_position);
+    std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
 
     /* White pawn @ a2 */
-    loki::Piece *pawn = board_state[6][0];
+    fenrir::Piece *pawn = board_state[6][0];
 
     ASSERT_NE(pawn, nullptr);
 
@@ -131,17 +156,50 @@ TEST_F(BoardTest, MoveOutOfBounds)
     EXPECT_EQ(board_state[6][0], pawn);
 }
 
+TEST_F(BoardTest, MovePawnAndEnPassantIsSet)
+{
+    fenrir::Board board(valid_fen_position);
+    std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+
+    /* White pawn @ a2 */
+    fenrir::Piece *pawn = board_state[1][0];
+    ASSERT_NE(pawn, nullptr);
+
+    /* Move the pawn to a4 */
+    board.move(pawn, 3, 0);
+
+    EXPECT_EQ(board.get_en_passant(), "a3");
+}
+
+TEST_F(BoardTest, MovePawnAndEnPassantIsCleared)
+{
+    fenrir::Board board(valid_fen_position);
+    std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+
+    /* White pawn @ a2 */
+    fenrir::Piece *pawn = board_state[1][0];
+    ASSERT_NE(pawn, nullptr);
+
+    /* Move the pawn to a4 */
+    board.move(pawn, 3, 0);
+
+    /* Move the pawn to a5 */
+    board.move(pawn, 4, 0);
+
+    EXPECT_EQ(board.get_en_passant(), "");
+}
+
 /* Edge cases */
 TEST_F(BoardTest, InvalidFENThrows)
 {
-    EXPECT_THROW(loki::Board("invalid_fen_position_string"), std::runtime_error);
-    EXPECT_THROW(loki::Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/8"), std::runtime_error);
-    EXPECT_THROW(loki::Board("rnbqkbnr/pppppppp/8/8/8/7/PPPPPPPP/RNBQKBN"), std::runtime_error);
+    EXPECT_THROW(fenrir::Board("invalid_fen_position_string"), std::runtime_error);
+    EXPECT_THROW(fenrir::Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/8"), std::runtime_error);
+    EXPECT_THROW(fenrir::Board("rnbqkbnr/pppppppp/8/8/8/7/PPPPPPPP/RNBQKBN"), std::runtime_error);
 }
 
 TEST_F(BoardTest, PrintBoard)
 {
-    loki::Board board(valid_fen_position);
+    fenrir::Board board(valid_fen_position);
 
     testing::internal::CaptureStdout();
     board.print();
@@ -157,7 +215,7 @@ TEST_F(BoardTest, PrintBoard)
 
 TEST_F(BoardTest, DestructorCleansUp)
 {
-    loki::Board *board = new loki::Board(valid_fen_position);
+    fenrir::Board *board = new fenrir::Board(valid_fen_position);
     delete board;
 }
 
@@ -168,10 +226,10 @@ TEST_F(BoardTest, StressTestManyMoves)
         GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
     }
 
-    loki::Board board(valid_fen_position);
-    std::vector<std::vector<loki::Piece *>> board_state = board.get_board();
+    fenrir::Board board(valid_fen_position);
+    std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
 
-    ASSERT_EQ(board_state.size(), loki::BOARD_SIZE);
+    ASSERT_EQ(board_state.size(), fenrir::BOARD_SIZE);
 
     /* Track the positions of the white and black pawns */
     uint8_t white_pawn_rank = 1, white_pawn_file = 0;
@@ -184,10 +242,10 @@ TEST_F(BoardTest, StressTestManyMoves)
         if (i % 2 == 0)
         {
             /* Move the white pawn forward if possible */
-            loki::Piece *pawn = board_state[white_pawn_rank][white_pawn_file];
+            fenrir::Piece *pawn = board_state[white_pawn_rank][white_pawn_file];
             ASSERT_NE(pawn, nullptr);
             ASSERT_EQ(pawn->get_alias(), 'P');
-            ASSERT_EQ(pawn->get_color(), loki::WHITE);
+            ASSERT_EQ(pawn->get_color(), fenrir::WHITE);
 
             uint8_t target_rank = white_pawn_rank + white_pawn_direction;
             if (board_state[target_rank][white_pawn_file] == nullptr)
@@ -198,7 +256,7 @@ TEST_F(BoardTest, StressTestManyMoves)
                 EXPECT_EQ(board_state[white_pawn_rank][white_pawn_file], nullptr);
                 white_pawn_rank = target_rank; // Update the white pawn's rank
             }
-            if (white_pawn_rank == 0 || white_pawn_rank == loki::BOARD_SIZE - 1)
+            if (white_pawn_rank == 0 || white_pawn_rank == fenrir::BOARD_SIZE - 1)
             {
                 white_pawn_direction *= -1;
             }
@@ -206,10 +264,10 @@ TEST_F(BoardTest, StressTestManyMoves)
         else
         {
             /* Move the black pawn forward if possible */
-            loki::Piece *pawn = board_state[black_pawn_rank][black_pawn_file];
+            fenrir::Piece *pawn = board_state[black_pawn_rank][black_pawn_file];
             ASSERT_NE(pawn, nullptr);
             ASSERT_EQ(pawn->get_alias(), 'p');
-            ASSERT_EQ(pawn->get_color(), loki::BLACK);
+            ASSERT_EQ(pawn->get_color(), fenrir::BLACK);
 
             uint8_t target_rank = black_pawn_rank + black_pawn_direction;
             if (board_state[target_rank][black_pawn_file] == nullptr)
@@ -220,7 +278,7 @@ TEST_F(BoardTest, StressTestManyMoves)
                 EXPECT_EQ(board_state[black_pawn_rank][black_pawn_file], nullptr);
                 black_pawn_rank = target_rank; // Update the black pawn's rank
             }
-            if (black_pawn_rank == 0 || black_pawn_rank == loki::BOARD_SIZE - 1)
+            if (black_pawn_rank == 0 || black_pawn_rank == fenrir::BOARD_SIZE - 1)
             {
                 black_pawn_direction *= -1;
             }
@@ -228,16 +286,16 @@ TEST_F(BoardTest, StressTestManyMoves)
     }
 
     /* Ensure the board is still valid after all moves */
-    for (const std::vector<loki::Piece *> &rank : board_state)
+    for (const std::vector<fenrir::Piece *> &rank : board_state)
     {
-        for (const loki::Piece *const &square : rank)
+        for (const fenrir::Piece *const &square : rank)
         {
             if (square != nullptr)
             {
                 EXPECT_GE(square->get_rank(), 0);
-                EXPECT_LT(square->get_rank(), loki::BOARD_SIZE);
+                EXPECT_LT(square->get_rank(), fenrir::BOARD_SIZE);
                 EXPECT_GE(square->get_file(), 0);
-                EXPECT_LT(square->get_file(), loki::BOARD_SIZE);
+                EXPECT_LT(square->get_file(), fenrir::BOARD_SIZE);
             }
         }
     }

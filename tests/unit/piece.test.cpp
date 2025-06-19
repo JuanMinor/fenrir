@@ -19,20 +19,18 @@
 #include "include/chess/piece.h"
 #include "include/core/core.h"
 
-using namespace loki;
-
-/* Test suite for the Piece class */
+/* Test suite for the fenrir::Piece class */
 class PieceTest : public ::testing::Test
 {
 protected:
-    Piece createWhitePawn()
+    fenrir::Piece createWhitePawn()
     {
-        return Piece('P', 1, 1);
+        return fenrir::Piece('P', 1, 1);
     }
 
-    Piece createBlackPawn()
+    fenrir::Piece createBlackPawn()
     {
-        return Piece('p', 6, 1);
+        return fenrir::Piece('p', 6, 1);
     }
 };
 
@@ -40,11 +38,11 @@ protected:
 TEST_F(PieceTest, ConstructorAndGetters)
 {
     /* Create a white pawn */
-    Piece pawn = createWhitePawn();
+    fenrir::Piece pawn = createWhitePawn();
 
     EXPECT_EQ(pawn.get_alias(), 'P');
     EXPECT_EQ(pawn.get_value(), 1);
-    EXPECT_EQ(pawn.get_color(), loki::WHITE);
+    EXPECT_EQ(pawn.get_color(), fenrir::WHITE);
     EXPECT_EQ(pawn.get_rank(), 1);
     EXPECT_EQ(pawn.get_file(), 1);
     EXPECT_FALSE(pawn.get_moved());
@@ -53,7 +51,7 @@ TEST_F(PieceTest, ConstructorAndGetters)
 TEST_F(PieceTest, SetRankAndMoved)
 {
     /* Create a white pawn */
-    Piece pawn = createWhitePawn();
+    fenrir::Piece pawn = createWhitePawn();
 
     pawn.set_rank(2);
     EXPECT_EQ(pawn.get_rank(), 2);
@@ -62,15 +60,15 @@ TEST_F(PieceTest, SetRankAndMoved)
 
 TEST_F(PieceTest, SetRankOutOfRange)
 {
-    Piece pawn = createWhitePawn();
+    fenrir::Piece pawn = createWhitePawn();
 
-    EXPECT_THROW(pawn.set_rank(8), std::out_of_range);
-    EXPECT_THROW(pawn.set_rank(-1), std::out_of_range);
+    EXPECT_THROW(pawn.set_rank(8), std::runtime_error);
+    EXPECT_THROW(pawn.set_rank(-1), std::runtime_error);
 }
 
 TEST_F(PieceTest, SetFile)
 {
-    Piece pawn = createWhitePawn();
+    fenrir::Piece pawn = createWhitePawn();
 
     pawn.set_file(2);
     EXPECT_EQ(pawn.get_file(), 2);
@@ -78,15 +76,15 @@ TEST_F(PieceTest, SetFile)
 
 TEST_F(PieceTest, SetFileOutOfRange)
 {
-    Piece pawn = createWhitePawn();
+    fenrir::Piece pawn = createWhitePawn();
 
-    EXPECT_THROW(pawn.set_file(8), std::out_of_range);
-    EXPECT_THROW(pawn.set_file(-1), std::out_of_range);
+    EXPECT_THROW(pawn.set_file(8), std::runtime_error);
+    EXPECT_THROW(pawn.set_file(-1), std::runtime_error);
 }
 
 TEST_F(PieceTest, SetMoved)
 {
-    Piece pawn = createWhitePawn();
+    fenrir::Piece pawn = createWhitePawn();
 
     pawn.set_moved(true);
     EXPECT_TRUE(pawn.get_moved());
@@ -97,11 +95,11 @@ TEST_F(PieceTest, SetMoved)
 
 TEST_F(PieceTest, BlackPiece)
 {
-    Piece pawn = createBlackPawn();
+    fenrir::Piece pawn = createBlackPawn();
 
     EXPECT_EQ(pawn.get_alias(), 'p');
     EXPECT_EQ(pawn.get_value(), 1);
-    EXPECT_EQ(pawn.get_color(), loki::BLACK);
+    EXPECT_EQ(pawn.get_color(), fenrir::BLACK);
     EXPECT_EQ(pawn.get_rank(), 6);
     EXPECT_EQ(pawn.get_file(), 1);
     EXPECT_FALSE(pawn.get_moved());
@@ -110,11 +108,11 @@ TEST_F(PieceTest, BlackPiece)
 TEST_F(PieceTest, DestructorTest)
 {
     {
-        Piece pawn = createWhitePawn();
+        fenrir::Piece pawn = createWhitePawn();
 
         EXPECT_EQ(pawn.get_alias(), 'P');
         EXPECT_EQ(pawn.get_value(), 1);
-        EXPECT_EQ(pawn.get_color(), loki::WHITE);
+        EXPECT_EQ(pawn.get_color(), fenrir::WHITE);
         EXPECT_EQ(pawn.get_rank(), 1);
         EXPECT_EQ(pawn.get_file(), 1);
         EXPECT_FALSE(pawn.get_moved());
@@ -130,7 +128,7 @@ TEST_F(PieceTest, StressTest)
         GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
     }
     const int numPieces = 100000;
-    std::vector<Piece> pieces;
+    std::vector<fenrir::Piece> pieces;
 
     /* Create a large number of white pawns */
     for (int i = 0; i < numPieces; ++i)
@@ -139,11 +137,11 @@ TEST_F(PieceTest, StressTest)
     }
 
     /* Verify that all pieces were created correctly */
-    for (const Piece &pawn : pieces)
+    for (const fenrir::Piece &pawn : pieces)
     {
         EXPECT_EQ(pawn.get_alias(), 'P');
         EXPECT_EQ(pawn.get_value(), 1);
-        EXPECT_EQ(pawn.get_color(), loki::WHITE);
+        EXPECT_EQ(pawn.get_color(), fenrir::WHITE);
         EXPECT_EQ(pawn.get_rank(), 1);
         EXPECT_EQ(pawn.get_file(), 1);
         EXPECT_FALSE(pawn.get_moved());

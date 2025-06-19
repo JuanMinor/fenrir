@@ -1,5 +1,5 @@
 {
-	"name": "Loki",
+	"name": "Fenrir",
 	"build": {
 		"dockerfile": "Dockerfile"
 	},

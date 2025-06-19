@@ -31,76 +31,76 @@ protected:
 
     static void TearDownTestSuite() {}
 
-    static const char *test_fen_string;
+    static std::string test_fen_string;
 };
 
-const char *FenTest::test_fen_string = nullptr;
+std::string FenTest::test_fen_string = "";
 
 /* Parsing tests */
 TEST_F(FenTest, ParsePlacement)
 {
-    loki::Fen fen(test_fen_string);
-    EXPECT_STREQ(fen.get_placement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+    fenrir::Fen fen(test_fen_string);
+    EXPECT_EQ(fen.get_placement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 }
 
 TEST_F(FenTest, ParseColor)
 {
-    loki::Fen fen(test_fen_string);
-    EXPECT_EQ(fen.get_color(), loki::WHITE);
+    fenrir::Fen fen(test_fen_string);
+    EXPECT_EQ(fen.get_color(), fenrir::WHITE);
 }
 
 TEST_F(FenTest, ParseCastling)
 {
-    loki::Fen fen(test_fen_string);
-    EXPECT_STREQ(fen.get_castling(), "KQkq");
+    fenrir::Fen fen(test_fen_string);
+    EXPECT_EQ(fen.get_castling(), "KQkq");
 }
 
 TEST_F(FenTest, ParseEnPassant)
 {
-    loki::Fen fen(test_fen_string);
-    EXPECT_STREQ(fen.get_en_passant(), "-");
+    fenrir::Fen fen(test_fen_string);
+    EXPECT_EQ(fen.get_en_passant(), "-");
 }
 
 TEST_F(FenTest, ParseHalfmoveClock)
 {
-    loki::Fen fen(test_fen_string);
+    fenrir::Fen fen(test_fen_string);
     EXPECT_EQ(fen.get_halfmove_clock(), 0);
 }
 
 TEST_F(FenTest, ParseFullmoves)
 {
-    loki::Fen fen(test_fen_string);
+    fenrir::Fen fen(test_fen_string);
     EXPECT_EQ(fen.get_fullmoves(), 1);
 }
 
 /* Invalid arguments */
 TEST_F(FenTest, InvalidFenStringThrows)
 {
-    EXPECT_THROW(loki::Fen("invalid_fen_string"), std::invalid_argument);
-    EXPECT_THROW(loki::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"), std::invalid_argument);
-    EXPECT_THROW(loki::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w X - 0 1"), std::invalid_argument);
-    EXPECT_THROW(loki::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1"), std::invalid_argument);
-    EXPECT_THROW(loki::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1x"), std::invalid_argument);
-    EXPECT_THROW(loki::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq z3 0 1"), std::invalid_argument);
+    EXPECT_THROW(fenrir::Fen("invalid_fen_string"), std::runtime_error);
+    EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"), std::runtime_error);
+    EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w X - 0 1"), std::runtime_error);
+    EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1"), std::runtime_error);
+    EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1x"), std::runtime_error);
+    EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq z3 0 1"), std::runtime_error);
 }
 
 /* Edge cases */
 TEST_F(FenTest, NoCastlingRights)
 {
-    loki::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1");
-    EXPECT_STREQ(fen.get_castling(), "-");
+    fenrir::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1");
+    EXPECT_EQ(fen.get_castling(), "-");
 }
 
 TEST_F(FenTest, EnPassantSquareSet)
 {
-    loki::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1");
-    EXPECT_STREQ(fen.get_en_passant(), "e3");
+    fenrir::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1");
+    EXPECT_EQ(fen.get_en_passant(), "e3");
 }
 
 /* Boundary values */
 TEST_F(FenTest, BoundaryValues)
 {
-    loki::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 255 255");
+    fenrir::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 255 255");
     EXPECT_EQ(fen.get_halfmove_clock(), 255);
     EXPECT_EQ(fen.get_fullmoves(), 255);
 }
@@ -108,7 +108,7 @@ TEST_F(FenTest, BoundaryValues)
 /* Memory management */
 TEST_F(FenTest, DestructorCleansUpMemory)
 {
-    loki::Fen *fen = new loki::Fen(test_fen_string);
+    fenrir::Fen *fen = new fenrir::Fen(test_fen_string);
     delete fen;
 }
 
@@ -122,11 +122,11 @@ TEST_F(FenTest, StressTest)
 
     for (int i = 0; i < 100000; ++i)
     {
-        loki::Fen fen(test_fen_string);
-        EXPECT_STREQ(fen.get_placement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-        EXPECT_EQ(fen.get_color(), loki::WHITE);
-        EXPECT_STREQ(fen.get_castling(), "KQkq");
-        EXPECT_STREQ(fen.get_en_passant(), "-");
+        fenrir::Fen fen(test_fen_string);
+        EXPECT_EQ(fen.get_placement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+        EXPECT_EQ(fen.get_color(), fenrir::WHITE);
+        EXPECT_EQ(fen.get_castling(), "KQkq");
+        EXPECT_EQ(fen.get_en_passant(), "-");
         EXPECT_EQ(fen.get_halfmove_clock(), 0);
         EXPECT_EQ(fen.get_fullmoves(), 1);
     }
