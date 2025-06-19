@@ -22,7 +22,7 @@
 class EngineTest : public ::testing::Test
 {
 protected:
-    loki::Engine engine;
+    fenrir::Engine engine;
 };
 
 TEST_F(EngineTest, DefaultBoardSetup)

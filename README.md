@@ -1,150 +1,102 @@
-# Loki
+# Fenrir Chess Engine
 
-Loki is an Atom Chess Engine designed to provide a robust and efficient chess-playing experience. It is built with modular components to ensure flexibility and maintainability. The project is written in C++ and adheres to modern software development practices.
+A modular C++ chess engine with FEN support, move generation, and comprehensive testing.
+
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/w/cpp/17)
+[![Build](https://img.shields.io/badge/Build-Make-green.svg)](https://www.gnu.org/software/make/)
+
+## Quick Start
+
+```bash
+# Build the shared library
+make
+
+# Run the example program
+./scripts/run.sh
+
+# Run tests with coverage
+make test coverage
+```
 
 ## Features
 
-- **Chess Board Representation**: Implements a flexible board representation using FEN (Forsyth-Edwards Notation).
-- **Move Generation**: Supports move generation and validation.
-- **PGN Support**: Handles Portable Game Notation (PGN) for recording and replaying games.
-- **Logging**: Provides detailed logging for debugging and analysis.
-- **Customizable Modifiers**: Includes modifiers for visual and functional customization.
+- **Chess Logic**: Board representation, move generation, and validation
+- **FEN Support**: Parse and generate Forsyth-Edwards Notation strings
+- **Shared Library**: `libloki.so` for integration into other projects
+- **PGN Handling**: Game recording and replay functionality
+- **Comprehensive Testing**: Unit tests with 100% code coverage requirement
+- **Development Tools**: VS Code integration, debugging support, and automation scripts
+
+## API Usage
+
+```cpp
+#include "include/engine/engine.h"
+
+// Initialize with default starting position
+fenrir::Engine engine;
+
+// Make moves (rank, file coordinates)
+engine.make_move(1, 1, 3, 1);  // Move pawn from b2 to b4
+
+// Generate legal moves for a square
+auto moves = engine.generate_moves("a2");
+
+// Display board state
+engine.print_board();
+
+// Reset to starting position
+engine.reset();
+```
+
+## Build System
+
+| Target | Description |
+|--------|-------------|
+| `make` | Build shared library (`bin/lib/libloki.so`) |
+| `make test` | Run unit tests with Google Test |
+| `make coverage` | Generate coverage report (requires 100% coverage) |
+| `make clean` | Clean build artifacts |
 
 ## Project Structure
 
 ```
-LICENSE
-main.cpp
-Makefile
-README.md
-bin/
-    loki.elf
-    build/
-        chess/
-            board.o
-            fen.o
-            moves.o
-            piece.o
-        chrono/
-            chrono.o
-        logger/
-            logger.o
-        modifier/
-            modifier.o
-        pgn/
-            pgn.o
-include/
-    chess/
-        board.h
-        fen.h
-        moves.h
-        piece.h
-    chrono/
-        chrono.h
-    core/
-        core.h
-    logger/
-        logger.h
-    modifier/
-        modifier.h
-    pgn/
-        pgn.h
-logs/
-    loki.log
-pgn/
-    loki.pgn
-    loki.store.txt
-scripts/
-    loki.sh
-src/
-    chess/
-        board.cpp
-        fen.cpp
-        moves.cpp
-        piece.cpp
-    chrono/
-        chrono.cpp
-    logger/
-        logger.cpp
-    modifier/
-        modifier.cpp
-    pgn/
-        pgn.cpp
+├── include/          # Header files
+│   ├── chess/        # Chess logic (board, pieces, moves, FEN)
+│   ├── engine/       # Main engine interface
+│   └── utils/        # Utilities and logging
+├── src/              # Implementation files
+├── tests/unit/       # Google Test unit tests
+├── scripts/          # Automation scripts (run.sh, test.sh)
+└── bin/              # Build artifacts
 ```
-
-## Build Instructions
-
-1. Ensure you have `make` and a C++ compiler installed on your system.
-2. Run the following command to build the project:
-   ```bash
-   make
-   ```
-3. The compiled binary will be available in the `bin/` directory as `loki.elf`.
-
-## Usage
-
-To run the chess engine, execute the following command:
-
-```bash
-./bin/loki.elf
-```
-
-## Logging
-
-Logs are stored in the `logs/` directory. The primary log file is `loki.log`.
-
-## PGN Support
-
-PGN files are stored in the `pgn/` directory. The engine supports reading and writing PGN files for game analysis and replay.
-
-## Scripts
-
-Utility scripts are available in the `scripts/` directory. For example, `loki.sh` can be used for automated tasks.
 
 ## Development
 
 ### Prerequisites
-
-- C++ Compiler
+- GCC/G++ compiler
 - GNU Make
-- Recommended VS Code Extensions:
-  - Code Spell Checker
-  - C/C++ (ms-vscode.cpptools)
-  - Makefile Tools
-  - Prettier - Code Formatter
-  - TODO Tree
-  - GitLens
+- Google Test (for testing)
+- lcov (for coverage reporting)
 
-### Debugging
-
-Use the `gdb` task for debugging. Ensure the project is built with debug symbols.
+### VS Code Setup
+Install recommended extensions via the task runner:
+```bash
+# In VS Code Command Palette (Ctrl+Shift+P)
+Tasks: Run Task → extensions
+```
 
 ### Testing
+All code must maintain 100% test coverage:
+```bash
+make coverage  # Fails if coverage < 100%
+```
 
-Unit tests can be added to validate individual components. Ensure all tests pass before committing changes.
+### Debugging
+Use the predefined VS Code tasks for debugging with GDB.
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0. See the [LICENSE](LICENSE) file for details.
+GNU General Public License v3.0 - see [LICENSE](LICENSE) file.
 
-## Contributing
-
-Contributions are welcome! Please fork the repository and submit a pull request with your changes.
-
-## Author
-
-Juan Minor
-
-## Acknowledgments
-
-Special thanks to the open-source community for providing tools and libraries that make this project possible.
-
-## Default FEN String
-
-The Loki engine uses the following default FEN string to initialize the chessboard:
-
-```
-rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-```
-
-This represents the standard starting position of a chess game.
+**Author**: Juan Minor

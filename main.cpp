@@ -16,13 +16,15 @@
  */
 
 #include <iostream>
+#include <string>
+#include <vector>
 #include "include/engine/engine.h"
 
 int main(int argc, char *argv[])
 {
     try
     {
-        loki::Engine engine = loki::Engine();
+        fenrir::Engine engine = fenrir::Engine();
         engine.print_board();
         engine.make_move(1, 1, 3, 1);
         engine.make_move(7, 1, 5, 2);
@@ -32,6 +34,16 @@ int main(int argc, char *argv[])
 
         engine.reset();
         engine.print_board();
+
+        // move generation
+        const std::vector<std::pair<const std::string, const std::string>> moves = engine.generate_moves("a2");
+
+        std::cout << "Generated moves for a2:" << std::endl;
+        for (const auto &move : moves)
+        {
+            std::cout << move.first << " -> " << move.second << std::endl;
+        }
+        std::cout << "Total moves: " << moves.size() << std::endl;
     }
     catch (const std::exception &e)
     {

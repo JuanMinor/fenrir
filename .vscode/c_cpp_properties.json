@@ -4,7 +4,7 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/workspaces/loki/",
+                "/workspaces/fenrir/",
                 "${workspaceFolder}",
                 "${workspaceFolder}"
             ],

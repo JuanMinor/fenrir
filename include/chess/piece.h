@@ -20,7 +20,7 @@
 
 #include <stdint.h>
 
-namespace loki
+namespace fenrir
 {
     class Piece
     {

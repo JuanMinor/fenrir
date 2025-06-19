@@ -36,12 +36,12 @@ namespace io
     {
         auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
         std::stringstream ss;
-        ss << "[Event \"User vs. Loki\"]\n"
+        ss << "[Event \"User vs. Fenrir\"]\n"
            << "[Site \"Remote server - atom\"]\n"
            << "[Date \"" << date << "\"]\n"
            << "[Round \"1\"]\n"
            << "[White \"User\"]\n"
-           << "[Black \"Loki\"]\n"
+           << "[Black \"Fenrir\"]\n"
            << "[Result \"-\"]\n";
 
         this->__clear_stream_flags__(__os);

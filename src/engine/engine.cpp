@@ -16,16 +16,44 @@
  */
 
 #include <iostream>
-#include <include/engine/engine.h>
+#include "include/engine/engine.h"
+#include "include/chess/moves.h"
+#include "include/utils/utils.h"
 
-namespace loki
+namespace fenrir
 {
 
-    Engine::Engine(const char *__fen) : fen(__fen), board(fen.get_placement())
+    Engine::Engine(const std::string &__fen) : fen(__fen), board(fen.get_placement(), fen.get_en_passant())
     {
     }
 
     Engine::~Engine() {}
+
+    std::vector<std::pair<const std::string, const std::string>> Engine::generate_moves(const std::string &__board_address) const
+    {
+        std::vector<std::pair<const std::string, const std::string>> moves;
+        u_int8_t rank, file;
+        utils::parse_algebraic_notation(__board_address, rank, file);
+        if (rank < 0 || rank >= BOARD_SIZE || file < 0 || file >= BOARD_SIZE)
+        {
+            LOG_THROW_ERROR(
+                (std::string("Board address ") + __board_address + " is invalid").c_str(),
+                false);
+            return moves;
+        }
+        if (!board.get_board().at(rank).at(file))
+        {
+            LOG_THROW_ERROR(
+                (std::string("Board address ") + __board_address + " does not contain a piece").c_str(),
+                false);
+            return moves;
+        }
+        const Piece *piece = board.get_piece(rank, file);
+
+        Moves::get_instance().generate_moves(piece, &board, moves);
+
+        return moves;
+    }
 
     void Engine::make_move(const uint8_t &__from_rank, const uint8_t &__from_file,
                            const uint8_t &__to_rank, const uint8_t &__to_file)

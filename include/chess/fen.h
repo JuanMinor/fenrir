@@ -19,32 +19,33 @@
 #define FEN_H
 
 #include <stdint.h>
+#include <string>
 #include <vector>
 
-namespace loki
+namespace fenrir
 {
     class Fen
     {
     private:
-        char *placement;
-        char *castling;
-        char *en_passant;
+        std::string placement;
+        std::string castling;
+        std::string en_passant;
         uint8_t color;
         uint8_t halfmove_clock;
         uint8_t fullmoves;
 
         // Helper method to split a FEN string into components
-        void __split__(const char *__fen, const char *__delimiters, std::vector<char *> &__tokens) const;
-        void __validate_placement__(const char *__placement) const;
+        void __split__(const std::string &__fen, const std::string &__delimiters, std::vector<std::string> &__tokens) const;
+        void __validate_placement__(const std::string &__placement) const;
 
     public:
-        Fen(const char *__fen);
+        Fen(const std::string &__fen);
         ~Fen();
 
         // Getters for FEN components
-        char *get_placement(void) const;
-        char *get_castling(void) const;
-        char *get_en_passant(void) const;
+        std::string get_placement(void) const;
+        std::string get_castling(void) const;
+        std::string get_en_passant(void) const;
         uint8_t get_color(void) const;
         uint8_t get_halfmove_clock(void) const;
         uint8_t get_fullmoves(void) const;

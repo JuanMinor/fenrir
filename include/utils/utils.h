@@ -15,32 +15,22 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef ENGINE_H
-#define ENGINE_H
+#ifndef UTILS_H
+#define UTILS_H
 
-#include "include/chess/board.h"
+#include <string>
+#include <stdexcept>
 #include "include/core/core.h"
-#include "include/chess/fen.h"
+#include "include/logger/logger.h"
 
-namespace fenrir
+namespace utils
 {
+    const std::string get_algebraic_notation(const uint8_t &__rank, const uint8_t &__file);
+    void log_throw_error(const std::string &__error, const bool &__throw, const char *__file, const uint8_t &__lineno);
+    void parse_algebraic_notation(const std::string &__algebraic_notation, uint8_t &__rank, uint8_t &__file);
 
-    class LOKI_API Engine
-    {
-        static constexpr const char *default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        Fen fen;
-        Board board;
-
-    public:
-        Engine(const std::string &__fen = default_fen);
-        ~Engine();
-
-        std::vector<std::pair<const std::string, const std::string>> generate_moves(const std::string &__board_address) const;
-        void make_move(const uint8_t &__from_rank, const uint8_t &__from_file,
-                       const uint8_t &__to_rank, const uint8_t &__to_file);
-        void print_board(void) const;
-        void reset();
-    };
+/* Macros */
+#define LOG_THROW_ERROR(ERROR, THROW) utils::log_throw_error(ERROR, THROW, __FILE__, __LINE__)
 }
 
 #endif

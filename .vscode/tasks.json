@@ -10,13 +10,13 @@
     },
     "tasks": [
         {
-            "label": "Loki setup",
+            "label": "Fenrir setup",
             "dependsOn": [
                 "extensions",
                 "git",
                 "gdb",
                 "scripts",
-                "loki"
+                "fenrir"
             ],
             "runOptions": {
                 "runOn": "folderOpen"
@@ -65,7 +65,7 @@
             }
         },
         {
-            "label": "loki",
+            "label": "fenrir",
             "type": "shell",
             "isBackground": true,
             "command": "/bin/zsh",
@@ -80,7 +80,7 @@
             "isBackground": true,
             "command": "/bin/zsh",
             "options": {
-                "cwd": "/workspaces/loki/scripts"
+                "cwd": "/workspaces/fenrir/scripts"
             },
             "icon": {
                 "id": "code",

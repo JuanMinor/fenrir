@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # -----------------------------------------------------------------------------
-# Loki Chess Engine Executor Script
+# Fenrir Chess Engine Executor Script
 # -----------------------------------------------------------------------------
-# This script automates the process of building and running the Loki chess engine.
+# This script automates the process of building and running the Fenrir chess engine.
 # It performs the following steps:
 #   1. Cleans and builds the project using the Makefile.
-#   2. Runs the Loki chess engine with the default FEN string.
+#   2. Runs the Fenrir chess engine with the default FEN string.
 # -----------------------------------------------------------------------------
 
 # Exit immediately if a command exits with a non-zero status
@@ -22,10 +22,10 @@ build_project() {
     (cd "$PROJECT_ROOT" && make clean && make)
 }
 
-# Function to run the Loki engine with the default FEN string
+# Function to run the Fenrir engine with the default FEN string
 run_engine() {
-    echo "Running the Loki engine..."
-    (cd "$PROJECT_ROOT" && g++ -g -I /workspaces/loki -fPIC -DLOKI_BUILD_DLL -o bin/mainh main.cpp -Lbin/lib -lloki)
+    echo "Running the Fenrir engine..."
+    (cd "$PROJECT_ROOT" && g++ -g -I /workspaces/fenrir -fPIC -DLOKI_BUILD_DLL -o bin/mainh main.cpp -Lbin/lib -lloki)
     (cd "$PROJECT_ROOT" && LD_LIBRARY_PATH=bin/lib ./bin/mainh)
 }
 
