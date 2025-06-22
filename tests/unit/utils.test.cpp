@@ -12,7 +12,7 @@
  *   GNU General Public License for more details.
 
  *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   along with this program.  If not, see <https:
  */
 
 #include <gtest/gtest.h>
@@ -34,7 +34,6 @@ TEST(UtilsTest, GetAlgebraicNotation_InvalidInput)
     EXPECT_THROW(utils::get_algebraic_notation(8, 8), std::runtime_error);
 }
 
-// Test for log_throw_error
 TEST(UtilsTest, LogThrowError_NoThrow)
 {
     EXPECT_NO_THROW(LOG_THROW_ERROR("This is a test error", false));
@@ -53,6 +52,11 @@ TEST(UtilsTest, LogThrowError_NullError)
 TEST(UtilsTest, LogThrowError_EmptyError)
 {
     EXPECT_THROW(LOG_THROW_ERROR("", true), std::runtime_error);
+}
+
+TEST(UtilsTest, LogThrowError_EmptyErrorNoThrow)
+{
+    EXPECT_NO_THROW(LOG_THROW_ERROR("", false));
 }
 TEST(UtilsTest, ParseAlgebraicNotation_ValidInput)
 {

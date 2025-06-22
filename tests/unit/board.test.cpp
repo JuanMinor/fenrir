@@ -12,7 +12,7 @@
  *   GNU General Public License for more details.
 
  *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   along with this program.  If not, see <https:
  */
 
 #include <gtest/gtest.h>
@@ -189,18 +189,49 @@ TEST_F(BoardTest, MovePawnAndEnPassantIsCleared)
     EXPECT_EQ(board.get_en_passant(), "");
 }
 
-/* Edge cases */
-TEST_F(BoardTest, InvalidFENThrows)
+/* Error handling tests for uncovered lines */
+TEST_F(BoardTest, InvalidFENIncorrectSquaresInRank)
 {
-    EXPECT_THROW(fenrir::Board("invalid_fen_position_string"), std::runtime_error);
-    EXPECT_THROW(fenrir::Board("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/8"), std::runtime_error);
-    EXPECT_THROW(fenrir::Board("rnbqkbnr/pppppppp/8/8/8/7/PPPPPPPP/RNBQKBN"), std::runtime_error);
+
+    std::string invalid_fen = "rnbqkbnr/pppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    EXPECT_THROW(fenrir::Board board(invalid_fen), std::runtime_error);
 }
 
-TEST_F(BoardTest, DestructorCleansUp)
+TEST_F(BoardTest, InvalidFENUnknownPieceCharacter)
 {
-    fenrir::Board *board = new fenrir::Board(valid_fen_position);
-    delete board;
+
+    std::string invalid_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBXKBNR w KQkq - 0 1";
+    EXPECT_THROW(fenrir::Board board(invalid_fen), std::runtime_error);
+}
+
+TEST_F(BoardTest, InvalidFENBoardCreationFailure)
+{
+
+    std::string invalid_fen = "rnbqkbnr/pppppppp/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    EXPECT_THROW(fenrir::Board board(invalid_fen), std::runtime_error);
+}
+
+TEST_F(BoardTest, InvalidFENTooManySquaresInRank)
+{
+
+    std::string invalid_fen = "rnbqkbnr/ppppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    EXPECT_THROW(fenrir::Board board(invalid_fen), std::runtime_error);
+}
+
+TEST_F(BoardTest, MoveFromInvalidBoardPosition)
+{
+
+    fenrir::Board board(valid_fen_position);
+
+    fenrir::Piece *invalid_piece = new fenrir::Piece('P', 4, 4);
+
+    board.move(invalid_piece, 5, 4);
+
+    std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+    EXPECT_EQ(board_state[4][4], nullptr);
+    EXPECT_EQ(board_state[5][4], nullptr);
+
+    delete invalid_piece;
 }
 
 TEST_F(BoardTest, StressTestManyMoves)
@@ -238,7 +269,7 @@ TEST_F(BoardTest, StressTestManyMoves)
                 board_state = board.get_board();
                 EXPECT_EQ(board_state[target_rank][white_pawn_file], pawn);
                 EXPECT_EQ(board_state[white_pawn_rank][white_pawn_file], nullptr);
-                white_pawn_rank = target_rank; // Update the white pawn's rank
+                white_pawn_rank = target_rank;
             }
             if (white_pawn_rank == 0 || white_pawn_rank == fenrir::BOARD_SIZE - 1)
             {
@@ -260,7 +291,7 @@ TEST_F(BoardTest, StressTestManyMoves)
                 board_state = board.get_board();
                 EXPECT_EQ(board_state[target_rank][black_pawn_file], pawn);
                 EXPECT_EQ(board_state[black_pawn_rank][black_pawn_file], nullptr);
-                black_pawn_rank = target_rank; // Update the black pawn's rank
+                black_pawn_rank = target_rank;
             }
             if (black_pawn_rank == 0 || black_pawn_rank == fenrir::BOARD_SIZE - 1)
             {

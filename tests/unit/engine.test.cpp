@@ -12,7 +12,7 @@
  *   GNU General Public License for more details.
 
  *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   along with this program.  If not, see <https:
  */
 
 #include <gtest/gtest.h>
@@ -23,13 +23,12 @@ class EngineTest : public ::testing::Test
 protected:
     fenrir::Engine engine;
 
-    // Helper method for testing
     char get_piece(const std::string &square)
     {
 #ifndef NDEBUG
         return engine.get_piece(square);
 #else
-        // Stub this out for release builds
+
         return '.';
 #endif
     }
@@ -71,6 +70,58 @@ TEST_F(EngineTest, ResetBoard)
     EXPECT_EQ(get_piece("b4"), '.');
     EXPECT_EQ(get_piece("e1"), 'K');
     EXPECT_EQ(get_piece("e8"), 'k');
+}
+
+TEST_F(EngineTest, GenerateMovesValidPiece)
+{
+
+    auto moves = engine.generate_moves("b2");
+    EXPECT_FALSE(moves.empty());
+
+    bool found_b3 = false;
+    bool found_b4 = false;
+    for (const auto &move : moves)
+    {
+        if (move.second == "b3")
+            found_b3 = true;
+        if (move.second == "b4")
+            found_b4 = true;
+    }
+    EXPECT_TRUE(found_b3 || found_b4);
+}
+
+TEST_F(EngineTest, GenerateMovesInvalidAddress)
+{
+
+    EXPECT_THROW(engine.generate_moves("z9"), std::runtime_error);
+}
+
+TEST_F(EngineTest, GenerateMovesEmptySquare)
+{
+
+    auto moves = engine.generate_moves("e4");
+    EXPECT_TRUE(moves.empty());
+}
+
+TEST_F(EngineTest, MakeMoveFromEmptySquare)
+{
+
+    testing::internal::CaptureStderr();
+    engine.make_move("e4", "e5");
+    std::string error_output = testing::internal::GetCapturedStderr();
+
+    EXPECT_EQ(get_piece("e4"), '.');
+    EXPECT_EQ(get_piece("e5"), '.');
+}
+
+TEST_F(EngineTest, PrintBoard)
+{
+
+    testing::internal::CaptureStdout();
+    engine.print_board();
+    std::string output = testing::internal::GetCapturedStdout();
+
+    EXPECT_FALSE(output.empty());
 }
 
 TEST_F(EngineTest, StressTestManyMovesAndResets)

@@ -12,7 +12,7 @@
  *   GNU General Public License for more details.
 
  *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   along with this program.  If not, see <https:
  */
 
 #include <gtest/gtest.h>
@@ -69,7 +69,7 @@ TEST_F(MovesTest, WhitePawnSingleMove)
 {
     fenrir::Board board(pawn_position);
     std::vector<std::pair<const std::string, const std::string>> moves;
-    const fenrir::Piece *pawn = board.get_piece(2, 4); // e3 white pawn
+    const fenrir::Piece *pawn = board.get_piece(2, 4);
 
     ASSERT_NE(pawn, nullptr);
     EXPECT_EQ(pawn->get_alias(), 'P');
@@ -84,7 +84,7 @@ TEST_F(MovesTest, BlackPawnSingleMove)
 {
     fenrir::Board board(pawn_position);
     std::vector<std::pair<const std::string, const std::string>> moves;
-    const fenrir::Piece *pawn = board.get_piece(3, 3); // d4 black pawn
+    const fenrir::Piece *pawn = board.get_piece(3, 3);
 
     ASSERT_NE(pawn, nullptr);
     EXPECT_EQ(pawn->get_alias(), 'p');
@@ -99,7 +99,7 @@ TEST_F(MovesTest, WhitePawnDoubleMove)
 {
     fenrir::Board board(standard_position);
     std::vector<std::pair<const std::string, const std::string>> moves;
-    const fenrir::Piece *pawn = board.get_piece(1, 4); // e2 white pawn
+    const fenrir::Piece *pawn = board.get_piece(1, 4);
 
     ASSERT_NE(pawn, nullptr);
     EXPECT_EQ(pawn->get_alias(), 'P');
@@ -115,7 +115,7 @@ TEST_F(MovesTest, BlackPawnDoubleMove)
 {
     fenrir::Board board(standard_position);
     std::vector<std::pair<const std::string, const std::string>> moves;
-    const fenrir::Piece *pawn = board.get_piece(6, 4); // e7 black pawn
+    const fenrir::Piece *pawn = board.get_piece(6, 4);
 
     ASSERT_NE(pawn, nullptr);
     EXPECT_EQ(pawn->get_alias(), 'p');
@@ -132,7 +132,7 @@ TEST_F(MovesTest, PawnCapture)
 
     fenrir::Board board("8/8/8/3p4/2P5/8/8/8 w KQkq - 0 1");
     std::vector<std::pair<const std::string, const std::string>> moves;
-    const fenrir::Piece *pawn = board.get_piece(3, 2); // c4 white pawn
+    const fenrir::Piece *pawn = board.get_piece(3, 2);
 
     ASSERT_NE(pawn, nullptr);
     EXPECT_EQ(pawn->get_alias(), 'P');
@@ -221,13 +221,45 @@ TEST_F(MovesTest, LogGeneratedMoves)
 
     fenrir::Board board(standard_position);
     std::vector<std::pair<const std::string, const std::string>> moves;
-    const fenrir::Piece *pawn = board.get_piece(1, 4); // e2 white pawn
+    const fenrir::Piece *pawn = board.get_piece(1, 4);
 
     ASSERT_NE(pawn, nullptr);
 
     fenrir::Moves::get_instance().generate_moves(pawn, &board, moves);
 
     SUCCEED();
+}
+
+/* Test non-pawn piece to cover default case */
+TEST_F(MovesTest, NonPawnPiece)
+{
+    fenrir::Board board(standard_position);
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *knight = board.get_piece(0, 1);
+
+    ASSERT_NE(knight, nullptr);
+    ASSERT_EQ(std::tolower(knight->get_alias()), 'n');
+
+    fenrir::Moves::get_instance().generate_moves(knight, &board, moves);
+
+    EXPECT_TRUE(moves.empty());
+}
+
+/* Test with rook piece to ensure default case coverage */
+TEST_F(MovesTest, RookPiece)
+{
+    fenrir::Board board(standard_position);
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *rook = board.get_piece(0, 0);
+
+    ASSERT_NE(rook, nullptr);
+    ASSERT_EQ(std::tolower(rook->get_alias()), 'r');
+
+    fenrir::Moves::get_instance().generate_moves(rook, &board, moves);
+
+    EXPECT_TRUE(moves.empty());
 }
 
 /* Stress test */

@@ -47,13 +47,6 @@ namespace fenrir
         std::vector<std::pair<const std::string, const std::string>> moves;
         u_int8_t rank, file;
         utils::parse_algebraic_notation(__algebraic_address, rank, file);
-        if (rank < 0 || rank >= BOARD_SIZE || file < 0 || file >= BOARD_SIZE)
-        {
-            LOG_THROW_ERROR(
-                (std::string("Board address ") + __algebraic_address + " is invalid").c_str(),
-                false);
-            return moves;
-        }
         if (!board.get_board().at(rank).at(file))
         {
             LOG_THROW_ERROR(

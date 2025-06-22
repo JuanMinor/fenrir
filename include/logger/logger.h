@@ -41,7 +41,7 @@ namespace logger
         ~Logger();
 
         // Logging method
-        void log(const std::string &__message, const char *__file, const uint8_t &__lineno, const LEVEL &__level) const;
+        void log(const std::string &__message, const char *__file, const uint32_t &__lineno, const LEVEL &__level) const;
     };
 
     // Macros for logging

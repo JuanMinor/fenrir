@@ -75,7 +75,8 @@
 		"set": "cpp",
 		"regex": "cpp",
 		"ranges": "cpp",
-		"cinttypes": "cpp"
+		"cinttypes": "cpp",
+		"chrono": "cpp"
 	},
 	"editor.fontLigatures": true,
 	"editor.fontFamily": "'JetBrains Mono Thin', 'Source Code Pro', Consolas, 'Courier New', monospace"
