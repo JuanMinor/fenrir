@@ -12,7 +12,7 @@
  *   GNU General Public License for more details.
 
  *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *   along with this program.  If not, see <https:
  */
 
 #include <gtest/gtest.h>
@@ -76,12 +76,22 @@ TEST_F(FenTest, ParseFullmoves)
 /* Invalid arguments */
 TEST_F(FenTest, InvalidFenStringThrows)
 {
+
+    EXPECT_THROW(fenrir::Fen(""), std::runtime_error);
+
     EXPECT_THROW(fenrir::Fen("invalid_fen_string"), std::runtime_error);
     EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"), std::runtime_error);
     EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w X - 0 1"), std::runtime_error);
     EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1"), std::runtime_error);
     EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1x"), std::runtime_error);
     EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq z3 0 1"), std::runtime_error);
+
+    EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/7/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"), std::runtime_error);
+    EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"), std::runtime_error);
+
+    EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0"), std::runtime_error);
+    EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 extra"), std::runtime_error);
+    EXPECT_THROW(fenrir::Fen("invalid"), std::runtime_error);
 }
 
 /* Edge cases */
@@ -130,4 +140,11 @@ TEST_F(FenTest, StressTest)
         EXPECT_EQ(fen.get_halfmove_clock(), 0);
         EXPECT_EQ(fen.get_fullmoves(), 1);
     }
+}
+
+/* Advanced placement validation test */
+TEST_F(FenTest, PlacementValidationSpecific)
+{
+
+    EXPECT_THROW(fenrir::Fen("rnbqkbn/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"), std::runtime_error);
 }

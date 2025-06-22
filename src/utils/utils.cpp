@@ -24,7 +24,6 @@ namespace utils
         if (__rank >= fenrir::BOARD_SIZE || __rank < 0 || __file >= fenrir::BOARD_SIZE || __file < 0)
         {
             LOG_THROW_ERROR("Cannot get algebraic notation for invalid board address", true);
-            return "";
         }
         return ((char(97 + __file)) + std::to_string(unsigned(__rank + 1))).c_str();
     }
@@ -38,7 +37,6 @@ namespace utils
             {
                 throw std::runtime_error("Error message cannot be null");
             }
-            return;
         }
 
         logger::Logger().log(__error, __file, __lineno, logger::ERROR);
@@ -53,16 +51,14 @@ namespace utils
         if (__algebraic_notation.empty() || __algebraic_notation.length() != 2 || !std::isalpha(__algebraic_notation[0]) || !std::isdigit(__algebraic_notation[1]))
         {
             LOG_THROW_ERROR("Invalid algebraic notation", true);
-            return;
         }
 
         __file = std::tolower(__algebraic_notation[0]) - 'a';
         __rank = __algebraic_notation[1] - '1';
 
-        if (__file >= fenrir::BOARD_SIZE || __rank >= fenrir::BOARD_SIZE)
+        if (__rank < 0 || __rank >= fenrir::BOARD_SIZE || __file < 0 || __file >= fenrir::BOARD_SIZE)
         {
             LOG_THROW_ERROR("Invalid algebraic notation", true);
-            return;
         }
     }
 }
