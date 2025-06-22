@@ -45,7 +45,7 @@ namespace logger
     Logger::Logger() {}
     Logger::~Logger() {}
 
-    void Logger::log(const std::string &__message, const char *__file, const uint8_t &__lineno, const LEVEL &__level) const
+    void Logger::log(const std::string &__message, const char *__file, const uint32_t &__lineno, const LEVEL &__level) const
     {
         if (__level == DEBUG && !fenrir::DEBUG)
         {
@@ -67,7 +67,7 @@ namespace logger
         try
         {
             const char *type = level_types.at(__level);
-            log_file << "[" << timestamp << "] [" << __file << " @ Line " << unsigned(__lineno) << "]::" << type << __message << std::endl;
+            log_file << "[" << timestamp << "] [" << __file << " @ Line " << __lineno << "]::" << type << __message << std::endl;
         }
         catch (const std::exception &e)
         {

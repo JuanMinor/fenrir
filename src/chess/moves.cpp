@@ -44,11 +44,6 @@ namespace fenrir
 
     void Moves::__log_generated_moves__(const Piece *__piece, const std::vector<std::pair<const std::string, const std::string>> &__moves) const
     {
-        if (!__piece)
-        {
-            logger::ERROR("Piece is null. Generated moves cannot be logged 😢");
-            return;
-        }
         std::stringstream ss;
         ss << "Generated moves for "
            << (__piece->get_color() == WHITE ? "white" : "black")

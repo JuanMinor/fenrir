@@ -63,10 +63,6 @@ namespace fenrir
             char c = __placement[i];
             if (c == '/')
             {
-                if (file != BOARD_SIZE)
-                {
-                    LOG_THROW_ERROR("Invalid FEN string: Rank does not have 8 squares", true);
-                }
                 rank--;
                 file = 0;
                 continue;
@@ -77,23 +73,12 @@ namespace fenrir
                 for (uint8_t j = 0; j < empties; ++j)
                 {
                     this->board[rank][file++] = nullptr;
-                    squares++;
                 }
                 continue;
             }
-            if (PIECE_NAMES.find(std::tolower(c, std::locale())) == PIECE_NAMES.end())
-            {
-                LOG_THROW_ERROR("Invalid FEN string: Unknown piece character", true);
-            }
-            squares++;
             Piece *piece = new Piece(c, rank, file);
             this->board[rank][file++] = piece;
             this->__log_piece_action__("Created", piece, utils::get_algebraic_notation(rank, file - 1), "✅");
-        }
-
-        if (file != BOARD_SIZE || rank != 0 || squares != 64)
-        {
-            LOG_THROW_ERROR("Invalid FEN string: Board could not be created correctly.", true);
         }
     }
 

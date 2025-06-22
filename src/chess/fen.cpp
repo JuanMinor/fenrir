@@ -35,10 +35,6 @@ namespace fenrir
         // Split the FEN string into components
         std::vector<std::string> tokens;
         this->__split__(__fen, " ", tokens);
-        if (tokens.size() != 6)
-        {
-            LOG_THROW_ERROR("Invalid FEN string", true);
-        }
 
         // Validate the placement section
         this->__validate_placement__(tokens[0]);
