@@ -44,8 +44,8 @@ namespace fenrir
         this->color = (tokens[1] == "w" || tokens[1] == "W") ? WHITE : BLACK;
         this->castling = tokens[2];
         this->en_passant = tokens[3];
-        this->halfmove_clock = static_cast<uint8_t>(std::stoi(tokens[4]));
-        this->fullmoves = static_cast<uint8_t>(std::stoi(tokens[5]));
+        this->halfmove_clock = static_cast<uint32_t>(std::stoi(tokens[4]));
+        this->fullmoves = static_cast<uint32_t>(std::stoi(tokens[5]));
 
         logger::INFO("FEN initialized with: " + __fen);
     }
@@ -85,6 +85,7 @@ namespace fenrir
         }
     }
 
+    // Getters for FEN components
     std::string Fen::get_placement(void) const
     {
         return this->placement;
@@ -105,13 +106,88 @@ namespace fenrir
         return this->color;
     }
 
-    uint8_t Fen::get_halfmove_clock(void) const
+    uint32_t Fen::get_halfmove_clock(void) const
     {
         return this->halfmove_clock;
     }
 
-    uint8_t Fen::get_fullmoves(void) const
+    uint32_t Fen::get_fullmoves(void) const
     {
         return this->fullmoves;
     }
+
+    // Setters for FEN components
+    void Fen::set_placement(const std::string &__placement)
+    {
+        std::regex placement_regex(
+            "^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+)$");
+
+        if (!std::regex_match(__placement, placement_regex))
+        {
+            LOG_THROW_ERROR("Invalid placement section: " + __placement, true);
+        }
+
+        this->__validate_placement__(__placement);
+        this->placement = __placement;
+        return;
+    }
+
+    void Fen::set_castling(const std::string &__castling)
+    {
+        if (__castling != "-" && !std::regex_match(__castling, std::regex("^[KQkq]+$")))
+        {
+            LOG_THROW_ERROR("Invalid castling rights: " + __castling, true);
+        }
+        this->castling = __castling;
+        return;
+    }
+
+    void Fen::set_en_passant(const std::string &__en_passant)
+    {
+        if (__en_passant != "-" && !std::regex_match(__en_passant, std::regex("^[a-h][36]$")))
+        {
+            LOG_THROW_ERROR("Invalid en passant square: " + __en_passant, true);
+        }
+        this->en_passant = __en_passant;
+        return;
+    }
+
+    void Fen::set_color(const uint8_t &__color)
+    {
+        if (__color != WHITE && __color != BLACK)
+        {
+            LOG_THROW_ERROR("Invalid color value: " + std::to_string(__color), true);
+        }
+        this->color = __color;
+        return;
+    }
+
+    void Fen::set_halfmove_clock(const uint32_t &__halfmove_clock)
+    {
+        this->halfmove_clock = __halfmove_clock;
+        return;
+    }
+
+    void Fen::set_fullmoves(const uint32_t &__fullmoves)
+    {
+        if (__fullmoves == 0)
+        {
+            LOG_THROW_ERROR("Fullmoves must be at least 1: " + std::to_string(__fullmoves), true);
+        }
+        this->fullmoves = __fullmoves;
+        return;
+    }
+
+    std::string Fen::generate_fen(void) const
+    {
+        std::ostringstream oss;
+        oss << this->placement << " "
+            << (this->color == WHITE ? "w" : "b") << " "
+            << this->castling << " "
+            << (this->en_passant.empty() ? "-" : this->en_passant) << " "
+            << this->halfmove_clock << " "
+            << this->fullmoves;
+        return oss.str();
+    }
+
 }

@@ -44,6 +44,7 @@ namespace fenrir
         Fen fen;
 
         void __build_board__(const std::string &__placement);
+        std::string __generate_placement_from_board__(void) const;
         void __log_piece_action__(const std::string &__action, const Piece *__piece, const std::string &__position, const std::string &__emoji);
 
     public:
@@ -52,6 +53,7 @@ namespace fenrir
 
         // Accessors and mutators
         std::vector<std::vector<Piece *>> get_board(void) const;
+        std::string get_fen(void);
         const std::string get_en_passant(void) const;
         Piece *get_piece(const uint8_t &__rank, const uint8_t &__file) const;
         void move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file);

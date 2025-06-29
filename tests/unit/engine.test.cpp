@@ -72,6 +72,23 @@ TEST_F(EngineTest, ResetBoard)
     EXPECT_EQ(get_piece("e8"), 'k');
 }
 
+TEST_F(EngineTest, GetFenInitialBoard)
+{
+    std::string fen = engine.get_fen();
+
+    EXPECT_FALSE(fen.empty());
+    EXPECT_TRUE(fen.find("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR") != std::string::npos);
+}
+
+TEST_F(EngineTest, GetFenAfterMove)
+{
+    engine.make_move("e2", "e4");
+    std::string fen = engine.get_fen();
+
+    EXPECT_FALSE(fen.empty());
+    EXPECT_TRUE(fen.find("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR") != std::string::npos);
+}
+
 TEST_F(EngineTest, GenerateMovesValidPiece)
 {
 
