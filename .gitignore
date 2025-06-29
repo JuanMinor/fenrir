@@ -60,11 +60,16 @@ dkms.conf
 # Gtest
 *.gcda
 *.gcno
-/bin/**
-/bint/**
+/bint
 
 # Coverage
 /.coverage
 
 # build modes
 .build_mode
+
+# Binaries
+/bin
+
+# Debug
+/.debug

@@ -82,18 +82,67 @@ namespace fenrir
         }
     }
 
+    std::string Board::__generate_placement_from_board__(void) const
+    {
+        std::string placement;
+        placement.reserve(80);
+
+        for (int rank = BOARD_SIZE - 1; rank >= 0; --rank)
+        {
+            uint8_t empty_squares = 0;
+            for (uint8_t file = 0; file < BOARD_SIZE; ++file)
+            {
+                const Piece *piece = this->board[rank][file];
+                if (!piece)
+                {
+                    ++empty_squares;
+                }
+                else
+                {
+                    if (empty_squares)
+                    {
+                        placement += static_cast<char>('0' + empty_squares);
+                        empty_squares = 0;
+                    }
+                    placement += piece->get_alias();
+                }
+            }
+            if (empty_squares)
+            {
+                placement += static_cast<char>('0' + empty_squares);
+            }
+            if (rank)
+            {
+                placement += '/';
+            }
+        }
+        return placement;
+    }
+
     void Board::__log_piece_action__(const std::string &__action, const Piece *__piece, const std::string &__position, const std::string &__emoji)
     {
         const std::string color = __piece->get_color() == WHITE ? "white" : "black";
-        std::stringstream ss;
-        ss << __action << " " << color << " " << PIECE_NAMES.at(std::tolower(__piece->get_alias(), std::locale()))
-           << " in position " << __position << " " << __emoji;
-        logger::DEBUG(ss.str());
+        std::stringstream oss;
+        oss << __action << " " << color << " " << PIECE_NAMES.at(std::tolower(__piece->get_alias(), std::locale()))
+            << " in position " << __position << " " << __emoji;
+        logger::DEBUG(oss.str());
     }
 
     std::vector<std::vector<Piece *>> Board::get_board(void) const
     {
         return this->board;
+    }
+
+    std::string Board::get_fen(void)
+    {
+        fen.set_placement(this->__generate_placement_from_board__());
+        fen.set_castling(this->castling.empty() ? "-" : this->castling);
+        fen.set_en_passant(this->en_passant.empty() ? "-" : this->en_passant);
+        fen.set_color(this->color);
+        fen.set_halfmove_clock(this->halfmove_clock);
+        fen.set_fullmoves(this->fullmoves);
+
+        return fen.generate_fen();
     }
 
     const std::string Board::get_en_passant(void) const

@@ -63,6 +63,13 @@ namespace fenrir
         return moves;
     }
 
+    std::string Engine::get_fen(void)
+    {
+        std::string current_fen = board.get_fen();
+        logger::DEBUG("Current FEN: " + current_fen);
+        return current_fen;
+    }
+
     void Engine::make_move(const std::string &__from_algebraic_address, const std::string &__to_algebraic_address)
     {
         u_int8_t __from_rank, __from_file, __to_rank, __to_file;

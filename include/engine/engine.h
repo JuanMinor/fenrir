@@ -38,6 +38,7 @@ namespace fenrir
         ~Engine();
 
         std::vector<std::pair<const std::string, const std::string>> generate_moves(const std::string &__algebraic_address) const;
+        std::string get_fen(void);
         void make_move(const std::string &__from_algebraic_address, const std::string &__to_algebraic_address);
         void print_board(void) const;
         void reset();
