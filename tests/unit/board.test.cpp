@@ -315,3 +315,50 @@ TEST_F(BoardTest, StressTestManyMoves)
         }
     }
 }
+
+/* FEN generation tests */
+TEST_F(BoardTest, GetFenAfterCreation)
+{
+    fenrir::Board board(valid_fen_position);
+
+    EXPECT_EQ(board.get_fen(), valid_fen_position);
+}
+
+TEST_F(BoardTest, GetFenAfterMove)
+{
+    fenrir::Board board("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
+    fenrir::Piece *black_pawn = board.get_piece(6, 3);
+    board.move(black_pawn, 4, 3);
+    EXPECT_EQ(board.get_fen(), "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR b KQkq d6 0 1");
+}
+
+TEST_F(BoardTest, GetFenEmptyBoard)
+{
+    fenrir::Board board(empty_fen_position);
+
+    EXPECT_EQ(board.get_fen(), empty_fen_position);
+}
+
+TEST_F(BoardTest, GetFenWithNoCastling)
+{
+    std::string fen_no_castling = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1";
+    fenrir::Board board(fen_no_castling);
+
+    EXPECT_EQ(board.get_fen(), fen_no_castling);
+}
+
+TEST_F(BoardTest, GetFenWithPartialCastling)
+{
+    std::string fen_partial_castling = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w Kq - 0 1";
+    fenrir::Board board(fen_partial_castling);
+
+    EXPECT_EQ(board.get_fen(), fen_partial_castling);
+}
+
+TEST_F(BoardTest, GetFenAfterPawnDoubleMove)
+{
+    fenrir::Board board(valid_fen_position);
+    fenrir::Piece *pawn = board.get_piece(1, 0);
+    board.move(pawn, 3, 0);
+    EXPECT_EQ(board.get_fen(), "rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR w KQkq a3 0 1");
+}

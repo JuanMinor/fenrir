@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# -----------------------------------------------------------------------------
+# Fenrir Chess Engine Coverage Report Generator
+# -----------------------------------------------------------------------------
+# This script generates a comprehensive test coverage report with detailed
+# per-file analysis and enforces 100% coverage policy.
+# It performs the following operations:
+#   1. Runs lcov to capture coverage data
+#   2. Filters to include only project source files
+#   3. Cleans unreachable code markers using AWK script
+#   4. Generates HTML report
+#   5. Creates detailed coverage table
+#   6. Enforces 100% coverage requirement
+# -----------------------------------------------------------------------------
+
+set -e
+
+# Configuration
+COVERAGE_DIR=".coverage"
+COVERAGE_INFO="$COVERAGE_DIR/coverage.info"
+COVERAGE_REPORT="$COVERAGE_DIR/report"
+DEBUG_DIR=".debug"
+
+# Create directories
+mkdir -p "$COVERAGE_DIR" "$DEBUG_DIR"
+
+echo "📊 Generating coverage report..."
+
+# Run tests first
+echo "🧪 Running tests..."
+bint/unit/tests
+
+# Generate coverage data
+lcov --capture --directory . --output-file "$COVERAGE_INFO" 2>/dev/null
+
+# Filter to only include project source files
+lcov --extract "$COVERAGE_INFO" '*/src/*' --output-file "$COVERAGE_INFO.filtered" 2>/dev/null
+mv "$COVERAGE_INFO.filtered" "$COVERAGE_INFO"
+
+# Generate gcov files for unreachable line analysis
+echo "🔧 Generating gcov files for unreachable code analysis..."
+for src_file in src/*/*.cpp; do
+    if [ -f "$src_file" ]; then
+        obj_dir="bin/build/$(dirname "$src_file" | sed 's|src/||')"
+        if [ -d "$obj_dir" ]; then
+            gcov -o "$obj_dir" "$src_file" >/dev/null 2>&1 || true
+        fi
+    fi
+done
+
+# Move only our source file gcov files to debug directory for AWK script
+for gcov_file in *.gcov; do
+    if [ -f "$gcov_file" ]; then
+        # Check if this is one of our project source files (ends with .cpp.gcov)
+        if [[ "$gcov_file" == *.cpp.gcov ]]; then
+            # This is one of our source files, move it to debug directory
+            mv "$gcov_file" "$DEBUG_DIR/"
+        else
+            # Remove STL/system header gcov files
+            rm -f "$gcov_file"
+        fi
+    fi
+done 2>/dev/null || true
+
+# Remove truly unreachable line entries (===== in gcov) and adjust totals dynamically
+echo "🔧 Cleaning truly unreachable code markers from coverage data..."
+awk -f scripts/build/clean_coverage.awk "$COVERAGE_INFO" > "$COVERAGE_INFO.tmp" && mv "$COVERAGE_INFO.tmp" "$COVERAGE_INFO"
+
+# Generate HTML report
+genhtml "$COVERAGE_INFO" --output-directory "$COVERAGE_REPORT" 2>/dev/null
+
+echo ""
+echo "📈 Coverage report generated in $COVERAGE_REPORT"
+echo ""
+
+# Generate per-file coverage table
+scripts/build/generate_coverage_table.sh "$COVERAGE_INFO" "$DEBUG_DIR"
+
+# Check for 100% coverage
+total_cov=$(lcov --summary "$COVERAGE_INFO" 2>/dev/null | grep 'lines.*:' | awk '{print $2}' | tr -d '%')
+if [ "$total_cov" != "100.0" ]; then
+    echo ""
+    echo "❌ ERROR: Coverage is not 100% ($total_cov%)"
+    echo "   Code changes cannot be committed without 100% test coverage!"
+    echo ""
+    echo "📈 Uncovered lines analysis:"
+    echo "Use: 'lcov --list $COVERAGE_INFO' to see detailed per-file coverage"
+    echo "Use: HTML report at $COVERAGE_REPORT/index.html for detailed analysis"
+    echo ""
+    echo "🔧 Next steps:"
+    echo "   1. Check the table above for exact uncovered lines"
+    echo "   2. Write tests for the missing lines"
+    echo "   3. Run 'make coverage' again until 100% is achieved"
+    echo ""
+    echo "⚠️  This is enforced to prevent quality issues as the project grows."
+    echo "📁 .gcov files available in $DEBUG_DIR/ for line-by-line debugging"
+    exit 1
+else
+    echo ""
+    echo "🎉 Perfect! 100% test coverage achieved!"
+    echo "✅ Code is ready for commit."
+fi
