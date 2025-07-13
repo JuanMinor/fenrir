@@ -434,6 +434,246 @@ TEST_F(MovesTest, BlackRookMovement)
     EXPECT_TRUE(moveExists(moves, "d4", "h4"));
 }
 
+/* Bishop movement tests */
+TEST_F(MovesTest, BishopDiagonalMovement)
+{
+    fenrir::Board board("8/8/8/8/3B4/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *bishop = board.get_piece(3, 3);
+
+    ASSERT_NE(bishop, nullptr);
+    ASSERT_EQ(std::tolower(bishop->get_alias()), 'b');
+
+    fenrir::Moves::get_instance().generate_moves(bishop, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "a1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "b2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "c3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e5"));
+    EXPECT_TRUE(moveExists(moves, "d4", "f6"));
+    EXPECT_TRUE(moveExists(moves, "d4", "g7"));
+    EXPECT_TRUE(moveExists(moves, "d4", "h8"));
+    EXPECT_TRUE(moveExists(moves, "d4", "a7"));
+    EXPECT_TRUE(moveExists(moves, "d4", "b6"));
+    EXPECT_TRUE(moveExists(moves, "d4", "c5"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "f2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "g1"));
+    EXPECT_EQ(moves.size(), 13);
+}
+
+TEST_F(MovesTest, BishopBlockedByFriendlyPiece)
+{
+    fenrir::Board board("8/8/8/2P1P3/3B4/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *bishop = board.get_piece(3, 3);
+
+    ASSERT_NE(bishop, nullptr);
+    ASSERT_EQ(std::tolower(bishop->get_alias()), 'b');
+
+    fenrir::Moves::get_instance().generate_moves(bishop, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "a1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "b2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "c3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "f2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "g1"));
+    EXPECT_FALSE(moveExists(moves, "d4", "c5"));
+    EXPECT_FALSE(moveExists(moves, "d4", "e5"));
+    EXPECT_EQ(moves.size(), 6);
+}
+
+TEST_F(MovesTest, BishopCaptureEnemyPiece)
+{
+    fenrir::Board board("8/8/8/2p1p3/3B4/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *bishop = board.get_piece(3, 3);
+
+    ASSERT_NE(bishop, nullptr);
+    ASSERT_EQ(std::tolower(bishop->get_alias()), 'b');
+
+    fenrir::Moves::get_instance().generate_moves(bishop, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "a1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "b2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "c3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "f2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "g1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "c5"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e5"));
+    EXPECT_FALSE(moveExists(moves, "d4", "b6"));
+    EXPECT_FALSE(moveExists(moves, "d4", "f6"));
+    EXPECT_EQ(moves.size(), 8);
+}
+
+TEST_F(MovesTest, BishopCornerPosition)
+{
+    fenrir::Board board("B7/8/8/8/8/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *bishop = board.get_piece(7, 0);
+
+    ASSERT_NE(bishop, nullptr);
+    ASSERT_EQ(std::tolower(bishop->get_alias()), 'b');
+
+    fenrir::Moves::get_instance().generate_moves(bishop, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "a8", "b7"));
+    EXPECT_TRUE(moveExists(moves, "a8", "c6"));
+    EXPECT_TRUE(moveExists(moves, "a8", "d5"));
+    EXPECT_TRUE(moveExists(moves, "a8", "e4"));
+    EXPECT_TRUE(moveExists(moves, "a8", "f3"));
+    EXPECT_TRUE(moveExists(moves, "a8", "g2"));
+    EXPECT_TRUE(moveExists(moves, "a8", "h1"));
+    EXPECT_EQ(moves.size(), 7);
+}
+
+TEST_F(MovesTest, BishopEdgePosition)
+{
+    fenrir::Board board("8/8/8/8/B7/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *bishop = board.get_piece(3, 0);
+
+    ASSERT_NE(bishop, nullptr);
+    ASSERT_EQ(std::tolower(bishop->get_alias()), 'b');
+
+    fenrir::Moves::get_instance().generate_moves(bishop, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "a4", "b5"));
+    EXPECT_TRUE(moveExists(moves, "a4", "c6"));
+    EXPECT_TRUE(moveExists(moves, "a4", "d7"));
+    EXPECT_TRUE(moveExists(moves, "a4", "e8"));
+    EXPECT_TRUE(moveExists(moves, "a4", "b3"));
+    EXPECT_TRUE(moveExists(moves, "a4", "c2"));
+    EXPECT_TRUE(moveExists(moves, "a4", "d1"));
+    EXPECT_EQ(moves.size(), 7);
+}
+
+TEST_F(MovesTest, BlackBishopMovement)
+{
+    fenrir::Board board("8/8/8/8/3b4/8/8/8 b - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *bishop = board.get_piece(3, 3);
+
+    ASSERT_NE(bishop, nullptr);
+    ASSERT_EQ(std::tolower(bishop->get_alias()), 'b');
+
+    fenrir::Moves::get_instance().generate_moves(bishop, &board, moves);
+
+    EXPECT_EQ(moves.size(), 13);
+    EXPECT_TRUE(moveExists(moves, "d4", "a1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "h8"));
+    EXPECT_TRUE(moveExists(moves, "d4", "g1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "a7"));
+}
+
+/* Queen movement tests */
+TEST_F(MovesTest, QueenCombinedMovement)
+{
+    fenrir::Board board("8/8/8/8/3Q4/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *queen = board.get_piece(3, 3);
+
+    ASSERT_NE(queen, nullptr);
+    ASSERT_EQ(std::tolower(queen->get_alias()), 'q');
+
+    fenrir::Moves::get_instance().generate_moves(queen, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "d1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d8"));
+    EXPECT_TRUE(moveExists(moves, "d4", "a4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "h4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "a1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "h8"));
+    EXPECT_TRUE(moveExists(moves, "d4", "g1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "a7"));
+    EXPECT_EQ(moves.size(), 27);
+}
+
+TEST_F(MovesTest, QueenBlockedByFriendlyPieces)
+{
+    fenrir::Board board("8/8/8/2PPP3/2PQP3/2PPP3/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *queen = board.get_piece(3, 3);
+
+    ASSERT_NE(queen, nullptr);
+    ASSERT_EQ(std::tolower(queen->get_alias()), 'q');
+
+    fenrir::Moves::get_instance().generate_moves(queen, &board, moves);
+
+    EXPECT_TRUE(moves.empty());
+    EXPECT_EQ(moves.size(), 0);
+}
+
+TEST_F(MovesTest, QueenCaptureEnemyPieces)
+{
+    fenrir::Board board("8/8/8/2ppp3/2pQp3/2ppp3/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *queen = board.get_piece(3, 3);
+
+    ASSERT_NE(queen, nullptr);
+    ASSERT_EQ(std::tolower(queen->get_alias()), 'q');
+
+    fenrir::Moves::get_instance().generate_moves(queen, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "c3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "c4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "c5"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d5"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e5"));
+    EXPECT_EQ(moves.size(), 8);
+}
+
+TEST_F(MovesTest, QueenCornerPosition)
+{
+    fenrir::Board board("Q7/8/8/8/8/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *queen = board.get_piece(7, 0);
+
+    ASSERT_NE(queen, nullptr);
+    ASSERT_EQ(std::tolower(queen->get_alias()), 'q');
+
+    fenrir::Moves::get_instance().generate_moves(queen, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "a8", "a1"));
+    EXPECT_TRUE(moveExists(moves, "a8", "h8"));
+    EXPECT_TRUE(moveExists(moves, "a8", "h1"));
+    EXPECT_EQ(moves.size(), 21);
+}
+
+TEST_F(MovesTest, BlackQueenMovement)
+{
+    fenrir::Board board("8/8/8/8/3q4/8/8/8 b - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *queen = board.get_piece(3, 3);
+
+    ASSERT_NE(queen, nullptr);
+    ASSERT_EQ(std::tolower(queen->get_alias()), 'q');
+
+    fenrir::Moves::get_instance().generate_moves(queen, &board, moves);
+
+    EXPECT_EQ(moves.size(), 27);
+    EXPECT_TRUE(moveExists(moves, "d4", "d1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d8"));
+    EXPECT_TRUE(moveExists(moves, "d4", "a4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "h4"));
+}
+
 /* Stress test */
 TEST_F(MovesTest, StressTestGenerateMoves)
 {
@@ -454,4 +694,34 @@ TEST_F(MovesTest, StressTestGenerateMoves)
             fenrir::Moves::get_instance().generate_moves(pawn, &board, moves);
         }
     }
+}
+
+TEST_F(MovesTest, BishopPiece)
+{
+    fenrir::Board board(standard_position);
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *bishop = board.get_piece(0, 2);
+
+    ASSERT_NE(bishop, nullptr);
+    ASSERT_EQ(std::tolower(bishop->get_alias()), 'b');
+
+    fenrir::Moves::get_instance().generate_moves(bishop, &board, moves);
+
+    EXPECT_TRUE(moves.empty());
+}
+
+TEST_F(MovesTest, QueenPiece)
+{
+    fenrir::Board board(standard_position);
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *queen = board.get_piece(0, 3);
+
+    ASSERT_NE(queen, nullptr);
+    ASSERT_EQ(std::tolower(queen->get_alias()), 'q');
+
+    fenrir::Moves::get_instance().generate_moves(queen, &board, moves);
+
+    EXPECT_TRUE(moves.empty());
 }
