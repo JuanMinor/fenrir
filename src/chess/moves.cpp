@@ -48,6 +48,41 @@ namespace fenrir
         }
     }
 
+    void Moves::__king__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves)
+    {
+        constexpr int8_t direction_vectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
+        this->__slide__(__piece, __board, __moves, direction_vectors, 8, true);
+    }
+
+    void Moves::__knight__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves)
+    {
+        const uint8_t current_rank = __piece->get_rank();
+        const uint8_t current_file = __piece->get_file();
+        const std::string from_position = utils::get_algebraic_notation(current_rank, current_file);
+
+        constexpr int8_t knight_moves[8][2] = {
+            {2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {1, -2}, {-1, 2}, {-1, -2}};
+
+        for (const auto &move : knight_moves)
+        {
+            const int8_t new_rank = current_rank + move[0];
+            const int8_t new_file = current_file + move[1];
+
+            if (new_rank >= 0 && new_rank <= 7 && new_file >= 0 && new_file <= 7)
+            {
+                const Piece *target_piece = __board->get_piece(new_rank, new_file);
+                if (!target_piece)
+                {
+                    __moves.emplace_back(from_position, utils::get_algebraic_notation(new_rank, new_file));
+                    continue;
+                }
+                this->__capture__(__piece, target_piece, __moves);
+            }
+        }
+
+        __log_generated_moves__(__piece, __moves);
+    }
+
     void Moves::__log_generated_moves__(const Piece *__piece, const std::vector<std::pair<const std::string, const std::string>> &__moves) const
     {
         std::stringstream ss;
@@ -143,7 +178,7 @@ namespace fenrir
         this->__slide__(__piece, __board, __moves, direction_vectors, 4);
     }
 
-    void Moves::__slide__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves, const int8_t direction_vectors[][2], size_t num_directions)
+    void Moves::__slide__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves, const int8_t direction_vectors[][2], size_t num_directions, bool __single_depth)
     {
         const uint8_t current_rank = __piece->get_rank();
         const uint8_t current_file = __piece->get_file();
@@ -156,9 +191,15 @@ namespace fenrir
 
             int8_t _rank = current_rank + rank_delta;
             int8_t _file = current_file + file_delta;
+            uint8_t depth = 0;
 
             while (_rank >= 0 && _rank <= 7 && _file >= 0 && _file <= 7)
             {
+                if (__single_depth && depth == 1)
+                {
+                    break;
+                }
+                depth++;
                 const Piece *target_piece = __board->get_piece(_rank, _file);
                 if (!target_piece)
                 {
@@ -193,19 +234,23 @@ namespace fenrir
         logger::DEBUG("Generating moves for piece at " + utils::get_algebraic_notation(__piece->get_rank(), __piece->get_file()));
         switch (std::tolower(__piece->get_alias()))
         {
-        case 'p':
-            this->__pawn__(__piece, __board, __moves);
-            break;
-        case 'r':
-            this->__rook__(__piece, __board, __moves);
-            break;
         case 'b':
             this->__bishop__(__piece, __board, __moves);
+            break;
+        case 'k':
+            this->__king__(__piece, __board, __moves);
+            break;
+        case 'n':
+            this->__knight__(__piece, __board, __moves);
+            break;
+        case 'p':
+            this->__pawn__(__piece, __board, __moves);
             break;
         case 'q':
             this->__queen__(__piece, __board, __moves);
             break;
-        default:
+        case 'r':
+            this->__rook__(__piece, __board, __moves);
             break;
         }
     }
