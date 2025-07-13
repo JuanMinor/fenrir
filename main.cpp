@@ -35,10 +35,13 @@ int main(int argc, char *argv[])
         engine.reset();
         engine.print_board();
 
-        // move generation
-        const std::vector<std::pair<const std::string, const std::string>> moves = engine.generate_moves("a2");
+        // test rook moves
+        engine.make_move("a2", "b3");
 
-        std::cout << "Generated moves for a2:" << std::endl;
+        // move generation
+        const std::vector<std::pair<const std::string, const std::string>> moves = engine.generate_moves("a1");
+
+        std::cout << "Generated moves for piece" << std::endl;
         for (const auto &move : moves)
         {
             std::cout << move.first << " -> " << move.second << std::endl;
