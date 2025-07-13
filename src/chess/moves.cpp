@@ -125,6 +125,44 @@ namespace fenrir
         __log_generated_moves__(__piece, __moves);
     }
 
+    void Moves::__rook__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves)
+    {
+        constexpr int8_t direction_vectors[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+        this->__slide__(__piece, __board, __moves, direction_vectors, 4);
+    }
+
+    void Moves::__slide__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves, const int8_t direction_vectors[][2], size_t num_directions)
+    {
+        const uint8_t current_rank = __piece->get_rank();
+        const uint8_t current_file = __piece->get_file();
+        const std::string from_position = utils::get_algebraic_notation(current_rank, current_file);
+
+        for (size_t i = 0; i < num_directions; ++i)
+        {
+            const int8_t rank_delta = direction_vectors[i][0];
+            const int8_t file_delta = direction_vectors[i][1];
+
+            int8_t _rank = current_rank + rank_delta;
+            int8_t _file = current_file + file_delta;
+
+            while (_rank >= 0 && _rank <= 7 && _file >= 0 && _file <= 7)
+            {
+                const Piece *target_piece = __board->get_piece(_rank, _file);
+                if (!target_piece)
+                {
+                    __moves.emplace_back(from_position, utils::get_algebraic_notation(_rank, _file));
+                    _rank += rank_delta;
+                    _file += file_delta;
+                    continue;
+                }
+                this->__capture__(__piece, target_piece, __moves);
+                break;
+            }
+        }
+
+        __log_generated_moves__(__piece, __moves);
+    }
+
     // Public
     Moves &Moves::get_instance()
     {
@@ -145,6 +183,9 @@ namespace fenrir
         {
         case 'p':
             this->__pawn__(__piece, __board, __moves);
+            break;
+        case 'r':
+            this->__rook__(__piece, __board, __moves);
             break;
         // Add cases for other pieces (N, B, R, Q, K) here
         default:
