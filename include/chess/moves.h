@@ -37,6 +37,8 @@ namespace fenrir
         void __capture__(const Piece *__piece, const Piece *__target_piece, std::vector<std::pair<const std::string, const std::string>> &__moves);
         void __log_generated_moves__(const Piece *__piece, const std::vector<std::pair<const std::string, const std::string>> &__moves) const;
         void __pawn__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
+        void __rook__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
+        void __slide__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves, const int8_t direction_vectors[][2], size_t num_directions);
 
     public:
         static Moves &get_instance();

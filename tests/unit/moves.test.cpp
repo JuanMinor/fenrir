@@ -262,6 +262,178 @@ TEST_F(MovesTest, RookPiece)
     EXPECT_TRUE(moves.empty());
 }
 
+TEST_F(MovesTest, RookVerticalMovement)
+{
+    fenrir::Board board("8/8/8/8/3R4/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *rook = board.get_piece(3, 3);
+
+    ASSERT_NE(rook, nullptr);
+    ASSERT_EQ(std::tolower(rook->get_alias()), 'r');
+
+    fenrir::Moves::get_instance().generate_moves(rook, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "d1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d5"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d6"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d7"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d8"));
+    EXPECT_EQ(moves.size(), 14);
+}
+
+TEST_F(MovesTest, RookHorizontalMovement)
+{
+    fenrir::Board board("8/8/8/8/3R4/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *rook = board.get_piece(3, 3);
+
+    ASSERT_NE(rook, nullptr);
+    ASSERT_EQ(std::tolower(rook->get_alias()), 'r');
+
+    fenrir::Moves::get_instance().generate_moves(rook, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "a4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "b4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "c4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "f4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "g4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "h4"));
+    EXPECT_EQ(moves.size(), 14);
+}
+
+TEST_F(MovesTest, RookBlockedByFriendlyPiece)
+{
+    fenrir::Board board("8/8/8/3P4/3R4/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *rook = board.get_piece(3, 3);
+
+    ASSERT_NE(rook, nullptr);
+    ASSERT_EQ(std::tolower(rook->get_alias()), 'r');
+
+    fenrir::Moves::get_instance().generate_moves(rook, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "d1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d3"));
+    EXPECT_FALSE(moveExists(moves, "d4", "d5"));
+    EXPECT_FALSE(moveExists(moves, "d4", "d6"));
+    EXPECT_FALSE(moveExists(moves, "d4", "d7"));
+    EXPECT_FALSE(moveExists(moves, "d4", "d8"));
+    EXPECT_EQ(moves.size(), 10);
+}
+
+TEST_F(MovesTest, RookCaptureEnemyPiece)
+{
+    fenrir::Board board("8/8/8/3p4/3R4/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *rook = board.get_piece(3, 3);
+
+    ASSERT_NE(rook, nullptr);
+    ASSERT_EQ(std::tolower(rook->get_alias()), 'r');
+
+    fenrir::Moves::get_instance().generate_moves(rook, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "d1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d5"));
+    EXPECT_FALSE(moveExists(moves, "d4", "d6"));
+    EXPECT_FALSE(moveExists(moves, "d4", "d7"));
+    EXPECT_FALSE(moveExists(moves, "d4", "d8"));
+    EXPECT_EQ(moves.size(), 11);
+}
+
+TEST_F(MovesTest, RookMultipleDirectionBlocking)
+{
+    fenrir::Board board("8/8/8/2pPp3/3R4/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *rook = board.get_piece(3, 3);
+
+    ASSERT_NE(rook, nullptr);
+    ASSERT_EQ(std::tolower(rook->get_alias()), 'r');
+
+    fenrir::Moves::get_instance().generate_moves(rook, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "d4", "d1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d2"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d3"));
+    EXPECT_TRUE(moveExists(moves, "d4", "a4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "b4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "c4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "e4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "f4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "g4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "h4"));
+    EXPECT_FALSE(moveExists(moves, "d4", "d5"));
+    EXPECT_EQ(moves.size(), 10);
+}
+
+TEST_F(MovesTest, RookCornerPosition)
+{
+    fenrir::Board board("R7/8/8/8/8/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *rook = board.get_piece(7, 0);
+
+    ASSERT_NE(rook, nullptr);
+    ASSERT_EQ(std::tolower(rook->get_alias()), 'r');
+
+    fenrir::Moves::get_instance().generate_moves(rook, &board, moves);
+
+    EXPECT_TRUE(moveExists(moves, "a8", "a7"));
+    EXPECT_TRUE(moveExists(moves, "a8", "a6"));
+    EXPECT_TRUE(moveExists(moves, "a8", "a1"));
+    EXPECT_TRUE(moveExists(moves, "a8", "b8"));
+    EXPECT_TRUE(moveExists(moves, "a8", "c8"));
+    EXPECT_TRUE(moveExists(moves, "a8", "h8"));
+    EXPECT_EQ(moves.size(), 14);
+}
+
+TEST_F(MovesTest, RookEdgePosition)
+{
+    fenrir::Board board("8/8/8/8/R7/8/8/8 w - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *rook = board.get_piece(3, 0);
+
+    ASSERT_NE(rook, nullptr);
+    ASSERT_EQ(std::tolower(rook->get_alias()), 'r');
+
+    fenrir::Moves::get_instance().generate_moves(rook, &board, moves);
+
+    EXPECT_EQ(moves.size(), 14);
+    EXPECT_TRUE(moveExists(moves, "a4", "a8"));
+    EXPECT_TRUE(moveExists(moves, "a4", "a1"));
+    EXPECT_TRUE(moveExists(moves, "a4", "h4"));
+}
+
+TEST_F(MovesTest, BlackRookMovement)
+{
+    fenrir::Board board("8/8/8/8/3r4/8/8/8 b - - 0 1");
+    std::vector<std::pair<const std::string, const std::string>> moves;
+
+    const fenrir::Piece *rook = board.get_piece(3, 3);
+
+    ASSERT_NE(rook, nullptr);
+    ASSERT_EQ(std::tolower(rook->get_alias()), 'r');
+
+    fenrir::Moves::get_instance().generate_moves(rook, &board, moves);
+
+    EXPECT_EQ(moves.size(), 14);
+    EXPECT_TRUE(moveExists(moves, "d4", "d1"));
+    EXPECT_TRUE(moveExists(moves, "d4", "d8"));
+    EXPECT_TRUE(moveExists(moves, "d4", "a4"));
+    EXPECT_TRUE(moveExists(moves, "d4", "h4"));
+}
+
 /* Stress test */
 TEST_F(MovesTest, StressTestGenerateMoves)
 {
