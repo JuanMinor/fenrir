@@ -15,8 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PIECE_H
-#define PIECE_H
+#pragma once
 
 #include <stdint.h>
 #include <unordered_map>
@@ -55,5 +54,3 @@ namespace fenrir
         void set_moved(const bool &__moved);
     };
 }
-
-#endif // PIECE_H

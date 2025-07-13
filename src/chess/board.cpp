@@ -125,7 +125,13 @@ namespace fenrir
         std::stringstream oss;
         oss << __action << " " << color << " " << PIECE_NAMES.at(std::tolower(__piece->get_alias(), std::locale()))
             << " in position " << __position << " " << __emoji;
-        logger::DEBUG(oss.str());
+
+        // Use stringstream as fallback for std::format compatibility
+        std::stringstream detailed_oss;
+        detailed_oss << oss.str() << " (" << __piece->get_value() << " value) at <"
+                     << unsigned(__piece->get_rank()) << ", " << unsigned(__piece->get_file()) << ">";
+
+        logger::DEBUG(detailed_oss.str());
     }
 
     std::vector<std::vector<Piece *>> Board::get_board(void) const

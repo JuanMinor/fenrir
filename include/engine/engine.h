@@ -15,8 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef ENGINE_H
-#define ENGINE_H
+#pragma once
 
 #include "include/chess/board.h"
 #include "include/core/core.h"
@@ -48,5 +47,3 @@ namespace fenrir
 #endif
     };
 }
-
-#endif

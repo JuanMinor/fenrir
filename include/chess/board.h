@@ -15,13 +15,12 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef BOARD_H
-#define BOARD_H
+#pragma once
 
 #include <string>
 #include <vector>
 #include <iostream>
-#include <sstream>
+#include <format>
 #include "include/core/core.h"
 #include "include/chess/fen.h"
 #include "include/logger/logger.h"
@@ -60,5 +59,3 @@ namespace fenrir
         void print(void) const;
     };
 }
-
-#endif

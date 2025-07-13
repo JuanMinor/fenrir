@@ -79,5 +79,5 @@
 		"chrono": "cpp"
 	},
 	"editor.fontLigatures": true,
-	"editor.fontFamily": "'JetBrains Mono Thin', 'Source Code Pro', Consolas, 'Courier New', monospace"
+	"editor.fontFamily": "'JetBrains Mono', 'Source Code Pro', Consolas, 'Courier New', monospace"
 }

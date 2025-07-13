@@ -15,8 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef LOGGER_H
-#define LOGGER_H
+#pragma once
 
 #include <filesystem>
 #include <fstream>
@@ -53,5 +52,3 @@ namespace logger
 #define ERROR(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::ERROR);
 #define CRITICAL(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::CRITICAL);
 }
-
-#endif // LOGGER_H

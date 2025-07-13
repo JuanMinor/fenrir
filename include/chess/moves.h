@@ -15,8 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MOVES_H
-#define MOVES_H
+#pragma once
 
 #include <string>
 #include <sstream>
@@ -45,5 +44,3 @@ namespace fenrir
         void generate_moves(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
     };
 }
-
-#endif
