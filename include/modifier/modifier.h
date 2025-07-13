@@ -15,8 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MODIFIER_H
-#define MODIFIER_H
+#pragma once
 
 #include <ostream>
 #include "include/core/core.h"
@@ -36,5 +35,3 @@ namespace color
         friend std::ostream &operator<<(std::ostream &__os, const Modifier &__modifier);
     };
 }
-
-#endif // MODIFIER_H

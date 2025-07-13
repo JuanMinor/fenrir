@@ -15,8 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PGN_H
-#define PGN_H
+#pragma once
 
 #include <fstream>
 #include <iomanip>
@@ -58,5 +57,3 @@ namespace io
 #define PGN_RECORD(MOVE) PGN.record(MOVE);
 #define PGN_CREATE() PGN.create();
 }
-
-#endif // PGN_H
