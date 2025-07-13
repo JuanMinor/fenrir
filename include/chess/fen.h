@@ -15,8 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef FEN_H
-#define FEN_H
+#pragma once
 
 #include <regex>
 #include <stdint.h>
@@ -65,5 +64,3 @@ namespace fenrir
         std::string generate_fen(void) const;
     };
 }
-
-#endif // FEN_H

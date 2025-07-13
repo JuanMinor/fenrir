@@ -15,8 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef CORE_H
-#define CORE_H
+#pragma once
 
 #include <unordered_map>
 
@@ -106,5 +105,3 @@ namespace test
 {
     static const char *CI = getenv("CI");
 }
-
-#endif // CORE_H

@@ -15,8 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef CHRONO_H
-#define CHRONO_H
+#pragma once
 
 #include <ctime>
 #include <iomanip>
@@ -41,5 +40,3 @@ namespace chrono
         std::_Put_time<char> get_time_with_format(const char *__format);
     };
 }
-
-#endif // CHRONO_H

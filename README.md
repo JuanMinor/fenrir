@@ -3,7 +3,7 @@
 A modular C++ chess engine with FEN support, move generation, and comprehensive testing.
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![C++](https://img.shields.io/badge/C%2B%2B-17-blue.svg)](https://en.cppreference.com/w/cpp/17)
+[![C++](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Build](https://img.shields.io/badge/Build-Make-green.svg)](https://www.gnu.org/software/make/)
 [![Testing](https://img.shields.io/badge/Testing-Google%20Test-red.svg)](https://github.com/google/googletest)
 [![VS Code](https://img.shields.io/badge/VS%20Code-Recommended-007ACC.svg)](https://code.visualstudio.com/)

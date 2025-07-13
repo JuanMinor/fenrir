@@ -18,10 +18,11 @@
 
 # Compiler and basic flags
 CC = g++
+CC_VERSION = c++20
 PROJECT_ROOT = /workspaces/fenrir
 
 # Common compiler flags for all builds
-COMMON_FLAGS = -I $(PROJECT_ROOT) -fPIC -DFENRIR_BUILD_DLL
+COMMON_FLAGS = -std=$(CC_VERSION) -I $(PROJECT_ROOT) -fPIC -DFENRIR_BUILD_DLL
 
 # Build mode selection (default: debug)
 BUILD_MODE ?= debug
