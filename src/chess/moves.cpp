@@ -26,6 +26,12 @@ namespace fenrir
 
     Moves::~Moves() {}
 
+    void Moves::__bishop__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves)
+    {
+        int8_t directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+        this->__slide__(__piece, __board, __moves, directions, 4);
+    }
+
     void Moves::__capture__(const Piece *__piece, const Piece *__target_piece, std::vector<std::pair<const std::string, const std::string>> &__moves)
     {
         if (__piece == nullptr || __target_piece == nullptr)
@@ -125,6 +131,12 @@ namespace fenrir
         __log_generated_moves__(__piece, __moves);
     }
 
+    void Moves::__queen__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves)
+    {
+        constexpr int8_t direction_vectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
+        this->__slide__(__piece, __board, __moves, direction_vectors, 8);
+    }
+
     void Moves::__rook__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves)
     {
         constexpr int8_t direction_vectors[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
@@ -187,7 +199,12 @@ namespace fenrir
         case 'r':
             this->__rook__(__piece, __board, __moves);
             break;
-        // Add cases for other pieces (N, B, R, Q, K) here
+        case 'b':
+            this->__bishop__(__piece, __board, __moves);
+            break;
+        case 'q':
+            this->__queen__(__piece, __board, __moves);
+            break;
         default:
             break;
         }
