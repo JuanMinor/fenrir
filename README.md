@@ -88,9 +88,9 @@ engine.make_move("b8", "c6");  // Knight b8 to c6
 engine.make_move(1, 4, 3, 4);  // Same as e2-e4
 
 // Generate legal moves for any piece type
-auto pawn_moves = engine.generate_moves("e4");    // Pawn moves
+auto pawn_moves = engine.generate_moves("e4");	// Pawn moves
 auto knight_moves = engine.generate_moves("f3");  // Knight moves
-auto all_moves = engine.generate_moves("d1");     // Queen moves
+auto all_moves = engine.generate_moves("d1");	 // Queen moves
 
 // Display current board state
 engine.print_board();
@@ -116,15 +116,15 @@ _For complete examples and compilation instructions, see the "Using the Library"
 
 **Fenrir uses GNU Make as the primary and currently supported build system.**
 
-| Target          | Description                                       |
+| Target		  | Description									   |
 | --------------- | ------------------------------------------------- |
-| `make`          | Build shared library (`bin/lib/libfenrir.so`)     |
-| `make debug`    | Explicitly build in debug mode (default)          |
-| `make release`  | Build optimized release version                   |
-| `make test`     | Run unit tests with Google Test                   |
+| `make`		  | Build shared library (`bin/lib/libfenrir.so`)	 |
+| `make debug`	| Explicitly build in debug mode (default)		  |
+| `make release`  | Build optimized release version				   |
+| `make test`	 | Run unit tests with Google Test				   |
 | `make coverage` | Generate coverage report (requires 100% coverage) |
-| `make clean`    | Clean build artifacts                             |
-| `make help`     | Show detailed help with all available targets     |
+| `make clean`	| Clean build artifacts							 |
+| `make help`	 | Show detailed help with all available targets	 |
 
 ### Building the Library
 
@@ -159,47 +159,47 @@ make release
    #include "include/engine/engine.h"
 
    int main() {
-       try {
-           // Initialize the chess engine
-           fenrir::Engine engine;
+	   try {
+		   // Initialize the chess engine
+		   fenrir::Engine engine;
 
-           // Display the initial board
-           std::cout << "Initial position:" << std::endl;
-           engine.print_board();
+		   // Display the initial board
+		   std::cout << "Initial position:" << std::endl;
+		   engine.print_board();
 
-           // Demonstrate movement for different piece types
-           engine.make_move("e2", "e4");  // White pawn to e4
-           engine.make_move("e7", "e5");  // Black pawn to e5
-           engine.make_move("g1", "f3");  // White knight to f3
-           engine.make_move("b8", "c6");  // Black knight to c6
-           engine.make_move("f1", "c4");  // White bishop to c4
+		   // Demonstrate movement for different piece types
+		   engine.make_move("e2", "e4");  // White pawn to e4
+		   engine.make_move("e7", "e5");  // Black pawn to e5
+		   engine.make_move("g1", "f3");  // White knight to f3
+		   engine.make_move("b8", "c6");  // Black knight to c6
+		   engine.make_move("f1", "c4");  // White bishop to c4
 
-           std::cout << "\nAfter multiple piece movements:" << std::endl;
-           engine.print_board();
+		   std::cout << "\nAfter multiple piece movements:" << std::endl;
+		   engine.print_board();
 
-           // Generate legal moves for different piece types
-           auto knight_moves = engine.generate_moves("f3");
-           std::cout << "\nLegal moves for white knight on f3:" << std::endl;
-           for (const auto& move : knight_moves) {
-               std::cout << move.first << " -> " << move.second << std::endl;
-           }
+		   // Generate legal moves for different piece types
+		   auto knight_moves = engine.generate_moves("f3");
+		   std::cout << "\nLegal moves for white knight on f3:" << std::endl;
+		   for (const auto& move : knight_moves) {
+			   std::cout << move.first << " -> " << move.second << std::endl;
+		   }
 
-           auto bishop_moves = engine.generate_moves("c4");
-           std::cout << "\nLegal moves for white bishop on c4:" << std::endl;
-           for (const auto& move : bishop_moves) {
-               std::cout << move.first << " -> " << move.second << std::endl;
-           }
+		   auto bishop_moves = engine.generate_moves("c4");
+		   std::cout << "\nLegal moves for white bishop on c4:" << std::endl;
+		   for (const auto& move : bishop_moves) {
+			   std::cout << move.first << " -> " << move.second << std::endl;
+		   }
 
-           // Reset to starting position
-           engine.reset();
-           std::cout << "\nBoard reset to starting position." << std::endl;
+		   // Reset to starting position
+		   engine.reset();
+		   std::cout << "\nBoard reset to starting position." << std::endl;
 
-       } catch (const std::exception& e) {
-           std::cerr << "Error: " << e.what() << std::endl;
-           return 1;
-       }
+	   } catch (const std::exception& e) {
+		   std::cerr << "Error: " << e.what() << std::endl;
+		   return 1;
+	   }
 
-       return 0;
+	   return 0;
    }
    ```
 
@@ -255,14 +255,14 @@ clean:
 ## Project Structure
 
 ```
-├── include/          # Header files
-│   ├── chess/        # Complete chess logic (board, all 6 piece types, moves, FEN)
-│   ├── engine/       # Main engine interface
-│   └── utils/        # Utilities and logging
-├── src/              # Implementation files
-├── tests/unit/       # Google Test unit tests (216+ tests, 100% coverage)
-├── scripts/          # Automation scripts (run.sh, test.sh)
-└── bin/              # Build artifacts
+├── include/		  # Header files
+│   ├── chess/		# Complete chess logic (board, all 6 piece types, moves, FEN)
+│   ├── engine/	   # Main engine interface
+│   └── utils/		# Utilities and logging
+├── src/			  # Implementation files
+├── tests/unit/	   # Google Test unit tests (216+ tests, 100% coverage)
+├── scripts/		  # Automation scripts (run.sh, test.sh)
+└── bin/			  # Build artifacts
 ```
 
 ## Development

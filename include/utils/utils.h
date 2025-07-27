@@ -20,14 +20,16 @@
 #include <stdint.h>
 #include <string>
 #include <stdexcept>
+#include <unordered_map>
 #include "include/core/core.h"
 #include "include/logger/logger.h"
 
 namespace utils
 {
-    const std::string get_algebraic_notation(const uint8_t &__rank, const uint8_t &__file);
-    void log_throw_error(const std::string &__error, const bool &__throw, const char *__file, const uint8_t &__lineno);
-    void parse_algebraic_notation(const std::string &__algebraic_notation, uint8_t &__rank, uint8_t &__file);
+	const bool __are_chess_piece_count_rules_valid__(const std::unordered_map<char, uint8_t> &piece_counts);
+	const std::string get_algebraic_notation(const uint8_t &__rank, const uint8_t &__file);
+	void log_throw_error(const std::string &__error, const bool &__throw, const char *__file, const int &__lineno);
+	void parse_algebraic_notation(const std::string &__algebraic_notation, uint8_t &__rank, uint8_t &__file);
 
 /* Macros */
 #define LOG_THROW_ERROR(ERROR, THROW) utils::log_throw_error(ERROR, THROW, __FILE__, __LINE__)

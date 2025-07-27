@@ -22,16 +22,16 @@
 
 namespace color
 {
-    class Modifier
-    {
-    private:
-        Color color;
+	class Modifier
+	{
+	private:
+		Color color;
 
-    public:
-        Modifier(Color __color);
-        ~Modifier();
+	public:
+		Modifier(Color __color);
+		~Modifier();
 
-        // Overloaded stream insertion operator
-        friend std::ostream &operator<<(std::ostream &__os, const Modifier &__modifier);
-    };
+		// Overloaded stream insertion operator
+		friend std::ostream &operator<<(std::ostream &__os, const Modifier &__modifier);
+	};
 }

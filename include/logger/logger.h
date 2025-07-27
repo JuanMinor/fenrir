@@ -30,20 +30,20 @@
 
 namespace logger
 {
-    class Logger
-    {
-    private:
-        mutable std::mutex log_mutex;
+	class Logger
+	{
+	private:
+		mutable std::mutex log_mutex;
 
-    public:
-        Logger();
-        ~Logger();
+	public:
+		Logger();
+		~Logger();
 
-        // Logging method
-        void log(const std::string &__message, const char *__file, const uint32_t &__lineno, const LEVEL &__level) const;
-    };
+		// Logging method
+		void log(const std::string &__message, const char *__file, const uint32_t &__lineno, const LEVEL &__level) const;
+	};
 
-    // Macros for logging
+	// Macros for logging
 #define LOG Logger()
 
 #define DEBUG(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::DEBUG);

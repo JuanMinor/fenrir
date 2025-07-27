@@ -1,19 +1,19 @@
 {
-    "configurations": [
-        {
-            "name": "Linux",
-            "includePath": [
-                "${workspaceFolder}/**",
-                "/workspaces/fenrir/",
-                "${workspaceFolder}",
-                "${workspaceFolder}"
-            ],
-            "defines": [],
-            "compilerPath": "/usr/local/bin/g++",
-            "cppStandard": "gnu++23",
-            "intelliSenseMode": "${default}",
-            "configurationProvider": "ms-vscode.makefile-tools"
-        }
-    ],
-    "version": 4
+	"configurations": [
+		{
+			"name": "Linux",
+			"includePath": [
+				"${workspaceFolder}/**",
+				"/workspaces/fenrir/",
+				"${workspaceFolder}",
+				"${workspaceFolder}"
+			],
+			"defines": [],
+			"compilerPath": "/usr/local/bin/g++",
+			"cppStandard": "gnu++23",
+			"intelliSenseMode": "${default}",
+			"configurationProvider": "ms-vscode.makefile-tools"
+		}
+	],
+	"version": 4
 }

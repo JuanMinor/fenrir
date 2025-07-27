@@ -18,7 +18,7 @@ PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 
 # Function to run tests
 run_tests() {
-    (cd "$PROJECT_ROOT" && make clean test coverage)
+	(cd "$PROJECT_ROOT" && make clean test coverage)
 }
 
 # Main execution

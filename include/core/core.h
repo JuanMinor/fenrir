@@ -35,73 +35,79 @@
 // Namespace for color-related constants
 namespace color
 {
-    typedef enum
-    {
-        RESET = 0,
-        FG_BLACK = 30,
-        BG_BLACK = 40,
-        FG_RED = 31,
-        BG_RED = 41,
-        FG_GREEN = 32,
-        BG_GREEN = 42,
-        FG_YELLOW = 33,
-        BG_YELLOW = 43,
-        FG_BLUE = 34,
-        BG_BLUE = 44,
-        FG_MAGENTA = 35,
-        BG_MAGENTA = 45,
-        FG_CYAN = 36,
-        BG_CYAN = 46,
-        FG_WHITE = 37,
-        BG_WHITE = 47
-    } Color;
-}
-
-// Namespace for input/output-related constants
-namespace io
-{
-    constexpr const char *PGN_FILE = "pgn/fenrir.pgn";
-    constexpr const char *PGN_FILE_STORE = "pgn/fenrir.store.txt";
-}
-
-// Namespace for logger-related constants
-namespace logger
-{
-    constexpr const char *LOG_FILE = "logs/fenrir.log";
-    constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024; // 5 MB
-
-    typedef enum
-    {
-        DEBUG,
-        INFO,
-        WARN,
-        ERROR,
-        CRITICAL
-    } LEVEL;
+	typedef enum
+	{
+		RESET = 0,
+		FG_BLACK = 30,
+		BG_BLACK = 40,
+		FG_RED = 31,
+		BG_RED = 41,
+		FG_GREEN = 32,
+		BG_GREEN = 42,
+		FG_YELLOW = 33,
+		BG_YELLOW = 43,
+		FG_BLUE = 34,
+		BG_BLUE = 44,
+		FG_MAGENTA = 35,
+		BG_MAGENTA = 45,
+		FG_CYAN = 36,
+		BG_CYAN = 46,
+		FG_WHITE = 37,
+		BG_WHITE = 47
+	} Color;
 }
 
 // Namespace for Fenrir engine constants
 namespace fenrir
 {
-    constexpr bool DEBUG = true;
+	constexpr bool DEBUG = true;
 
-    constexpr int BOARD_SIZE = 8;
-    constexpr int BOARD_MAX_LEFT = 0;
-    constexpr int BOARD_MAX_RIGHT = 7;
+	constexpr int BOARD_SIZE = 8;
+	constexpr int BOARD_MAX_LEFT = 0;
+	constexpr int BOARD_MAX_RIGHT = 7;
 
-    constexpr int WHITE = 0;
-    constexpr int BLACK = 1;
+	constexpr int WHITE = 0;
+	constexpr int BLACK = 1;
 
-    const std::unordered_map<char, const char *> PIECE_NAMES = {
-        {'p', "pawn"},
-        {'n', "knight"},
-        {'b', "bishop"},
-        {'r', "rook"},
-        {'q', "queen"},
-        {'k', "king"}};
+	const std::unordered_map<char, const char *> PIECE_NAMES = {
+		{'p', "pawn"},
+		{'n', "knight"},
+		{'b', "bishop"},
+		{'r', "rook"},
+		{'q', "queen"},
+		{'k', "king"}};
+
+	typedef enum
+	{
+		PERMISSIVE = 0,
+		TOURNAMENT = 1,
+	} GameMode;
+}
+
+// Namespace for input/output-related constants
+namespace io
+{
+	constexpr const char *PGN_FILE = "pgn/fenrir.pgn";
+	constexpr const char *PGN_FILE_STORE = "pgn/fenrir.store.txt";
+}
+
+// Namespace for logger-related constants
+namespace logger
+{
+	constexpr const char *LOG_FILE = "logs/fenrir.log";
+	constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024; // 5 MB
+
+	typedef enum
+	{
+		DEBUG,
+		INFO,
+		WARN,
+		ERROR,
+		CRITICAL
+	} LEVEL;
 }
 
 namespace test
 {
-    static const char *CI = getenv("CI");
+	static const char *CI = getenv("CI");
 }

@@ -18,15 +18,15 @@ PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 
 # Function to clean and build the project
 build_project() {
-    echo "Cleaning and building the project..."
-    (cd "$PROJECT_ROOT" && make clean release)
+	echo "Cleaning and building the project..."
+	(cd "$PROJECT_ROOT" && make clean release)
 }
 
 # Function to run the Fenrir engine with the default FEN string
 run_engine() {
-    echo "Running the Fenrir engine..."
-    (cd "$PROJECT_ROOT" && g++ -O2 -DNDEBUG -I /workspaces/fenrir -fPIC -DFENRIR_BUILD_DLL -o bin/mainh main.cpp -Lbin/lib -lfenrir)
-    (cd "$PROJECT_ROOT" && LD_LIBRARY_PATH=bin/lib ./bin/mainh)
+	echo "Running the Fenrir engine..."
+	(cd "$PROJECT_ROOT" && g++ -O2 -DNDEBUG -I /workspaces/fenrir -fPIC -DFENRIR_BUILD_DLL -o bin/mainh main.cpp -Lbin/lib -lfenrir)
+	(cd "$PROJECT_ROOT" && LD_LIBRARY_PATH=bin/lib ./bin/mainh)
 }
 
 # Main execution

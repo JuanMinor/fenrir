@@ -1,91 +1,91 @@
 {
-    "version": "2.0.0",
-    "presentation": {
-        "echo": false,
-        "reveal": "always",
-        "focus": false,
-        "panel": "dedicated",
-        "showReuseMessage": true,
-        "clear": false
-    },
-    "tasks": [
-        {
-            "label": "Fenrir setup",
-            "dependsOn": [
-                "extensions",
-                "git",
-                "gdb",
-                "scripts",
-                "fenrir"
-            ],
-            "runOptions": {
-                "runOn": "folderOpen"
-            }
-        },
-        {
-            "label": "extensions",
-            "type": "shell",
-            "isBackground": false,
-            "command": [
-                "code --install-extension streetsidesoftware.code-spell-checker",
-                "code --install-extension ms-vscode.cpptools",
-                "code --install-extension ms-vscode.makefile-tools",
-                "code --install-extension esbenp.prettier-vscode",
-                "code --install-extension Gruntfuggly.todo-tree",
-                "code --install-extension eamodio.gitlens",
-                "code --install-extension ms-vscode.cpptools-extension-pack"
-            ],
-            "icon": {
-                "id": "symbol-event",
-                "color": "terminal.ansiYellow"
-            }
-        },
-        {
-            "label": "gdb",
-            "type": "shell",
-            "isBackground": true,
-            "command": [
-                "/bin/zsh",
-            ],
-            "icon": {
-                "id": "bug",
-                "color": "terminal.ansiCyan"
-            }
-        },
-        {
-            "label": "git",
-            "type": "shell",
-            "isBackground": true,
-            "command": [
-                "/bin/zsh",
-            ],
-            "icon": {
-                "id": "github",
-                "color": "terminal.ansiWhite"
-            }
-        },
-        {
-            "label": "fenrir",
-            "type": "shell",
-            "isBackground": true,
-            "command": "/bin/zsh",
-            "icon": {
-                "id": "rocket",
-                "color": "terminal.ansiRed"
-            }
-        },
-        {
-            "label": "scripts",
-            "type": "shell",
-            "isBackground": true,
-            "command": "/bin/zsh",
-            "options": {
-                "cwd": "/workspaces/fenrir/scripts"
-            },
-            "icon": {
-                "id": "code",
-                "color": "terminal.ansiGreen"
-            }
-        },
-    ]
+	"version": "2.0.0",
+	"presentation": {
+		"echo": false,
+		"reveal": "always",
+		"focus": false,
+		"panel": "dedicated",
+		"showReuseMessage": true,
+		"clear": false
+	},
+	"tasks": [
+		{
+			"label": "Fenrir setup",
+			"dependsOn": [
+				"extensions",
+				"git",
+				"gdb",
+				"scripts",
+				"fenrir"
+			],
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
+		},
+		{
+			"label": "extensions",
+			"type": "shell",
+			"isBackground": false,
+			"command": [
+				"code --install-extension streetsidesoftware.code-spell-checker",
+				"code --install-extension ms-vscode.cpptools",
+				"code --install-extension ms-vscode.makefile-tools",
+				"code --install-extension esbenp.prettier-vscode",
+				"code --install-extension Gruntfuggly.todo-tree",
+				"code --install-extension eamodio.gitlens",
+				"code --install-extension ms-vscode.cpptools-extension-pack"
+			],
+			"icon": {
+				"id": "symbol-event",
+				"color": "terminal.ansiYellow"
+			}
+		},
+		{
+			"label": "gdb",
+			"type": "shell",
+			"isBackground": true,
+			"command": [
+				"/bin/zsh",
+			],
+			"icon": {
+				"id": "bug",
+				"color": "terminal.ansiCyan"
+			}
+		},
+		{
+			"label": "git",
+			"type": "shell",
+			"isBackground": true,
+			"command": [
+				"/bin/zsh",
+			],
+			"icon": {
+				"id": "github",
+				"color": "terminal.ansiWhite"
+			}
+		},
+		{
+			"label": "fenrir",
+			"type": "shell",
+			"isBackground": true,
+			"command": "/bin/zsh",
+			"icon": {
+				"id": "rocket",
+				"color": "terminal.ansiRed"
+			}
+		},
+		{
+			"label": "scripts",
+			"type": "shell",
+			"isBackground": true,
+			"command": "/bin/zsh",
+			"options": {
+				"cwd": "/workspaces/fenrir/scripts"
+			},
+			"icon": {
+				"id": "code",
+				"color": "terminal.ansiGreen"
+			}
+		},
+	]
 }
