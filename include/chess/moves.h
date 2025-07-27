@@ -27,26 +27,26 @@
 
 namespace fenrir
 {
-    class Moves
-    {
-        Moves();
-        ~Moves();
-        Moves(const Moves &) = delete;
-        Moves &operator=(const Moves &) = delete;
+	class Moves
+	{
+		Moves();
+		~Moves();
+		Moves(const Moves &) = delete;
+		Moves &operator=(const Moves &) = delete;
 
-        void __bishop__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
-        void __capture__(const Piece *__piece, const Piece *__target_piece, std::vector<std::pair<const std::string, const std::string>> &__moves);
-        void __king__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
-        void __knight__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
-        void __log_generated_moves__(const Piece *__piece, const std::vector<std::pair<const std::string, const std::string>> &__moves) const;
-        void __pawn__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
-        void __queen__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
-        void __rook__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
-        void __slide__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves, const int8_t direction_vectors[][2], size_t num_directions, bool __single_depth = false);
+		void __bishop__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
+		void __capture__(const Piece *__piece, const Piece *__target_piece, std::vector<std::pair<const std::string, const std::string>> &__moves);
+		void __king__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
+		void __knight__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
+		void __log_generated_moves__(const Piece *__piece, const std::vector<std::pair<const std::string, const std::string>> &__moves) const;
+		void __pawn__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
+		void __queen__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
+		void __rook__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
+		void __slide__(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves, const int8_t direction_vectors[][2], size_t num_directions, bool __single_depth = false);
 
-    public:
-        static Moves &get_instance();
+	public:
+		static Moves &get_instance();
 
-        void generate_moves(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
-    };
+		void generate_moves(const Piece *__piece, const Board *__board, std::vector<std::pair<const std::string, const std::string>> &__moves);
+	};
 }

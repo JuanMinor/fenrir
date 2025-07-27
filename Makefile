@@ -4,12 +4,12 @@
 # This Makefile builds the Fenrir chess engine shared library and runs tests.
 # 
 # Main targets:
-#   make          - Build debug version of shared library
+#   make		  - Build debug version of shared library
 #   make release  - Build optimized release version  
-#   make test     - Run unit tests (debug mode only)
+#   make test	 - Run unit tests (debug mode only)
 #   make coverage - Generate test coverage report
-#   make clean    - Clean all build artifacts
-#   make help     - Show detailed help
+#   make clean	- Clean all build artifacts
+#   make help	 - Show detailed help
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -29,11 +29,11 @@ BUILD_MODE ?= debug
 
 # Mode-specific flags
 ifeq ($(BUILD_MODE),release)
-    # Release: optimized, no debug symbols, assertions disabled
-    CXXFLAGS = $(COMMON_FLAGS) -O2 -DNDEBUG
+	# Release: optimized, no debug symbols, assertions disabled
+	CXXFLAGS = $(COMMON_FLAGS) -O2 -DNDEBUG
 else
-    # Debug: debug symbols, no optimization, assertions enabled
-    CXXFLAGS = $(COMMON_FLAGS) -g
+	# Debug: debug symbols, no optimization, assertions enabled
+	CXXFLAGS = $(COMMON_FLAGS) -g
 endif
 
 # Test-specific flags (adds coverage instrumentation)
@@ -65,15 +65,15 @@ PGN_FILES = pgn/fenrir.pgn pgn/fenrir.store.txt
 
 # All source files for the main library
 SRC_FILES = src/chess/board.cpp \
-           src/chrono/chrono.cpp \
-           src/engine/engine.cpp \
-           src/chess/fen.cpp \
-           src/logger/logger.cpp \
-           src/modifier/modifier.cpp \
-           src/chess/moves.cpp \
-           src/pgn/pgn.cpp \
-           src/chess/piece.cpp \
-           src/utils/utils.cpp
+		   src/chrono/chrono.cpp \
+		   src/engine/engine.cpp \
+		   src/chess/fen.cpp \
+		   src/logger/logger.cpp \
+		   src/modifier/modifier.cpp \
+		   src/chess/moves.cpp \
+		   src/pgn/pgn.cpp \
+		   src/chess/piece.cpp \
+		   src/utils/utils.cpp
 
 # Convert source files to object file paths
 OBJECT_FILES = $(SRC_FILES:src/%.cpp=$(BUILD_DIR)/%.o)
@@ -83,15 +83,15 @@ SHARED_LIB = $(LIB_DIR)/libfenrir.so
 
 # Test source files
 TEST_SRC_FILES = tests/unit/fen.test.cpp \
-                tests/unit/board.test.cpp \
-                tests/unit/piece.test.cpp \
-                tests/unit/engine.test.cpp \
-                tests/unit/utils.test.cpp \
-                tests/unit/moves.test.cpp \
-                tests/unit/logger.test.cpp \
-                tests/unit/chrono.test.cpp \
-                tests/unit/modifier.test.cpp \
-                tests/unit/pgn.test.cpp
+				tests/unit/board.test.cpp \
+				tests/unit/piece.test.cpp \
+				tests/unit/engine.test.cpp \
+				tests/unit/utils.test.cpp \
+				tests/unit/moves.test.cpp \
+				tests/unit/logger.test.cpp \
+				tests/unit/chrono.test.cpp \
+				tests/unit/modifier.test.cpp \
+				tests/unit/pgn.test.cpp
 
 # Test executable
 TEST_EXECUTABLE = $(TEST_BUILD_DIR)/tests
@@ -175,28 +175,28 @@ help:
 	@echo "======================================"
 	@echo ""
 	@echo "📋 Available targets:"
-	@echo "  all              - Build shared library (default: debug mode)"
-	@echo "  debug            - Build in debug mode (symbols + assertions)"
-	@echo "  release          - Build in release mode (optimized + stripped)"
-	@echo "  test             - Run unit tests (debug mode only)"
-	@echo "  coverage         - Generate test coverage report (debug mode only)"
-	@echo "  clean            - Remove all build artifacts"
-	@echo "  help             - Show this help message"
+	@echo "  all			  - Build shared library (default: debug mode)"
+	@echo "  debug			- Build in debug mode (symbols + assertions)"
+	@echo "  release		  - Build in release mode (optimized + stripped)"
+	@echo "  test			 - Run unit tests (debug mode only)"
+	@echo "  coverage		 - Generate test coverage report (debug mode only)"
+	@echo "  clean			- Remove all build artifacts"
+	@echo "  help			 - Show this help message"
 	@echo ""
 	@echo "🔧 Build modes:"
 	@echo "  Debug   : -g (debug symbols), assertions enabled"
 	@echo "  Release : -O2 (optimized), -DNDEBUG (assertions disabled)"
 	@echo ""
 	@echo "📁 Output locations:"
-	@echo "  Library     : $(SHARED_LIB)"
-	@echo "  Tests       : $(TEST_EXECUTABLE)"
+	@echo "  Library	 : $(SHARED_LIB)"
+	@echo "  Tests	   : $(TEST_EXECUTABLE)"
 	@echo "  Debug		 : $(DEBUG_DIR)"
-	@echo "  Coverage    : $(COVERAGE_REPORT)/index.html"
+	@echo "  Coverage	: $(COVERAGE_REPORT)/index.html"
 	@echo ""
 	@echo "⚠️  Coverage Policy: 100% test coverage is REQUIRED!"
-	@echo "     - 'make coverage' will fail if coverage < 100%"
-	@echo "     - Coverage table shows exact uncovered line numbers"
-	@echo "     - This enforces code quality as the project grows"
+	@echo "	 - 'make coverage' will fail if coverage < 100%"
+	@echo "	 - Coverage table shows exact uncovered line numbers"
+	@echo "	 - This enforces code quality as the project grows"
 	@echo ""
 
 # ------------------------------------------------------------------------------
@@ -213,8 +213,8 @@ ifeq ($(BUILD_MODE),release)
 	@echo "   which can lead to unreliable test results and poor debugging."
 	@echo ""
 	@echo "💡 Solution: Use debug mode for testing:"
-	@echo "   make test              (uses debug mode by default)"
-	@echo "   make coverage          (uses debug mode by default)"  
+	@echo "   make test			  (uses debug mode by default)"
+	@echo "   make coverage		  (uses debug mode by default)"  
 	@echo "   make BUILD_MODE=debug test"
 	@echo ""
 	@exit 1

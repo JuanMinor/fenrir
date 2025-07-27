@@ -1,11 +1,11 @@
 {
-    "recommendations": [
-        "streetsidesoftware.code-spell-checker",
-        "ms-vscode.cpptools",
-        "ms-vscode.makefile-tools",
-        "esbenp.prettier-vscode",
-        "Gruntfuggly.todo-tree",
-        "eamodio.gitlens",
-        "ms-vscode.cpptools-extension-pack"
-    ]
+	"recommendations": [
+		"streetsidesoftware.code-spell-checker",
+		"ms-vscode.cpptools",
+		"ms-vscode.makefile-tools",
+		"esbenp.prettier-vscode",
+		"Gruntfuggly.todo-tree",
+		"eamodio.gitlens",
+		"ms-vscode.cpptools-extension-pack"
+	]
 }
