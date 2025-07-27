@@ -19,175 +19,285 @@
 
 namespace fenrir
 {
-    Fen::Fen(const std::string &__fen)
-    {
-        if (__fen.empty())
-        {
-            LOG_THROW_ERROR("FEN string cannot be empty", true);
-        }
-        const std::regex fen_regex(
-            "^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+) [wb] (-|[KQkq]+) (-|[a-h][36]) (\\d+) (\\d+)$");
-        if (!std::regex_match(__fen, fen_regex))
-        {
-            LOG_THROW_ERROR("Invalid FEN string", true);
-        }
+	Fen::Fen(const std::string &__fen, GameMode __game_mode) : game_mode(__game_mode)
+	{
+		if (__fen.empty())
+		{
+			LOG_THROW_ERROR("FEN string cannot be empty", true);
+		}
+		const std::regex fen_regex(
+			"^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+) [wb] (-|[KQkq]+) (-|[a-h][36]) (\\d+) (\\d+)$");
+		if (!std::regex_match(__fen, fen_regex))
+		{
+			LOG_THROW_ERROR("Invalid FEN string", true);
+		}
 
-        // Split the FEN string into components
-        std::vector<std::string> tokens;
-        this->__split__(__fen, " ", tokens);
+		std::vector<std::string> tokens;
+		this->__split__(__fen, " ", tokens);
 
-        // Validate the placement section
-        this->__validate_placement__(tokens[0]);
+		this->__validate_placement__(tokens[0]);
 
-        // Assign components to member variables
-        this->placement = tokens[0];
-        this->color = (tokens[1] == "w" || tokens[1] == "W") ? WHITE : BLACK;
-        this->castling = tokens[2];
-        this->en_passant = tokens[3];
-        this->halfmove_clock = static_cast<uint32_t>(std::stoi(tokens[4]));
-        this->fullmoves = static_cast<uint32_t>(std::stoi(tokens[5]));
+		this->placement = tokens[0];
+		this->color = (tokens[1] == "w" || tokens[1] == "W") ? WHITE : BLACK;
+		this->castling = tokens[2];
+		this->en_passant = tokens[3];
+		this->halfmove_clock = static_cast<uint32_t>(std::stoi(tokens[4]));
+		this->fullmoves = static_cast<uint32_t>(std::stoi(tokens[5]));
 
-        logger::INFO("FEN initialized with: " + __fen);
-    }
+		if (game_mode == GameMode::TOURNAMENT)
+		{
+			if (this->halfmove_clock > 100)
+			{
+				LOG_THROW_ERROR("Invalid FEN: halfmove clock cannot exceed 100 (50-move rule)", true);
+			}
+			if (this->fullmoves == 0)
+			{
+				LOG_THROW_ERROR("Invalid FEN: fullmoves must be at least 1", true);
+			}
+		}
 
-    Fen::~Fen() {}
+		const std::string mode_str = (game_mode == GameMode::PERMISSIVE) ? "PERMISSIVE" : "TOURNAMENT";
+		logger::INFO("FEN initialized with " + mode_str + " mode: " + __fen);
+	}
 
-    void Fen::__split__(const std::string &__fen, const std::string &__delimiters, std::vector<std::string> &__tokens) const
-    {
-        __tokens.clear();
-        std::istringstream iss(__fen);
-        std::string token;
+	Fen::~Fen() {}
 
-        while (std::getline(iss, token, __delimiters[0])) // Assuming delimiter is a single char
-        {
-            __tokens.emplace_back(token);
-        }
-        return;
-    }
+	void Fen::__split__(const std::string &__fen, const std::string &__delimiters, std::vector<std::string> &__tokens) const
+	{
+		__tokens.clear();
+		std::istringstream iss(__fen);
+		std::string token;
 
-    void Fen::__validate_placement__(const std::string &__placement) const
-    {
-        int squares = 0;
-        for (char c : __placement)
-        {
-            if (isdigit(c))
-            {
-                squares += c - '0';
-            }
-            else if (isalpha(c))
-            {
-                squares++;
-            }
-        }
-        if (squares != 64)
-        {
-            LOG_THROW_ERROR("Invalid FEN string: placement section does not represent 64 squares", true);
-        }
-    }
+		while (std::getline(iss, token, __delimiters[0]))
+		{
+			__tokens.emplace_back(token);
+		}
+		return;
+	}
 
-    // Getters for FEN components
-    std::string Fen::get_placement(void) const
-    {
-        return this->placement;
-    }
+	void Fen::__validate_chess_rules__(const std::string &__placement) const
+	{
+		std::unordered_map<char, uint8_t> piece_counts = {
+			{'K', 0}, {'k', 0}, {'Q', 0}, {'q', 0}, {'R', 0}, {'r', 0}, {'B', 0}, {'b', 0}, {'N', 0}, {'n', 0}, {'P', 0}, {'p', 0}};
 
-    std::string Fen::get_castling(void) const
-    {
-        return this->castling;
-    }
+		for (char c : __placement)
+		{
+			if (isalpha(c))
+			{
+				if (piece_counts.find(c) != piece_counts.end())
+				{
+					piece_counts[c]++;
+				}
+			}
+		}
 
-    std::string Fen::get_en_passant(void) const
-    {
-        return this->en_passant;
-    }
+		if (!utils::__are_chess_piece_count_rules_valid__(piece_counts))
+		{
+			LOG_THROW_ERROR("FEN placement does not comply with chess piece count rules", true);
+		}
 
-    uint8_t Fen::get_color(void) const
-    {
-        return this->color;
-    }
+		std::vector<std::string> ranks;
+		this->__split__(__placement, "/", ranks);
 
-    uint32_t Fen::get_halfmove_clock(void) const
-    {
-        return this->halfmove_clock;
-    }
+		// Additional tournament-level validations
+		this->__validate_pawn_placement__(ranks);
+		this->__validate_king_safety__(ranks);
+	}
 
-    uint32_t Fen::get_fullmoves(void) const
-    {
-        return this->fullmoves;
-    }
+	void Fen::__validate_pawn_placement__(const std::vector<std::string> &__ranks) const
+	{
+		for (char c : __ranks[0])
+		{
+			if (c == 'P')
+			{
+				LOG_THROW_ERROR("Invalid FEN: white pawns must promote upon reaching 8th rank", true);
+			}
+		}
 
-    // Setters for FEN components
-    void Fen::set_placement(const std::string &__placement)
-    {
-        std::regex placement_regex(
-            "^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+)$");
+		for (char c : __ranks[7])
+		{
+			if (c == 'p')
+			{
+				LOG_THROW_ERROR("Invalid FEN: black pawns must promote upon reaching 1st rank", true);
+			}
+		}
+	}
 
-        if (!std::regex_match(__placement, placement_regex))
-        {
-            LOG_THROW_ERROR("Invalid placement section: " + __placement, true);
-        }
+	void Fen::__validate_king_safety__(const std::vector<std::string> &__ranks) const
+	{
+		int white_king_rank = -1, white_king_file = -1;
+		int black_king_rank = -1, black_king_file = -1;
 
-        this->__validate_placement__(__placement);
-        this->placement = __placement;
-        return;
-    }
+		// Find king positions
+		for (int rank = 0; rank < fenrir::BOARD_SIZE; rank++)
+		{
+			int file = 0;
+			for (char c : __ranks[rank])
+			{
+				if (isdigit(c))
+				{
+					file += c - '0';
+					continue;
+				}
+				if (c == 'K')
+				{
+					white_king_rank = rank;
+					white_king_file = file;
+					file++;
+					continue;
+				}
+				if (c == 'k')
+				{
+					black_king_rank = rank;
+					black_king_file = file;
+					file++;
+					continue;
+				}
+				file++;
+			}
+		}
 
-    void Fen::set_castling(const std::string &__castling)
-    {
-        if (__castling != "-" && !std::regex_match(__castling, std::regex("^[KQkq]+$")))
-        {
-            LOG_THROW_ERROR("Invalid castling rights: " + __castling, true);
-        }
-        this->castling = __castling;
-        return;
-    }
+		uint8_t rank_diff = abs(white_king_rank - black_king_rank);
+		uint8_t file_diff = abs(white_king_file - black_king_file);
 
-    void Fen::set_en_passant(const std::string &__en_passant)
-    {
-        if (__en_passant != "-" && !std::regex_match(__en_passant, std::regex("^[a-h][36]$")))
-        {
-            LOG_THROW_ERROR("Invalid en passant square: " + __en_passant, true);
-        }
-        this->en_passant = __en_passant;
-        return;
-    }
+		if (rank_diff <= 1 && file_diff <= 1 && !(rank_diff == 0 && file_diff == 0))
+		{
+			LOG_THROW_ERROR("Invalid FEN: kings cannot be adjacent to each other", true);
+		}
+	}
 
-    void Fen::set_color(const uint8_t &__color)
-    {
-        if (__color != WHITE && __color != BLACK)
-        {
-            LOG_THROW_ERROR("Invalid color value: " + std::to_string(__color), true);
-        }
-        this->color = __color;
-        return;
-    }
+	void Fen::__validate_placement__(const std::string &__placement) const
+	{
+		int squares = 0;
+		for (char c : __placement)
+		{
+			if (isdigit(c))
+			{
+				squares += c - '0';
+			}
+			else if (isalpha(c))
+			{
+				squares++;
+			}
+		}
+		if (squares != 64)
+		{
+			LOG_THROW_ERROR("Invalid FEN string: placement section does not represent 64 squares", true);
+		}
 
-    void Fen::set_halfmove_clock(const uint32_t &__halfmove_clock)
-    {
-        this->halfmove_clock = __halfmove_clock;
-        return;
-    }
+		if (this->game_mode == GameMode::TOURNAMENT)
+		{
+			this->__validate_chess_rules__(__placement);
+		}
+	}
 
-    void Fen::set_fullmoves(const uint32_t &__fullmoves)
-    {
-        if (__fullmoves == 0)
-        {
-            LOG_THROW_ERROR("Fullmoves must be at least 1: " + std::to_string(__fullmoves), true);
-        }
-        this->fullmoves = __fullmoves;
-        return;
-    }
+	// Getters for FEN components
+	std::string Fen::get_placement(void) const
+	{
+		return this->placement;
+	}
 
-    std::string Fen::generate_fen(void) const
-    {
-        std::ostringstream oss;
-        oss << this->placement << " "
-            << (this->color == WHITE ? "w" : "b") << " "
-            << this->castling << " "
-            << (this->en_passant.empty() ? "-" : this->en_passant) << " "
-            << this->halfmove_clock << " "
-            << this->fullmoves;
-        return oss.str();
-    }
+	std::string Fen::get_castling(void) const
+	{
+		return this->castling;
+	}
+
+	std::string Fen::get_en_passant(void) const
+	{
+		return this->en_passant;
+	}
+
+	uint8_t Fen::get_color(void) const
+	{
+		return this->color;
+	}
+
+	uint32_t Fen::get_halfmove_clock(void) const
+	{
+		return this->halfmove_clock;
+	}
+
+	uint32_t Fen::get_fullmoves(void) const
+	{
+		return this->fullmoves;
+	}
+
+	// Setters for FEN components
+	void Fen::set_placement(const std::string &__placement)
+	{
+		std::regex placement_regex(
+			"^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+)$");
+
+		if (!std::regex_match(__placement, placement_regex))
+		{
+			LOG_THROW_ERROR("Invalid placement section: " + __placement, true);
+		}
+
+		this->__validate_placement__(__placement);
+		this->placement = __placement;
+		return;
+	}
+
+	void Fen::set_castling(const std::string &__castling)
+	{
+		if (__castling != "-" && !std::regex_match(__castling, std::regex("^[KQkq]+$")))
+		{
+			LOG_THROW_ERROR("Invalid castling rights: " + __castling, true);
+		}
+		this->castling = __castling;
+		return;
+	}
+
+	void Fen::set_en_passant(const std::string &__en_passant)
+	{
+		if (__en_passant != "-" && !std::regex_match(__en_passant, std::regex("^[a-h][36]$")))
+		{
+			LOG_THROW_ERROR("Invalid en passant square: " + __en_passant, true);
+		}
+		this->en_passant = __en_passant;
+		return;
+	}
+
+	void Fen::set_color(const uint8_t &__color)
+	{
+		if (__color != WHITE && __color != BLACK)
+		{
+			LOG_THROW_ERROR("Invalid color value: " + std::to_string(__color), true);
+		}
+		this->color = __color;
+		return;
+	}
+
+	void Fen::set_halfmove_clock(const uint32_t &__halfmove_clock)
+	{
+		if (this->game_mode == GameMode::TOURNAMENT && __halfmove_clock > 100)
+		{
+			LOG_THROW_ERROR("Invalid halfmove clock: cannot exceed 100 in tournament mode (50-move rule)", true);
+		}
+		this->halfmove_clock = __halfmove_clock;
+		return;
+	}
+
+	void Fen::set_fullmoves(const uint32_t &__fullmoves)
+	{
+		if (__fullmoves == 0)
+		{
+			LOG_THROW_ERROR("Fullmoves must be at least 1: " + std::to_string(__fullmoves), true);
+		}
+		this->fullmoves = __fullmoves;
+		return;
+	}
+
+	std::string Fen::generate_fen(void) const
+	{
+		std::ostringstream oss;
+		oss << this->placement << " "
+			<< (this->color == WHITE ? "w" : "b") << " "
+			<< this->castling << " "
+			<< (this->en_passant.empty() ? "-" : this->en_passant) << " "
+			<< this->halfmove_clock << " "
+			<< this->fullmoves;
+		return oss.str();
+	}
 
 }

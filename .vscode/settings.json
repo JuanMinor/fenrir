@@ -1,11 +1,10 @@
 {
 	"C_Cpp.autocompleteAddParentheses": true,
-	"C_Cpp.default.cppStandard": "c++23",
+	"C_Cpp.default.cppStandard": "c++20",
 	"C_Cpp.default.intelliSenseMode": "clang-x64",
 	"C_Cpp.errorSquiggles": "enabled",
 	"C_Cpp.inlayHints.parameterNames.suppressWhenArgumentContainsName": false,
 	"C_Cpp.inlayHints.parameterNames.enabled": true,
-	"editor.formatOnSave": true,
 	"files.associations": {
 		"array": "cpp",
 		"atomic": "cpp",
@@ -78,6 +77,44 @@
 		"cinttypes": "cpp",
 		"chrono": "cpp"
 	},
+	"editor.formatOnSave": true,
 	"editor.fontLigatures": true,
-	"editor.fontFamily": "'JetBrains Mono', 'Source Code Pro', Consolas, 'Courier New', monospace"
+	"editor.fontFamily": "'JetBrains Mono'",
+	"editor.fontWeight": "500",
+	"editor.insertSpaces": false,
+	"editor.tabSize": 4,
+	"editor.detectIndentation": false,
+	"editor.useTabStops": true,
+	"files.insertFinalNewline": true,
+	"files.trimTrailingWhitespace": true,
+	"[*]": {
+		"editor.insertSpaces": false,
+		"editor.tabSize": 4
+	},
+	"editor.tokenColorCustomizations": {
+		"textMateRules": [
+			{
+				"scope": [
+					"source",
+					"text",
+					"comment",
+					"string",
+					"constant",
+					"entity",
+					"keyword",
+					"markup",
+					"meta",
+					"storage",
+					"support",
+					"variable"
+				],
+				"settings": {
+					"fontStyle": "italic"
+				}
+			}
+		]
+	},
+	"terminal.integrated.fontFamily": "'JetBrains Mono'",
+	"terminal.integrated.fontWeight": "500",
+	"terminal.integrated.fontSize": 14,
 }

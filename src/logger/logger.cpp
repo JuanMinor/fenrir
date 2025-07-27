@@ -19,59 +19,59 @@
 
 namespace logger
 {
-    // Mapping of log levels to their string representations
-    std::unordered_map<uint8_t, const char *> level_types = {
-        {DEBUG, "[DEBUG] - "},
-        {INFO, "[INFO] - "},
-        {WARN, "[WARN] - "},
-        {ERROR, "[ERROR] - "},
-        {CRITICAL, "[CRITICAL] - "}};
+	// Mapping of log levels to their string representations
+	std::unordered_map<uint8_t, const char *> level_types = {
+		{DEBUG, "[DEBUG] - "},
+		{INFO, "[INFO] - "},
+		{WARN, "[WARN] - "},
+		{ERROR, "[ERROR] - "},
+		{CRITICAL, "[CRITICAL] - "}};
 
-    void rotate_logs()
-    {
-        namespace fs = std::filesystem;
+	void rotate_logs()
+	{
+		namespace fs = std::filesystem;
 
-        if (fs::exists(LOG_FILE) && fs::file_size(LOG_FILE) > MAX_LOG_SIZE)
-        {
-            std::string backup_file = std::string(LOG_FILE) + ".1";
-            if (fs::exists(backup_file))
-            {
-                fs::remove(backup_file);
-            }
-            fs::rename(LOG_FILE, backup_file);
-        }
-    }
+		if (fs::exists(LOG_FILE) && fs::file_size(LOG_FILE) > MAX_LOG_SIZE)
+		{
+			std::string backup_file = std::string(LOG_FILE) + ".1";
+			if (fs::exists(backup_file))
+			{
+				fs::remove(backup_file);
+			}
+			fs::rename(LOG_FILE, backup_file);
+		}
+	}
 
-    Logger::Logger() {}
-    Logger::~Logger() {}
+	Logger::Logger() {}
+	Logger::~Logger() {}
 
-    void Logger::log(const std::string &__message, const char *__file, const uint32_t &__lineno, const LEVEL &__level) const
-    {
-        if (__level == DEBUG && !fenrir::DEBUG)
-        {
-            return;
-        }
+	void Logger::log(const std::string &__message, const char *__file, const uint32_t &__lineno, const LEVEL &__level) const
+	{
+		if (__level == DEBUG && !fenrir::DEBUG)
+		{
+			return;
+		}
 
-        auto timestamp = chrono::Chrono().get_time_with_format("%a %b %d, %Y @ %H:%M:%S");
+		auto timestamp = chrono::Chrono().get_time_with_format("%a %b %d, %Y @ %H:%M:%S");
 
-        std::lock_guard<std::mutex> guard(this->log_mutex);
+		std::lock_guard<std::mutex> guard(this->log_mutex);
 
-        rotate_logs();
+		rotate_logs();
 
-        std::ofstream log_file(LOG_FILE, std::ios_base::app);
-        if (!log_file)
-        {
-            return;
-        }
+		std::ofstream log_file(LOG_FILE, std::ios_base::app);
+		if (!log_file)
+		{
+			return;
+		}
 
-        try
-        {
-            const char *type = level_types.at(__level);
-            log_file << "[" << timestamp << "] [" << __file << " @ Line " << __lineno << "]::" << type << __message << std::endl;
-        }
-        catch (const std::exception &e)
-        {
-            // Handle any exceptions that occur during logging
-        }
-    }
+		try
+		{
+			const char *type = level_types.at(__level);
+			log_file << "[" << timestamp << "] [" << __file << " @ Line " << __lineno << "]::" << type << __message << std::endl;
+		}
+		catch (const std::exception &e)
+		{
+			// Handle any exceptions that occur during logging
+		}
+	}
 }

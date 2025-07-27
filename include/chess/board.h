@@ -31,31 +31,31 @@
 
 namespace fenrir
 {
-    class Board
-    {
-    private:
-        std::vector<std::vector<Piece *>> board;
-        std::string castling;
-        std::string en_passant;
-        uint8_t color;
-        uint8_t halfmove_clock;
-        uint8_t fullmoves;
-        Fen fen;
+	class Board
+	{
+	private:
+		std::vector<std::vector<Piece *>> board;
+		std::string castling;
+		std::string en_passant;
+		uint8_t color;
+		uint8_t halfmove_clock;
+		uint8_t fullmoves;
+		Fen fen;
 
-        void __build_board__(const std::string &__placement);
-        std::string __generate_placement_from_board__(void) const;
-        void __log_piece_action__(const std::string &__action, const Piece *__piece, const std::string &__position, const std::string &__emoji);
+		void __build_board__(const std::string &__placement);
+		std::string __generate_placement_from_board__(void) const;
+		void __log_piece_action__(const std::string &__action, const Piece *__piece, const std::string &__position, const std::string &__emoji);
 
-    public:
-        Board(const std::string &__fen);
-        ~Board();
+	public:
+		Board(const std::string &__fen);
+		~Board();
 
-        // Accessors and mutators
-        std::vector<std::vector<Piece *>> get_board(void) const;
-        std::string get_fen(void);
-        const std::string get_en_passant(void) const;
-        Piece *get_piece(const uint8_t &__rank, const uint8_t &__file) const;
-        void move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file);
-        void print(void) const;
-    };
+		// Accessors and mutators
+		std::vector<std::vector<Piece *>> get_board(void) const;
+		std::string get_fen(void);
+		const std::string get_en_passant(void) const;
+		Piece *get_piece(const uint8_t &__rank, const uint8_t &__file) const;
+		void move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file);
+		void print(void) const;
+	};
 }
