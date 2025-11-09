@@ -32,7 +32,17 @@ echo "🧪 Running tests..."
 bint/unit/tests
 
 # Generate coverage data
-lcov --capture --directory . --output-file "$COVERAGE_INFO" 2>/dev/null
+# Configuration is loaded from .lcovrc (disables checksums for gcov 15.x compatibility)
+# --ignore-errors: gcov 15.x compatibility issues with lcov 2.x:
+#   - inconsistent: Format/version mismatches between gcov and lcov
+#   - mismatch: Line number discrepancies in intermediate format
+#   - negative: Invalid hit counts in system headers
+#   - count: Hit count calculation issues in C++15.x STL
+# This approach combines:
+#   1. Config file (.lcovrc) for reusable settings (checksum=0)
+#   2. Targeted error suppression for gcov 15.x specific format issues
+# These errors occur in system headers, not project code, so suppression is safe.
+lcov --config-file .lcovrc --capture --directory . --output-file "$COVERAGE_INFO" --ignore-errors inconsistent,mismatch,negative,count 2>/dev/null
 
 # Filter to only include project source files
 lcov --extract "$COVERAGE_INFO" '*/src/*' --output-file "$COVERAGE_INFO.filtered" 2>/dev/null
