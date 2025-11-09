@@ -45,14 +45,14 @@ namespace logger
 	Logger::Logger() {}
 	Logger::~Logger() {}
 
-	void Logger::log(const std::string &__message, const char *__file, const uint32_t &__lineno, const LEVEL &__level) const
+	void Logger::log(const std::string &message, const char *file, const uint32_t &lineNumber, const LEVEL &level) const
 	{
-		if (__level == DEBUG && !fenrir::DEBUG)
+		if (level == DEBUG && !fenrir::DEBUG)
 		{
 			return;
 		}
 
-		auto timestamp = chrono::Chrono().get_time_with_format("%a %b %d, %Y @ %H:%M:%S");
+		auto timestamp = chrono::Chrono().getTimeWithFormat("%a %b %d, %Y @ %H:%M:%S");
 
 		std::lock_guard<std::mutex> guard(this->log_mutex);
 
@@ -66,8 +66,8 @@ namespace logger
 
 		try
 		{
-			const char *type = level_types.at(__level);
-			log_file << "[" << timestamp << "] [" << __file << " @ Line " << __lineno << "]::" << type << __message << std::endl;
+			const char *type = level_types.at(level);
+			log_file << "[" << timestamp << "] [" << file << " @ Line " << lineNumber << "]::" << type << message << std::endl;
 		}
 		catch (const std::exception &e)
 		{

@@ -19,23 +19,23 @@
 
 namespace fenrir
 {
-	Fen::Fen(const std::string &__fen, GameMode __game_mode) : game_mode(__game_mode)
+	Fen::Fen(const std::string &fenString, GameMode gameMode) : game_mode(gameMode)
 	{
-		if (__fen.empty())
+		if (fenString.empty())
 		{
 			LOG_THROW_ERROR("FEN string cannot be empty", true);
 		}
 		const std::regex fen_regex(
 			"^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+) [wb] (-|[KQkq]+) (-|[a-h][36]) (\\d+) (\\d+)$");
-		if (!std::regex_match(__fen, fen_regex))
+		if (!std::regex_match(fenString, fen_regex))
 		{
 			LOG_THROW_ERROR("Invalid FEN string", true);
 		}
 
 		std::vector<std::string> tokens;
-		this->__split__(__fen, " ", tokens);
+		this->splitString(fenString, " ", tokens);
 
-		this->__validate_placement__(tokens[0]);
+		this->validatePlacement(tokens[0]);
 
 		this->placement = tokens[0];
 		this->color = (tokens[1] == "w" || tokens[1] == "W") ? WHITE : BLACK;
@@ -57,30 +57,30 @@ namespace fenrir
 		}
 
 		const std::string mode_str = (game_mode == GameMode::PERMISSIVE) ? "PERMISSIVE" : "TOURNAMENT";
-		logger::INFO("FEN initialized with " + mode_str + " mode: " + __fen);
+		logger::INFO("FEN initialized with " + mode_str + " mode: " + fenString);
 	}
 
 	Fen::~Fen() {}
 
-	void Fen::__split__(const std::string &__fen, const std::string &__delimiters, std::vector<std::string> &__tokens) const
+	void Fen::splitString(const std::string &fenString, const std::string &delimiters, std::vector<std::string> &tokens) const
 	{
-		__tokens.clear();
-		std::istringstream iss(__fen);
+		tokens.clear();
+		std::istringstream iss(fenString);
 		std::string token;
 
-		while (std::getline(iss, token, __delimiters[0]))
+		while (std::getline(iss, token, delimiters[0]))
 		{
-			__tokens.emplace_back(token);
+			tokens.emplace_back(token);
 		}
 		return;
 	}
 
-	void Fen::__validate_chess_rules__(const std::string &__placement) const
+	void Fen::validateChessRules(const std::string &placement) const
 	{
 		std::unordered_map<char, uint8_t> piece_counts = {
 			{'K', 0}, {'k', 0}, {'Q', 0}, {'q', 0}, {'R', 0}, {'r', 0}, {'B', 0}, {'b', 0}, {'N', 0}, {'n', 0}, {'P', 0}, {'p', 0}};
 
-		for (char c : __placement)
+		for (char c : placement)
 		{
 			if (isalpha(c))
 			{
@@ -91,22 +91,22 @@ namespace fenrir
 			}
 		}
 
-		if (!utils::__are_chess_piece_count_rules_valid__(piece_counts))
+		if (!utils::areChessPieceCountRulesValid(piece_counts))
 		{
 			LOG_THROW_ERROR("FEN placement does not comply with chess piece count rules", true);
 		}
 
 		std::vector<std::string> ranks;
-		this->__split__(__placement, "/", ranks);
+		this->splitString(placement, "/", ranks);
 
 		// Additional tournament-level validations
-		this->__validate_pawn_placement__(ranks);
-		this->__validate_king_safety__(ranks);
+		this->validatePawnPlacement(ranks);
+		this->validateKingSafety(ranks);
 	}
 
-	void Fen::__validate_pawn_placement__(const std::vector<std::string> &__ranks) const
+	void Fen::validatePawnPlacement(const std::vector<std::string> &ranks) const
 	{
-		for (char c : __ranks[0])
+		for (char c : ranks[0])
 		{
 			if (c == 'P')
 			{
@@ -114,7 +114,7 @@ namespace fenrir
 			}
 		}
 
-		for (char c : __ranks[7])
+		for (char c : ranks[7])
 		{
 			if (c == 'p')
 			{
@@ -123,7 +123,7 @@ namespace fenrir
 		}
 	}
 
-	void Fen::__validate_king_safety__(const std::vector<std::string> &__ranks) const
+	void Fen::validateKingSafety(const std::vector<std::string> &ranks) const
 	{
 		int white_king_rank = -1, white_king_file = -1;
 		int black_king_rank = -1, black_king_file = -1;
@@ -132,7 +132,7 @@ namespace fenrir
 		for (int rank = 0; rank < fenrir::BOARD_SIZE; rank++)
 		{
 			int file = 0;
-			for (char c : __ranks[rank])
+			for (char c : ranks[rank])
 			{
 				if (isdigit(c))
 				{
@@ -166,10 +166,10 @@ namespace fenrir
 		}
 	}
 
-	void Fen::__validate_placement__(const std::string &__placement) const
+	void Fen::validatePlacement(const std::string &placement) const
 	{
 		int squares = 0;
-		for (char c : __placement)
+		for (char c : placement)
 		{
 			if (isdigit(c))
 			{
@@ -187,108 +187,108 @@ namespace fenrir
 
 		if (this->game_mode == GameMode::TOURNAMENT)
 		{
-			this->__validate_chess_rules__(__placement);
+			this->validateChessRules(placement);
 		}
 	}
 
 	// Getters for FEN components
-	std::string Fen::get_placement(void) const
+	std::string Fen::getPlacement(void) const
 	{
 		return this->placement;
 	}
 
-	std::string Fen::get_castling(void) const
+	std::string Fen::getCastling(void) const
 	{
 		return this->castling;
 	}
 
-	std::string Fen::get_en_passant(void) const
+	std::string Fen::getEnPassant(void) const
 	{
 		return this->en_passant;
 	}
 
-	uint8_t Fen::get_color(void) const
+	uint8_t Fen::getColor(void) const
 	{
 		return this->color;
 	}
 
-	uint32_t Fen::get_halfmove_clock(void) const
+	uint32_t Fen::getHalfmoveClock(void) const
 	{
 		return this->halfmove_clock;
 	}
 
-	uint32_t Fen::get_fullmoves(void) const
+	uint32_t Fen::getFullmoves(void) const
 	{
 		return this->fullmoves;
 	}
 
 	// Setters for FEN components
-	void Fen::set_placement(const std::string &__placement)
+	void Fen::setPlacement(const std::string &placement)
 	{
 		std::regex placement_regex(
 			"^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+)$");
 
-		if (!std::regex_match(__placement, placement_regex))
+		if (!std::regex_match(placement, placement_regex))
 		{
-			LOG_THROW_ERROR("Invalid placement section: " + __placement, true);
+			LOG_THROW_ERROR("Invalid placement section: " + placement, true);
 		}
 
-		this->__validate_placement__(__placement);
-		this->placement = __placement;
+		this->validatePlacement(placement);
+		this->placement = placement;
 		return;
 	}
 
-	void Fen::set_castling(const std::string &__castling)
+	void Fen::setCastling(const std::string &castling)
 	{
-		if (__castling != "-" && !std::regex_match(__castling, std::regex("^[KQkq]+$")))
+		if (castling != "-" && !std::regex_match(castling, std::regex("^[KQkq]+$")))
 		{
-			LOG_THROW_ERROR("Invalid castling rights: " + __castling, true);
+			LOG_THROW_ERROR("Invalid castling rights: " + castling, true);
 		}
-		this->castling = __castling;
+		this->castling = castling;
 		return;
 	}
 
-	void Fen::set_en_passant(const std::string &__en_passant)
+	void Fen::setEnPassant(const std::string &en_passant)
 	{
-		if (__en_passant != "-" && !std::regex_match(__en_passant, std::regex("^[a-h][36]$")))
+		if (en_passant != "-" && !std::regex_match(en_passant, std::regex("^[a-h][36]$")))
 		{
-			LOG_THROW_ERROR("Invalid en passant square: " + __en_passant, true);
+			LOG_THROW_ERROR("Invalid en passant square: " + en_passant, true);
 		}
-		this->en_passant = __en_passant;
+		this->en_passant = en_passant;
 		return;
 	}
 
-	void Fen::set_color(const uint8_t &__color)
+	void Fen::setColor(const uint8_t &color)
 	{
-		if (__color != WHITE && __color != BLACK)
+		if (color != WHITE && color != BLACK)
 		{
-			LOG_THROW_ERROR("Invalid color value: " + std::to_string(__color), true);
+			LOG_THROW_ERROR("Invalid color value: " + std::to_string(color), true);
 		}
-		this->color = __color;
+		this->color = color;
 		return;
 	}
 
-	void Fen::set_halfmove_clock(const uint32_t &__halfmove_clock)
+	void Fen::setHalfmoveClock(const uint32_t &halfmove_clock)
 	{
-		if (this->game_mode == GameMode::TOURNAMENT && __halfmove_clock > 100)
+		if (this->game_mode == GameMode::TOURNAMENT && halfmove_clock > 100)
 		{
 			LOG_THROW_ERROR("Invalid halfmove clock: cannot exceed 100 in tournament mode (50-move rule)", true);
 		}
-		this->halfmove_clock = __halfmove_clock;
+		this->halfmove_clock = halfmove_clock;
 		return;
 	}
 
-	void Fen::set_fullmoves(const uint32_t &__fullmoves)
+	void Fen::setFullmoves(const uint32_t &fullmoves)
 	{
-		if (__fullmoves == 0)
+		if (fullmoves == 0)
 		{
-			LOG_THROW_ERROR("Fullmoves must be at least 1: " + std::to_string(__fullmoves), true);
+			LOG_THROW_ERROR("Fullmoves must be at least 1: " + std::to_string(fullmoves), true);
 		}
-		this->fullmoves = __fullmoves;
+		this->fullmoves = fullmoves;
 		return;
 	}
 
-	std::string Fen::generate_fen(void) const
+	std::string Fen::generateFen(void) const
 	{
 		std::ostringstream oss;
 		oss << this->placement << " "

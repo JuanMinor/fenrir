@@ -19,12 +19,12 @@
 
 namespace color
 {
-	Modifier::Modifier(Color __color) : color(__color) {}
+	Modifier::Modifier(Color colorValue) : color(colorValue) {}
 
 	Modifier::~Modifier() {}
 
-	std::ostream &operator<<(std::ostream &__os, const Modifier &__modifier)
+	std::ostream &operator<<(std::ostream &os, const Modifier &modifier)
 	{
-		return __os << "\033[" << __modifier.color << "m";
+		return os << "\033[" << modifier.color << "m";
 	}
 }

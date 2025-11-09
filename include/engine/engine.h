@@ -33,17 +33,17 @@ namespace fenrir
 		Board board;
 
 	public:
-		Engine(const std::string &__fen = default_fen);
+		Engine(const std::string &fenString = default_fen);
 		~Engine();
 
-		std::vector<std::pair<const std::string, const std::string>> generate_moves(const std::string &__algebraic_address) const;
-		std::string get_fen(void);
-		void make_move(const std::string &__from_algebraic_address, const std::string &__to_algebraic_address);
-		void print_board(void) const;
+		std::vector<std::pair<const std::string, const std::string>> generateMoves(const std::string &algebraicAddress) const;
+		std::string getFen(void);
+		void makeMove(const std::string &fromAlgebraicAddress, const std::string &toAlgebraicAddress);
+		void printBoard(void) const;
 		void reset();
 
 #ifndef NDEBUG
-		char get_piece(const std::string &__algebraic_address) const;
+		char getPiece(const std::string &algebraicAddress) const;
 #endif
 	};
 }

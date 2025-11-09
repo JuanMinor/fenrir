@@ -43,26 +43,26 @@ std::string BoardTest::empty_fen_position = "";
 TEST_F(BoardTest, ParseValidFENPosition)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	ASSERT_EQ(board_state.size(), fenrir::BOARD_SIZE);
 
 	/* Check pieces */
 	/* White rook */
 	EXPECT_NE(board_state[0][0], nullptr);
-	EXPECT_EQ(board_state[0][0]->get_alias(), 'R');
-	EXPECT_EQ(board_state[0][0]->get_color(), fenrir::WHITE);
+	EXPECT_EQ(board_state[0][0]->getAlias(), 'R');
+	EXPECT_EQ(board_state[0][0]->getColor(), fenrir::WHITE);
 
 	/* Black king */
 	EXPECT_NE(board_state[7][4], nullptr);
-	EXPECT_EQ(board_state[7][4]->get_alias(), 'k');
-	EXPECT_EQ(board_state[7][4]->get_color(), fenrir::BLACK);
+	EXPECT_EQ(board_state[7][4]->getAlias(), 'k');
+	EXPECT_EQ(board_state[7][4]->getColor(), fenrir::BLACK);
 }
 
 TEST_F(BoardTest, ParseEmptyFENPosition)
 {
 	fenrir::Board board(empty_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	for (const std::vector<fenrir::Piece *> &rank : board_state)
 	{
@@ -77,23 +77,23 @@ TEST_F(BoardTest, SetEnPassant)
 {
 	fenrir::Board board(valid_fen_position);
 
-	EXPECT_EQ(board.get_en_passant(), "a3");
+	EXPECT_EQ(board.getEnPassant(), "a3");
 }
 
 TEST_F(BoardTest, GetPiece_AtValidPosition)
 {
 	fenrir::Board board(valid_fen_position);
-	fenrir::Piece *piece = board.get_piece(0, 0);
+	fenrir::Piece *piece = board.getPiece(0, 0);
 
 	ASSERT_NE(piece, nullptr);
-	EXPECT_EQ(piece->get_alias(), 'R');
-	EXPECT_EQ(piece->get_color(), fenrir::WHITE);
+	EXPECT_EQ(piece->getAlias(), 'R');
+	EXPECT_EQ(piece->getColor(), fenrir::WHITE);
 }
 
 TEST_F(BoardTest, GetPiece_AtInvalidPosition)
 {
 	fenrir::Board board(valid_fen_position);
-	fenrir::Piece *piece = board.get_piece(8, 0);
+	fenrir::Piece *piece = board.getPiece(8, 0);
 
 	EXPECT_EQ(piece, nullptr);
 }
@@ -102,29 +102,29 @@ TEST_F(BoardTest, GetPiece_AtInvalidPosition)
 TEST_F(BoardTest, MovePiece)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	/* White pawn @ a2 */
 	fenrir::Piece *pawn = board_state[1][0];
 
 	ASSERT_NE(pawn, nullptr);
-	EXPECT_EQ(pawn->get_alias(), 'P');
-	EXPECT_EQ(pawn->get_color(), fenrir::WHITE);
+	EXPECT_EQ(pawn->getAlias(), 'P');
+	EXPECT_EQ(pawn->getColor(), fenrir::WHITE);
 
 	/* Move the pawn from a2 to a4 */
 	board.move(pawn, 3, 0);
 
-	board_state = board.get_board();
+	board_state = board.getBoard();
 	EXPECT_EQ(board_state[3][0], pawn);
 	EXPECT_EQ(board_state[1][0], nullptr);
-	EXPECT_EQ(pawn->get_rank(), 3);
-	EXPECT_EQ(pawn->get_file(), 0);
+	EXPECT_EQ(pawn->getRank(), 3);
+	EXPECT_EQ(pawn->getFile(), 0);
 }
 
 TEST_F(BoardTest, MoveToOccupiedSquare)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	/* White pawn @ a2 */
 	fenrir::Piece *pawn = board_state[1][0];
@@ -134,7 +134,7 @@ TEST_F(BoardTest, MoveToOccupiedSquare)
 	board.move(pawn, 0, 0);
 
 	/* Ensure the move was not performed */
-	board_state = board.get_board();
+	board_state = board.getBoard();
 	EXPECT_EQ(board_state[1][0], pawn);
 	EXPECT_NE(board_state[0][0], nullptr);
 }
@@ -142,7 +142,7 @@ TEST_F(BoardTest, MoveToOccupiedSquare)
 TEST_F(BoardTest, MoveOutOfBounds)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	/* White pawn @ a2 */
 	fenrir::Piece *pawn = board_state[6][0];
@@ -152,14 +152,14 @@ TEST_F(BoardTest, MoveOutOfBounds)
 	/* Attempt to move out of bounds */
 	board.move(pawn, 8, 0);
 
-	board_state = board.get_board();
+	board_state = board.getBoard();
 	EXPECT_EQ(board_state[6][0], pawn);
 }
 
 TEST_F(BoardTest, MovePawnAndEnPassantIsSet)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	/* White pawn @ a2 */
 	fenrir::Piece *pawn = board_state[1][0];
@@ -168,13 +168,13 @@ TEST_F(BoardTest, MovePawnAndEnPassantIsSet)
 	/* Move the pawn to a4 */
 	board.move(pawn, 3, 0);
 
-	EXPECT_EQ(board.get_en_passant(), "a3");
+	EXPECT_EQ(board.getEnPassant(), "a3");
 }
 
 TEST_F(BoardTest, MovePawnAndEnPassantIsCleared)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	/* White pawn @ a2 */
 	fenrir::Piece *pawn = board_state[1][0];
@@ -186,7 +186,7 @@ TEST_F(BoardTest, MovePawnAndEnPassantIsCleared)
 	/* Move the pawn to a5 */
 	board.move(pawn, 4, 0);
 
-	EXPECT_EQ(board.get_en_passant(), "");
+	EXPECT_EQ(board.getEnPassant(), "");
 }
 
 /* Error handling tests for uncovered lines */
@@ -227,7 +227,7 @@ TEST_F(BoardTest, MoveFromInvalidBoardPosition)
 
 	board.move(invalid_piece, 5, 4);
 
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 	EXPECT_EQ(board_state[4][4], nullptr);
 	EXPECT_EQ(board_state[5][4], nullptr);
 
@@ -242,7 +242,7 @@ TEST_F(BoardTest, StressTestManyMoves)
 	}
 
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.get_board();
+	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	ASSERT_EQ(board_state.size(), fenrir::BOARD_SIZE);
 
@@ -259,14 +259,14 @@ TEST_F(BoardTest, StressTestManyMoves)
 			/* Move the white pawn forward if possible */
 			fenrir::Piece *pawn = board_state[white_pawn_rank][white_pawn_file];
 			ASSERT_NE(pawn, nullptr);
-			ASSERT_EQ(pawn->get_alias(), 'P');
-			ASSERT_EQ(pawn->get_color(), fenrir::WHITE);
+			ASSERT_EQ(pawn->getAlias(), 'P');
+			ASSERT_EQ(pawn->getColor(), fenrir::WHITE);
 
 			uint8_t target_rank = white_pawn_rank + white_pawn_direction;
 			if (board_state[target_rank][white_pawn_file] == nullptr)
 			{
 				board.move(pawn, target_rank, white_pawn_file);
-				board_state = board.get_board();
+				board_state = board.getBoard();
 				EXPECT_EQ(board_state[target_rank][white_pawn_file], pawn);
 				EXPECT_EQ(board_state[white_pawn_rank][white_pawn_file], nullptr);
 				white_pawn_rank = target_rank;
@@ -281,14 +281,14 @@ TEST_F(BoardTest, StressTestManyMoves)
 			/* Move the black pawn forward if possible */
 			fenrir::Piece *pawn = board_state[black_pawn_rank][black_pawn_file];
 			ASSERT_NE(pawn, nullptr);
-			ASSERT_EQ(pawn->get_alias(), 'p');
-			ASSERT_EQ(pawn->get_color(), fenrir::BLACK);
+			ASSERT_EQ(pawn->getAlias(), 'p');
+			ASSERT_EQ(pawn->getColor(), fenrir::BLACK);
 
 			uint8_t target_rank = black_pawn_rank + black_pawn_direction;
 			if (board_state[target_rank][black_pawn_file] == nullptr)
 			{
 				board.move(pawn, target_rank, black_pawn_file);
-				board_state = board.get_board();
+				board_state = board.getBoard();
 				EXPECT_EQ(board_state[target_rank][black_pawn_file], pawn);
 				EXPECT_EQ(board_state[black_pawn_rank][black_pawn_file], nullptr);
 				black_pawn_rank = target_rank;
@@ -307,10 +307,10 @@ TEST_F(BoardTest, StressTestManyMoves)
 		{
 			if (square != nullptr)
 			{
-				EXPECT_GE(square->get_rank(), 0);
-				EXPECT_LT(square->get_rank(), fenrir::BOARD_SIZE);
-				EXPECT_GE(square->get_file(), 0);
-				EXPECT_LT(square->get_file(), fenrir::BOARD_SIZE);
+				EXPECT_GE(square->getRank(), 0);
+				EXPECT_LT(square->getRank(), fenrir::BOARD_SIZE);
+				EXPECT_GE(square->getFile(), 0);
+				EXPECT_LT(square->getFile(), fenrir::BOARD_SIZE);
 			}
 		}
 	}
@@ -321,22 +321,22 @@ TEST_F(BoardTest, GetFenAfterCreation)
 {
 	fenrir::Board board(valid_fen_position);
 
-	EXPECT_EQ(board.get_fen(), valid_fen_position);
+	EXPECT_EQ(board.getFen(), valid_fen_position);
 }
 
 TEST_F(BoardTest, GetFenAfterMove)
 {
 	fenrir::Board board("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1");
-	fenrir::Piece *black_pawn = board.get_piece(6, 3);
+	fenrir::Piece *black_pawn = board.getPiece(6, 3);
 	board.move(black_pawn, 4, 3);
-	EXPECT_EQ(board.get_fen(), "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR b KQkq d6 0 1");
+	EXPECT_EQ(board.getFen(), "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR b KQkq d6 0 1");
 }
 
 TEST_F(BoardTest, GetFenEmptyBoard)
 {
 	fenrir::Board board(empty_fen_position);
 
-	EXPECT_EQ(board.get_fen(), empty_fen_position);
+	EXPECT_EQ(board.getFen(), empty_fen_position);
 }
 
 TEST_F(BoardTest, GetFenWithNoCastling)
@@ -344,7 +344,7 @@ TEST_F(BoardTest, GetFenWithNoCastling)
 	std::string fen_no_castling = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1";
 	fenrir::Board board(fen_no_castling);
 
-	EXPECT_EQ(board.get_fen(), fen_no_castling);
+	EXPECT_EQ(board.getFen(), fen_no_castling);
 }
 
 TEST_F(BoardTest, GetFenWithPartialCastling)
@@ -352,13 +352,13 @@ TEST_F(BoardTest, GetFenWithPartialCastling)
 	std::string fen_partial_castling = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w Kq - 0 1";
 	fenrir::Board board(fen_partial_castling);
 
-	EXPECT_EQ(board.get_fen(), fen_partial_castling);
+	EXPECT_EQ(board.getFen(), fen_partial_castling);
 }
 
 TEST_F(BoardTest, GetFenAfterPawnDoubleMove)
 {
 	fenrir::Board board(valid_fen_position);
-	fenrir::Piece *pawn = board.get_piece(1, 0);
+	fenrir::Piece *pawn = board.getPiece(1, 0);
 	board.move(pawn, 3, 0);
-	EXPECT_EQ(board.get_fen(), "rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR w KQkq a3 0 1");
+	EXPECT_EQ(board.getFen(), "rnbqkbnr/pppppppp/8/8/P7/8/1PPPPPPP/RNBQKBNR w KQkq a3 0 1");
 }

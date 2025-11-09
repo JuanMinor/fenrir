@@ -25,18 +25,13 @@ namespace chrono
 {
 	class Chrono
 	{
-	private:
-		tm *__get_local_time__(time_t *__timer) noexcept(true);
-		time_t __get_raw_time__(void) noexcept(true);
-		std::_Put_time<char> __get_time_with_format__(const char *__format);
-
 	public:
 		Chrono();
 		~Chrono();
 
 		// Public methods
-		tm *get_local_time(time_t *__timer) noexcept(true);
-		time_t get_raw_time(void) noexcept(true);
-		std::_Put_time<char> get_time_with_format(const char *__format);
+		tm *getLocalTime(time_t *timer) noexcept(true);
+		time_t getRawTime(void) noexcept(true);
+		std::_Put_time<char> getTimeWithFormat(const char *format);
 	};
 }

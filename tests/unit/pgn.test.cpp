@@ -110,8 +110,8 @@ std::vector<std::string> PgnTest::sample_moves = {};
 /* Singleton tests */
 TEST_F(PgnTest, GetInstance)
 {
-	io::Pgn &pgn1 = io::Pgn::get_instance();
-	io::Pgn &pgn2 = io::Pgn::get_instance();
+	io::Pgn &pgn1 = io::Pgn::getInstance();
+	io::Pgn &pgn2 = io::Pgn::getInstance();
 
 	EXPECT_EQ(&pgn1, &pgn2);
 }
@@ -127,7 +127,7 @@ TEST_F(PgnTest, GetInstanceMacro)
 /* Record move tests */
 TEST_F(PgnTest, RecordSingleMove)
 {
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	pgn.record("e4");
 
@@ -139,7 +139,7 @@ TEST_F(PgnTest, RecordSingleMove)
 
 TEST_F(PgnTest, RecordMultipleMoves)
 {
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	for (const auto &move : sample_moves)
 	{
@@ -168,7 +168,7 @@ TEST_F(PgnTest, RecordMoveWithMacro)
 
 TEST_F(PgnTest, RecordEmptyMove)
 {
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	pgn.record("");
 
@@ -180,7 +180,7 @@ TEST_F(PgnTest, RecordEmptyMove)
 
 TEST_F(PgnTest, RecordMoveWithSpecialCharacters)
 {
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	std::string move_with_special_chars = "O-O-O+";
 	pgn.record(move_with_special_chars);
@@ -197,7 +197,7 @@ TEST_F(PgnTest, CreatePgnFromEmptyStore)
 
 	create_test_store_file({});
 
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 	pgn.create();
 
 	EXPECT_TRUE(file_exists(io::PGN_FILE));
@@ -220,7 +220,7 @@ TEST_F(PgnTest, CreatePgnFromMovesInStore)
 
 	create_test_store_file(sample_moves);
 
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 	pgn.create();
 
 	EXPECT_TRUE(file_exists(io::PGN_FILE));
@@ -254,7 +254,7 @@ TEST_F(PgnTest, CreatePgnWithSingleMove)
 {
 	create_test_store_file({"e4"});
 
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 	pgn.create();
 
 	EXPECT_TRUE(file_exists(io::PGN_FILE));
@@ -267,7 +267,7 @@ TEST_F(PgnTest, CreatePgnWithSingleMove)
 TEST_F(PgnTest, CreatePgnWithoutStoreFile)
 {
 
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	EXPECT_NO_THROW(pgn.create());
 
@@ -282,7 +282,7 @@ TEST_F(PgnTest, CreatePgnWithoutStoreFile)
 TEST_F(PgnTest, RecordMoveToReadOnlyDirectory)
 {
 
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	EXPECT_NO_THROW(pgn.record("e4"));
 }
@@ -292,7 +292,7 @@ TEST_F(PgnTest, RecordMoveWithoutPgnDirectory)
 
 	std::filesystem::remove_all("pgn");
 
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	EXPECT_NO_THROW(pgn.record("e4"));
 
@@ -309,7 +309,7 @@ TEST_F(PgnTest, CreatePgnWithoutPgnDirectory)
 
 	std::filesystem::remove_all("pgn");
 
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	EXPECT_NO_THROW(pgn.create());
 
@@ -321,7 +321,7 @@ TEST_F(PgnTest, CreatePgnWithoutPgnDirectory)
 /* Integration tests */
 TEST_F(PgnTest, CompleteWorkflow)
 {
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	pgn.record("e4");
 	pgn.record("e5");
@@ -347,7 +347,7 @@ TEST_F(PgnTest, CompleteWorkflow)
 
 TEST_F(PgnTest, MultipleRecordAndCreateCycles)
 {
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	pgn.record("e4");
 	pgn.record("e5");
@@ -367,7 +367,7 @@ TEST_F(PgnTest, MultipleRecordAndCreateCycles)
 /* Memory and performance tests */
 TEST_F(PgnTest, RecordManyMoves)
 {
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	const int num_moves = 1000;
 	for (int i = 0; i < num_moves; ++i)
@@ -390,7 +390,7 @@ TEST_F(PgnTest, CreatePgnFromManyMoves)
 
 	create_test_store_file(many_moves);
 
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	auto start = std::chrono::high_resolution_clock::now();
 	pgn.create();
@@ -410,7 +410,7 @@ TEST_F(PgnTest, CreatePgnFromManyMoves)
 /* Edge cases and boundary tests */
 TEST_F(PgnTest, RecordVeryLongMove)
 {
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	std::string long_move(1000, 'a');
 	pgn.record(long_move);
@@ -423,7 +423,7 @@ TEST_F(PgnTest, RecordVeryLongMove)
 
 TEST_F(PgnTest, RecordMoveWithNewlines)
 {
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	std::string move_with_newlines = "e4\ntest\nmore";
 	pgn.record(move_with_newlines);
@@ -442,7 +442,7 @@ TEST_F(PgnTest, StressTest)
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}
 
-	io::Pgn &pgn = io::Pgn::get_instance();
+	io::Pgn &pgn = io::Pgn::getInstance();
 
 	const int stress_iterations = 10000;
 	auto start = std::chrono::high_resolution_clock::now();
@@ -471,8 +471,8 @@ TEST_F(PgnTest, StressTest)
 TEST_F(PgnTest, SingletonNotCopyable)
 {
 
-	io::Pgn &pgn1 = io::Pgn::get_instance();
-	io::Pgn &pgn2 = io::Pgn::get_instance();
+	io::Pgn &pgn1 = io::Pgn::getInstance();
+	io::Pgn &pgn2 = io::Pgn::getInstance();
 
 	EXPECT_EQ(&pgn1, &pgn2);
 
