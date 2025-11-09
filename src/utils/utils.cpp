@@ -19,7 +19,7 @@
 
 namespace utils
 {
-	const bool __are_chess_piece_count_rules_valid__(const std::unordered_map<char, uint8_t> &piece_counts)
+	const bool areChessPieceCountRulesValid(const std::unordered_map<char, uint8_t> &piece_counts)
 	{
 		if (piece_counts.at('K') != 1 || piece_counts.at('k') != 1)
 		{
@@ -76,44 +76,44 @@ namespace utils
 		return true;
 	}
 
-	const std::string get_algebraic_notation(const uint8_t &__rank, const uint8_t &__file)
+	const std::string getAlgebraicNotation(const uint8_t &rank, const uint8_t &file)
 	{
-		if (__rank >= fenrir::BOARD_SIZE || __rank < 0 || __file >= fenrir::BOARD_SIZE || __file < 0)
+		if (rank >= fenrir::BOARD_SIZE || rank < 0 || file >= fenrir::BOARD_SIZE || file < 0)
 		{
 			LOG_THROW_ERROR("Cannot get algebraic notation for invalid board address", true);
 		}
-		return ((char(97 + __file)) + std::to_string(unsigned(__rank + 1))).c_str();
+		return ((char(97 + file)) + std::to_string(unsigned(rank + 1))).c_str();
 	}
 
-	void log_throw_error(const std::string &__error, const bool &__throw, const char *__file, const int &__lineno)
+	void logThrowError(const std::string &error, const bool &throw_error, const char *file, const int &lineno)
 	{
-		if (__error.empty())
+		if (error.empty())
 		{
-			logger::Logger().log("Error message cannot be null", __file, __lineno, logger::ERROR);
-			if (__throw)
+			logger::Logger().log("Error message cannot be null", file, lineno, logger::ERROR);
+			if (throw_error)
 			{
 				throw std::runtime_error("Error message cannot be null");
 			}
 		}
 
-		logger::Logger().log(__error, __file, __lineno, logger::ERROR);
-		if (__throw)
+		logger::Logger().log(error, file, lineno, logger::ERROR);
+		if (throw_error)
 		{
-			throw std::runtime_error(__error);
+			throw std::runtime_error(error);
 		}
 	}
 
-	void parse_algebraic_notation(const std::string &__algebraic_notation, uint8_t &__rank, uint8_t &__file)
+	void parseAlgebraicNotation(const std::string &algebraic_notation, uint8_t &rank, uint8_t &file)
 	{
-		if (__algebraic_notation.empty() || __algebraic_notation.length() != 2 || !std::isalpha(__algebraic_notation[0]) || !std::isdigit(__algebraic_notation[1]))
+		if (algebraic_notation.empty() || algebraic_notation.length() != 2 || !std::isalpha(algebraic_notation[0]) || !std::isdigit(algebraic_notation[1]))
 		{
 			LOG_THROW_ERROR("Invalid algebraic notation", true);
 		}
 
-		__file = std::tolower(__algebraic_notation[0]) - 'a';
-		__rank = __algebraic_notation[1] - '1';
+		file = std::tolower(algebraic_notation[0]) - 'a';
+		rank = algebraic_notation[1] - '1';
 
-		if (__rank < 0 || __rank >= fenrir::BOARD_SIZE || __file < 0 || __file >= fenrir::BOARD_SIZE)
+		if (rank < 0 || rank >= fenrir::BOARD_SIZE || file < 0 || file >= fenrir::BOARD_SIZE)
 		{
 			LOG_THROW_ERROR("Invalid algebraic notation", true);
 		}

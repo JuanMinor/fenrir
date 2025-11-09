@@ -40,12 +40,12 @@ TEST_F(PieceTest, ConstructorAndGetters)
 	/* Create a white pawn */
 	fenrir::Piece pawn = createWhitePawn();
 
-	EXPECT_EQ(pawn.get_alias(), 'P');
-	EXPECT_EQ(pawn.get_value(), 1);
-	EXPECT_EQ(pawn.get_color(), fenrir::WHITE);
-	EXPECT_EQ(pawn.get_rank(), 1);
-	EXPECT_EQ(pawn.get_file(), 1);
-	EXPECT_FALSE(pawn.get_moved());
+	EXPECT_EQ(pawn.getAlias(), 'P');
+	EXPECT_EQ(pawn.getValue(), 1);
+	EXPECT_EQ(pawn.getColor(), fenrir::WHITE);
+	EXPECT_EQ(pawn.getRank(), 1);
+	EXPECT_EQ(pawn.getFile(), 1);
+	EXPECT_FALSE(pawn.getMoved());
 }
 
 TEST_F(PieceTest, SetRankAndMoved)
@@ -53,56 +53,56 @@ TEST_F(PieceTest, SetRankAndMoved)
 	/* Create a white pawn */
 	fenrir::Piece pawn = createWhitePawn();
 
-	pawn.set_rank(2);
-	EXPECT_EQ(pawn.get_rank(), 2);
-	EXPECT_TRUE(pawn.get_moved());
+	pawn.setRank(2);
+	EXPECT_EQ(pawn.getRank(), 2);
+	EXPECT_TRUE(pawn.getMoved());
 }
 
 TEST_F(PieceTest, SetRankOutOfRange)
 {
 	fenrir::Piece pawn = createWhitePawn();
 
-	EXPECT_THROW(pawn.set_rank(8), std::runtime_error);
-	EXPECT_THROW(pawn.set_rank(-1), std::runtime_error);
+	EXPECT_THROW(pawn.setRank(8), std::runtime_error);
+	EXPECT_THROW(pawn.setRank(-1), std::runtime_error);
 }
 
 TEST_F(PieceTest, SetFile)
 {
 	fenrir::Piece pawn = createWhitePawn();
 
-	pawn.set_file(2);
-	EXPECT_EQ(pawn.get_file(), 2);
+	pawn.setFile(2);
+	EXPECT_EQ(pawn.getFile(), 2);
 }
 
 TEST_F(PieceTest, SetFileOutOfRange)
 {
 	fenrir::Piece pawn = createWhitePawn();
 
-	EXPECT_THROW(pawn.set_file(8), std::runtime_error);
-	EXPECT_THROW(pawn.set_file(-1), std::runtime_error);
+	EXPECT_THROW(pawn.setFile(8), std::runtime_error);
+	EXPECT_THROW(pawn.setFile(-1), std::runtime_error);
 }
 
 TEST_F(PieceTest, SetMoved)
 {
 	fenrir::Piece pawn = createWhitePawn();
 
-	pawn.set_moved(true);
-	EXPECT_TRUE(pawn.get_moved());
+	pawn.setMoved(true);
+	EXPECT_TRUE(pawn.getMoved());
 
-	pawn.set_moved(false);
-	EXPECT_FALSE(pawn.get_moved());
+	pawn.setMoved(false);
+	EXPECT_FALSE(pawn.getMoved());
 }
 
 TEST_F(PieceTest, BlackPiece)
 {
 	fenrir::Piece pawn = createBlackPawn();
 
-	EXPECT_EQ(pawn.get_alias(), 'p');
-	EXPECT_EQ(pawn.get_value(), 1);
-	EXPECT_EQ(pawn.get_color(), fenrir::BLACK);
-	EXPECT_EQ(pawn.get_rank(), 6);
-	EXPECT_EQ(pawn.get_file(), 1);
-	EXPECT_FALSE(pawn.get_moved());
+	EXPECT_EQ(pawn.getAlias(), 'p');
+	EXPECT_EQ(pawn.getValue(), 1);
+	EXPECT_EQ(pawn.getColor(), fenrir::BLACK);
+	EXPECT_EQ(pawn.getRank(), 6);
+	EXPECT_EQ(pawn.getFile(), 1);
+	EXPECT_FALSE(pawn.getMoved());
 }
 
 TEST_F(PieceTest, DestructorTest)
@@ -110,12 +110,12 @@ TEST_F(PieceTest, DestructorTest)
 	{
 		fenrir::Piece pawn = createWhitePawn();
 
-		EXPECT_EQ(pawn.get_alias(), 'P');
-		EXPECT_EQ(pawn.get_value(), 1);
-		EXPECT_EQ(pawn.get_color(), fenrir::WHITE);
-		EXPECT_EQ(pawn.get_rank(), 1);
-		EXPECT_EQ(pawn.get_file(), 1);
-		EXPECT_FALSE(pawn.get_moved());
+		EXPECT_EQ(pawn.getAlias(), 'P');
+		EXPECT_EQ(pawn.getValue(), 1);
+		EXPECT_EQ(pawn.getColor(), fenrir::WHITE);
+		EXPECT_EQ(pawn.getRank(), 1);
+		EXPECT_EQ(pawn.getFile(), 1);
+		EXPECT_FALSE(pawn.getMoved());
 	}
 
 	SUCCEED();
@@ -139,21 +139,21 @@ TEST_F(PieceTest, StressTest)
 	/* Verify that all pieces were created correctly */
 	for (const fenrir::Piece &pawn : pieces)
 	{
-		EXPECT_EQ(pawn.get_alias(), 'P');
-		EXPECT_EQ(pawn.get_value(), 1);
-		EXPECT_EQ(pawn.get_color(), fenrir::WHITE);
-		EXPECT_EQ(pawn.get_rank(), 1);
-		EXPECT_EQ(pawn.get_file(), 1);
-		EXPECT_FALSE(pawn.get_moved());
+		EXPECT_EQ(pawn.getAlias(), 'P');
+		EXPECT_EQ(pawn.getValue(), 1);
+		EXPECT_EQ(pawn.getColor(), fenrir::WHITE);
+		EXPECT_EQ(pawn.getRank(), 1);
+		EXPECT_EQ(pawn.getFile(), 1);
+		EXPECT_FALSE(pawn.getMoved());
 	}
 
 	/* Modify all pieces and verify the changes */
 	for (int i = 0; i < numPieces; ++i)
 	{
-		pieces[i].set_rank(2);
-		pieces[i].set_file(2);
-		EXPECT_EQ(pieces[i].get_rank(), 2);
-		EXPECT_EQ(pieces[i].get_file(), 2);
-		EXPECT_TRUE(pieces[i].get_moved());
+		pieces[i].setRank(2);
+		pieces[i].setFile(2);
+		EXPECT_EQ(pieces[i].getRank(), 2);
+		EXPECT_EQ(pieces[i].getFile(), 2);
+		EXPECT_TRUE(pieces[i].getMoved());
 	}
 }

@@ -33,12 +33,12 @@ namespace io
 		Pgn();
 
 		// Helper methods
-		void __clear_stream_flags__(std::ostream &__os) const;
-		void __set_metadata__(std::ostream &__os) const;
+		void clearStreamFlags(std::ostream &os) const;
+		void setMetadata(std::ostream &os) const;
 
 	public:
 		// Singleton pattern
-		static Pgn &get_instance();
+		static Pgn &getInstance();
 
 		// Delete copy constructor and assignment operator
 		Pgn(const Pgn &) = delete;
@@ -47,13 +47,13 @@ namespace io
 		~Pgn();
 
 		// Public methods
-		void update_metadata(const std::string &__tag);
-		void record(const std::string &__move) const;
+		void updateMetadata(const std::string &tag);
+		void record(const std::string &move) const;
 		void create(void) const;
 	};
 
 	// Macros for PGN operations
-#define PGN Pgn::get_instance()
+#define PGN Pgn::getInstance()
 #define PGN_RECORD(MOVE) PGN.record(MOVE);
 #define PGN_CREATE() PGN.create();
 }

@@ -26,7 +26,7 @@ protected:
 	char get_piece(const std::string &square)
 	{
 #ifndef NDEBUG
-		return engine.get_piece(square);
+		return engine.getPiece(square);
 #else
 
 		return '.';
@@ -50,7 +50,7 @@ TEST_F(EngineTest, DefaultBoardSetup)
 
 TEST_F(EngineTest, MakeMove)
 {
-	engine.make_move("b2", "b4");
+	engine.makeMove("b2", "b4");
 
 	EXPECT_EQ(get_piece("b2"), '.');
 	EXPECT_EQ(get_piece("b4"), 'P');
@@ -61,7 +61,7 @@ TEST_F(EngineTest, MakeMove)
 
 TEST_F(EngineTest, ResetBoard)
 {
-	engine.make_move("b2", "b4");
+	engine.makeMove("b2", "b4");
 	EXPECT_EQ(get_piece("b4"), 'P');
 
 	engine.reset();
@@ -74,7 +74,7 @@ TEST_F(EngineTest, ResetBoard)
 
 TEST_F(EngineTest, GetFenInitialBoard)
 {
-	std::string fen = engine.get_fen();
+	std::string fen = engine.getFen();
 
 	EXPECT_FALSE(fen.empty());
 	EXPECT_TRUE(fen.find("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR") != std::string::npos);
@@ -82,8 +82,8 @@ TEST_F(EngineTest, GetFenInitialBoard)
 
 TEST_F(EngineTest, GetFenAfterMove)
 {
-	engine.make_move("e2", "e4");
-	std::string fen = engine.get_fen();
+	engine.makeMove("e2", "e4");
+	std::string fen = engine.getFen();
 
 	EXPECT_FALSE(fen.empty());
 	EXPECT_TRUE(fen.find("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR") != std::string::npos);
@@ -92,7 +92,7 @@ TEST_F(EngineTest, GetFenAfterMove)
 TEST_F(EngineTest, GenerateMovesValidPiece)
 {
 
-	auto moves = engine.generate_moves("b2");
+	auto moves = engine.generateMoves("b2");
 	EXPECT_FALSE(moves.empty());
 
 	bool found_b3 = false;
@@ -110,13 +110,13 @@ TEST_F(EngineTest, GenerateMovesValidPiece)
 TEST_F(EngineTest, GenerateMovesInvalidAddress)
 {
 
-	EXPECT_THROW(engine.generate_moves("z9"), std::runtime_error);
+	EXPECT_THROW(engine.generateMoves("z9"), std::runtime_error);
 }
 
 TEST_F(EngineTest, GenerateMovesEmptySquare)
 {
 
-	auto moves = engine.generate_moves("e4");
+	auto moves = engine.generateMoves("e4");
 	EXPECT_TRUE(moves.empty());
 }
 
@@ -124,7 +124,7 @@ TEST_F(EngineTest, MakeMoveFromEmptySquare)
 {
 
 	testing::internal::CaptureStderr();
-	engine.make_move("e4", "e5");
+	engine.makeMove("e4", "e5");
 	std::string error_output = testing::internal::GetCapturedStderr();
 
 	EXPECT_EQ(get_piece("e4"), '.');
@@ -135,7 +135,7 @@ TEST_F(EngineTest, PrintBoard)
 {
 
 	testing::internal::CaptureStdout();
-	engine.print_board();
+	engine.printBoard();
 	std::string output = testing::internal::GetCapturedStdout();
 
 	EXPECT_FALSE(output.empty());
@@ -152,8 +152,8 @@ TEST_F(EngineTest, StressTestManyMovesAndResets)
 
 	for (int i = 0; i < num_iterations; ++i)
 	{
-		engine.make_move("b2", "b4");
-		engine.make_move("b4", "b2");
+		engine.makeMove("b2", "b4");
+		engine.makeMove("b4", "b2");
 
 		engine.reset();
 

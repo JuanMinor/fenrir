@@ -36,21 +36,21 @@ namespace fenrir
 		bool moved;
 
 		// Helper method to check if the piece has moved
-		bool __has_piece_moved__(void) const;
+		bool hasPieceMoved(void) const;
 
 	public:
-		Piece(const char &__alias, const uint8_t &__rank, const uint8_t &__file);
+		Piece(const char &alias, const uint8_t &rank, const uint8_t &file);
 		~Piece();
 
 		// Accessors and mutators
-		char get_alias(void) const;
-		uint8_t get_value(void) const;
-		uint8_t get_color(void) const;
-		uint8_t get_rank(void) const;
-		void set_rank(const uint8_t &__rank);
-		uint8_t get_file(void) const;
-		void set_file(const uint8_t &__file);
-		bool get_moved(void) const;
-		void set_moved(const bool &__moved);
+		char getAlias(void) const;
+		uint8_t getValue(void) const;
+		uint8_t getColor(void) const;
+		uint8_t getRank(void) const;
+		void setRank(const uint8_t &rank);
+		uint8_t getFile(void) const;
+		void setFile(const uint8_t &file);
+		bool getMoved(void) const;
+		void setMoved(const bool &moved);
 	};
 }

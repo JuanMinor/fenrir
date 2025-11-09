@@ -20,74 +20,74 @@
 namespace fenrir
 {
 
-	Engine::Engine(const std::string &__fen) : fen(__fen), board(__fen)
+	Engine::Engine(const std::string &fenString) : fen(fenString), board(fenString)
 	{
-		logger::INFO("Engine initialized with FEN: " + __fen);
+		logger::INFO("Engine initialized with FEN: " + fenString);
 	}
 
 	Engine::~Engine() {}
 
 #ifndef NDEBUG
-	char Engine::get_piece(const std::string &__algebraic_address) const
+	char Engine::getPiece(const std::string &algebraicAddress) const
 	{
 		uint8_t rank, file;
-		utils::parse_algebraic_notation(__algebraic_address, rank, file);
+		utils::parseAlgebraicNotation(algebraicAddress, rank, file);
 
-		const Piece *piece = board.get_piece(rank, file);
+		const Piece *piece = board.getPiece(rank, file);
 		if (piece == nullptr)
 		{
 			return '.'; // Empty square
 		}
-		return piece->get_alias();
+		return piece->getAlias();
 	}
 #endif
 
-	std::vector<std::pair<const std::string, const std::string>> Engine::generate_moves(const std::string &__algebraic_address) const
+	std::vector<std::pair<const std::string, const std::string>> Engine::generateMoves(const std::string &algebraicAddress) const
 	{
 		std::vector<std::pair<const std::string, const std::string>> moves;
 		u_int8_t rank, file;
-		utils::parse_algebraic_notation(__algebraic_address, rank, file);
-		if (!board.get_board().at(rank).at(file))
+		utils::parseAlgebraicNotation(algebraicAddress, rank, file);
+		if (!board.getBoard().at(rank).at(file))
 		{
 			LOG_THROW_ERROR(
-				(std::string("Board address ") + __algebraic_address + " does not contain a piece").c_str(),
+				(std::string("Board address ") + algebraicAddress + " does not contain a piece").c_str(),
 				false);
 			return moves;
 		}
-		const Piece *piece = board.get_piece(rank, file);
+		const Piece *piece = board.getPiece(rank, file);
 
-		Moves::get_instance().generate_moves(piece, &board, moves);
+		Moves::getInstance().generateMoves(piece, &board, moves);
 
-		logger::DEBUG("Generated moves for piece at address: " + __algebraic_address);
+		logger::DEBUG("Generated moves for piece at address: " + algebraicAddress);
 
 		return moves;
 	}
 
-	std::string Engine::get_fen(void)
+	std::string Engine::getFen(void)
 	{
-		std::string current_fen = board.get_fen();
+		std::string current_fen = board.getFen();
 		logger::DEBUG("Current FEN: " + current_fen);
 		return current_fen;
 	}
 
-	void Engine::make_move(const std::string &__from_algebraic_address, const std::string &__to_algebraic_address)
+	void Engine::makeMove(const std::string &fromAlgebraicAddress, const std::string &toAlgebraicAddress)
 	{
-		u_int8_t __from_rank, __from_file, __to_rank, __to_file;
-		utils::parse_algebraic_notation(__from_algebraic_address, __from_rank, __from_file);
-		utils::parse_algebraic_notation(__to_algebraic_address, __to_rank, __to_file);
+		u_int8_t fromRank, fromFile, toRank, toFile;
+		utils::parseAlgebraicNotation(fromAlgebraicAddress, fromRank, fromFile);
+		utils::parseAlgebraicNotation(toAlgebraicAddress, toRank, toFile);
 
-		Piece *piece = board.get_board().at(__from_rank).at(__from_file);
+		Piece *piece = board.getBoard().at(fromRank).at(fromFile);
 		if (!piece)
 		{
-			logger::ERROR("No piece found at " + __from_algebraic_address);
+			logger::ERROR("No piece found at " + fromAlgebraicAddress);
 			return;
 		}
-		board.move(piece, __to_rank, __to_file);
+		board.move(piece, toRank, toFile);
 
-		logger::DEBUG("Made move from " + __from_algebraic_address + " to " + __to_algebraic_address);
+		logger::DEBUG("Made move from " + fromAlgebraicAddress + " to " + toAlgebraicAddress);
 	}
 
-	void Engine::print_board(void) const
+	void Engine::printBoard(void) const
 	{
 		board.print();
 	}
