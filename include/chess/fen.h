@@ -40,32 +40,32 @@ namespace fenrir
 		uint32_t fullmoves;
 
 		// Helper method to split a FEN string into components
-		void __split__(const std::string &__fen, const std::string &__delimiters, std::vector<std::string> &__tokens) const;
-		void __validate_chess_rules__(const std::string &__placement) const;
-		void __validate_placement__(const std::string &__placement) const;
-		void __validate_pawn_placement__(const std::vector<std::string> &__ranks) const;
-		void __validate_king_safety__(const std::vector<std::string> &__ranks) const;
+		void splitString(const std::string &fenString, const std::string &delimiters, std::vector<std::string> &tokens) const;
+		void validateChessRules(const std::string &placement) const;
+		void validatePlacement(const std::string &placement) const;
+		void validatePawnPlacement(const std::vector<std::string> &ranks) const;
+		void validateKingSafety(const std::vector<std::string> &ranks) const;
 
 	public:
-		Fen(const std::string &__fen, GameMode __game_mode = GameMode::PERMISSIVE);
+		Fen(const std::string &fenString, GameMode gameMode = GameMode::PERMISSIVE);
 		~Fen();
 
 		// Getters for FEN components
-		std::string get_placement(void) const;
-		std::string get_castling(void) const;
-		std::string get_en_passant(void) const;
-		uint8_t get_color(void) const;
-		uint32_t get_halfmove_clock(void) const;
-		uint32_t get_fullmoves(void) const;
+		std::string getPlacement(void) const;
+		std::string getCastling(void) const;
+		std::string getEnPassant(void) const;
+		uint8_t getColor(void) const;
+		uint32_t getHalfmoveClock(void) const;
+		uint32_t getFullmoves(void) const;
 
 		// Setters for FEN components
-		void set_placement(const std::string &__placement);
-		void set_castling(const std::string &__castling);
-		void set_en_passant(const std::string &__en_passant);
-		void set_color(const uint8_t &__color);
-		void set_halfmove_clock(const uint32_t &__halfmove_clock);
-		void set_fullmoves(const uint32_t &__fullmoves);
+		void setPlacement(const std::string &placement);
+		void setCastling(const std::string &castling);
+		void setEnPassant(const std::string &enPassant);
+		void setColor(const uint8_t &color);
+		void setHalfmoveClock(const uint32_t &halfmoveClock);
+		void setFullmoves(const uint32_t &fullmoves);
 
-		std::string generate_fen(void) const;
+		std::string generateFen(void) const;
 	};
 }

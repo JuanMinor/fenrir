@@ -42,20 +42,20 @@ namespace fenrir
 		uint8_t fullmoves;
 		Fen fen;
 
-		void __build_board__(const std::string &__placement);
-		std::string __generate_placement_from_board__(void) const;
-		void __log_piece_action__(const std::string &__action, const Piece *__piece, const std::string &__position, const std::string &__emoji);
+		void buildBoard(const std::string &placement);
+		std::string generatePlacementFromBoard(void) const;
+		void logPieceAction(const std::string &action, const Piece *piece, const std::string &position, const std::string &emoji);
 
 	public:
-		Board(const std::string &__fen);
+		Board(const std::string &fenString);
 		~Board();
 
 		// Accessors and mutators
-		std::vector<std::vector<Piece *>> get_board(void) const;
-		std::string get_fen(void);
-		const std::string get_en_passant(void) const;
-		Piece *get_piece(const uint8_t &__rank, const uint8_t &__file) const;
-		void move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file);
+		std::vector<std::vector<Piece *>> getBoard(void) const;
+		std::string getFen(void);
+		const std::string getEnPassant(void) const;
+		Piece *getPiece(const uint8_t &rank, const uint8_t &file) const;
+		void move(Piece *&piece, const uint8_t &rank, const uint8_t &file);
 		void print(void) const;
 	};
 }

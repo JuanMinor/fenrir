@@ -28,10 +28,10 @@ namespace color
 		Color color;
 
 	public:
-		Modifier(Color __color);
+		Modifier(Color colorValue);
 		~Modifier();
 
 		// Overloaded stream insertion operator
-		friend std::ostream &operator<<(std::ostream &__os, const Modifier &__modifier);
+		friend std::ostream &operator<<(std::ostream &os, const Modifier &modifier);
 	};
 }

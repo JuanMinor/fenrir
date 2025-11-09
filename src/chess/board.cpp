@@ -19,18 +19,18 @@
 
 namespace fenrir
 {
-	Board::Board(const std::string &__fen)
-		: fen(__fen)
+	Board::Board(const std::string &fenString)
+		: fen(fenString)
 	{
-		this->castling = fen.get_castling();
-		this->en_passant = fen.get_en_passant() == "-" ? "" : fen.get_en_passant();
-		this->color = fen.get_color();
-		this->halfmove_clock = fen.get_halfmove_clock();
-		this->fullmoves = fen.get_fullmoves();
+		this->castling = fen.getCastling();
+		this->en_passant = fen.getEnPassant() == "-" ? "" : fen.getEnPassant();
+		this->color = fen.getColor();
+		this->halfmove_clock = fen.getHalfmoveClock();
+		this->fullmoves = fen.getFullmoves();
 
-		this->__build_board__(fen.get_placement());
+		this->buildBoard(fen.getPlacement());
 
-		logger::INFO("Board initialized with FEN: " + fen.get_placement());
+		logger::INFO("Board initialized with FEN: " + fen.getPlacement());
 	}
 
 	Board::~Board()
@@ -42,7 +42,7 @@ namespace fenrir
 				Piece *piece = this->board.at(rank).at(file);
 				if (piece != nullptr)
 				{
-					this->__log_piece_action__("Destroyed", piece, utils::get_algebraic_notation(rank, file), "❌");
+					this->logPieceAction("Destroyed", piece, utils::getAlgebraicNotation(rank, file), "❌");
 					delete piece;
 				}
 			}
@@ -51,16 +51,16 @@ namespace fenrir
 	}
 
 	/* Private */
-	void Board::__build_board__(const std::string &__placement)
+	void Board::buildBoard(const std::string &placement)
 	{
-		size_t size = __placement.size();
+		size_t size = placement.size();
 		uint8_t rank = BOARD_SIZE - 1, file = 0, squares = 0;
 
 		this->board.resize(BOARD_SIZE, std::vector<Piece *>(BOARD_SIZE, nullptr));
 
 		for (size_t i = 0; i < size && rank < BOARD_SIZE; ++i)
 		{
-			char c = __placement[i];
+			char c = placement[i];
 			if (c == '/')
 			{
 				rank--;
@@ -78,11 +78,11 @@ namespace fenrir
 			}
 			Piece *piece = new Piece(c, rank, file);
 			this->board[rank][file++] = piece;
-			this->__log_piece_action__("Created", piece, utils::get_algebraic_notation(rank, file - 1), "✅");
+			this->logPieceAction("Created", piece, utils::getAlgebraicNotation(rank, file - 1), "✅");
 		}
 	}
 
-	std::string Board::__generate_placement_from_board__(void) const
+	std::string Board::generatePlacementFromBoard(void) const
 	{
 		std::string placement;
 		placement.reserve(80);
@@ -104,7 +104,7 @@ namespace fenrir
 						placement += static_cast<char>('0' + empty_squares);
 						empty_squares = 0;
 					}
-					placement += piece->get_alias();
+					placement += piece->getAlias();
 				}
 			}
 			if (empty_squares)
@@ -119,98 +119,98 @@ namespace fenrir
 		return placement;
 	}
 
-	void Board::__log_piece_action__(const std::string &__action, const Piece *__piece, const std::string &__position, const std::string &__emoji)
+	void Board::logPieceAction(const std::string &action, const Piece *piece, const std::string &position, const std::string &emoji)
 	{
-		const std::string color = __piece->get_color() == WHITE ? "white" : "black";
+		const std::string color = piece->getColor() == WHITE ? "white" : "black";
 		std::stringstream oss;
-		oss << __action << " " << color << " " << PIECE_NAMES.at(std::tolower(__piece->get_alias(), std::locale()))
-			<< " in position " << __position << " " << __emoji;
+		oss << action << " " << color << " " << PIECE_NAMES.at(std::tolower(piece->getAlias(), std::locale()))
+			<< " in position " << position << " " << emoji;
 
 		// Use stringstream as fallback for std::format compatibility
 		std::stringstream detailed_oss;
-		detailed_oss << oss.str() << " (" << __piece->get_value() << " value) at <"
-					 << unsigned(__piece->get_rank()) << ", " << unsigned(__piece->get_file()) << ">";
+		detailed_oss << oss.str() << " (" << piece->getValue() << " value) at <"
+					 << unsigned(piece->getRank()) << ", " << unsigned(piece->getFile()) << ">";
 
 		logger::DEBUG(detailed_oss.str());
 	}
 
-	std::vector<std::vector<Piece *>> Board::get_board(void) const
+	std::vector<std::vector<Piece *>> Board::getBoard(void) const
 	{
 		return this->board;
 	}
 
-	std::string Board::get_fen(void)
+	std::string Board::getFen(void)
 	{
-		fen.set_placement(this->__generate_placement_from_board__());
-		fen.set_castling(this->castling.empty() ? "-" : this->castling);
-		fen.set_en_passant(this->en_passant.empty() ? "-" : this->en_passant);
-		fen.set_color(this->color);
-		fen.set_halfmove_clock(this->halfmove_clock);
-		fen.set_fullmoves(this->fullmoves);
+		fen.setPlacement(this->generatePlacementFromBoard());
+		fen.setCastling(this->castling.empty() ? "-" : this->castling);
+		fen.setEnPassant(this->en_passant.empty() ? "-" : this->en_passant);
+		fen.setColor(this->color);
+		fen.setHalfmoveClock(this->halfmove_clock);
+		fen.setFullmoves(this->fullmoves);
 
-		return fen.generate_fen();
+		return fen.generateFen();
 	}
 
-	const std::string Board::get_en_passant(void) const
+	const std::string Board::getEnPassant(void) const
 	{
 		return this->en_passant;
 	}
 
-	Piece *Board::get_piece(const uint8_t &__rank, const uint8_t &__file) const
+	Piece *Board::getPiece(const uint8_t &rank, const uint8_t &file) const
 	{
-		if (__rank < 0 || __rank >= BOARD_SIZE || __file < 0 || __file >= BOARD_SIZE)
+		if (rank < 0 || rank >= BOARD_SIZE || file < 0 || file >= BOARD_SIZE)
 		{
 			LOG_THROW_ERROR(
-				("Address <" + std::to_string(unsigned(__rank)) + ", " + std::to_string(unsigned(__file)) + "> is invalid").c_str(),
+				("Address <" + std::to_string(unsigned(rank)) + ", " + std::to_string(unsigned(file)) + "> is invalid").c_str(),
 				false);
 			return nullptr;
 		}
-		return this->board.at(__rank).at(__file);
+		return this->board.at(rank).at(file);
 	}
 
-	void Board::move(Piece *&__piece, const uint8_t &__rank, const uint8_t &__file)
+	void Board::move(Piece *&piece, const uint8_t &rank, const uint8_t &file)
 	{
-		if (__rank >= BOARD_SIZE || __file >= BOARD_SIZE)
+		if (rank >= BOARD_SIZE || file >= BOARD_SIZE)
 		{
 			LOG_THROW_ERROR(
-				("Address <" + std::to_string(unsigned(__rank)) + ", " + std::to_string(unsigned(__file)) + "> is invalid").c_str(),
+				("Address <" + std::to_string(unsigned(rank)) + ", " + std::to_string(unsigned(file)) + "> is invalid").c_str(),
 				false);
 			return;
 		}
-		uint8_t rank = __piece->get_rank(), file = __piece->get_file();
-		if (this->board[rank][file] == nullptr)
+		uint8_t oldRank = piece->getRank(), oldFile = piece->getFile();
+		if (this->board[oldRank][oldFile] == nullptr)
 		{
 			LOG_THROW_ERROR(
-				("Piece at board address <" + std::to_string(unsigned(rank)) + ", " + std::to_string(unsigned(file)) + "> is invalid").c_str(),
+				("Piece at board address <" + std::to_string(unsigned(oldRank)) + ", " + std::to_string(unsigned(oldFile)) + "> is invalid").c_str(),
 				false);
 			return;
 		}
 
-		if (this->board[__rank][__file] != nullptr &&
-			this->board[__rank][__file]->get_color() == __piece->get_color())
+		if (this->board[rank][file] != nullptr &&
+			this->board[rank][file]->getColor() == piece->getColor())
 		{
 			LOG_THROW_ERROR(
-				("Cannot move to address <" + std::to_string(unsigned(__rank)) + ", " + std::to_string(unsigned(__file)) + ">").c_str(),
+				("Cannot move to address <" + std::to_string(unsigned(rank)) + ", " + std::to_string(unsigned(file)) + ">").c_str(),
 				false);
 			return;
 		}
 
 		// En passant
 		this->en_passant = "";
-		if (std::tolower(__piece->get_alias()) == 'p' && std::abs(__rank - __piece->get_rank()) == 2)
+		if (std::tolower(piece->getAlias()) == 'p' && std::abs(rank - piece->getRank()) == 2)
 		{
-			this->en_passant = std::string(utils::get_algebraic_notation(
-				(__rank + __piece->get_rank()) / 2,
-				__piece->get_file()));
+			this->en_passant = std::string(utils::getAlgebraicNotation(
+				(rank + piece->getRank()) / 2,
+				piece->getFile()));
 		}
 
-		__piece->set_rank(__rank);
-		__piece->set_file(__file);
-		this->board[__rank][__file] = __piece;
-		this->board[rank][file] = nullptr;
+		piece->setRank(rank);
+		piece->setFile(file);
+		this->board[rank][file] = piece;
+		this->board[oldRank][oldFile] = nullptr;
 
-		this->__log_piece_action__("Moved", __piece, utils::get_algebraic_notation(__rank, __file), "🚀");
-		io::PGN_RECORD(std::string(utils::get_algebraic_notation(rank, file)) + " " + utils::get_algebraic_notation(__rank, __file));
+		this->logPieceAction("Moved", piece, utils::getAlgebraicNotation(rank, file), "🚀");
+		io::PGN_RECORD(std::string(utils::getAlgebraicNotation(oldRank, oldFile)) + " " + utils::getAlgebraicNotation(rank, file));
 	}
 
 	void Board::print(void) const
@@ -233,10 +233,10 @@ namespace fenrir
 			{
 				if (this->board.at(i).at(j))
 				{
-					std::cout << color::Modifier(this->board.at(i).at(j)->get_color() == BLACK
+					std::cout << color::Modifier(this->board.at(i).at(j)->getColor() == BLACK
 													 ? color::Color::FG_CYAN
 													 : color::Color::RESET)
-							  << this->board.at(i).at(j)->get_alias()
+							  << this->board.at(i).at(j)->getAlias()
 							  << color::Modifier(color::Color::RESET) << " ";
 					continue;
 				}
