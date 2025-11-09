@@ -2,10 +2,10 @@
 # Fenrir Chess Engine - Makefile
 # ==============================================================================
 # This Makefile builds the Fenrir chess engine shared library and runs tests.
-# 
+#
 # Main targets:
 #   make		  - Build debug version of shared library
-#   make release  - Build optimized release version  
+#   make release  - Build optimized release version
 #   make test	 - Run unit tests (debug mode only)
 #   make coverage - Generate test coverage report
 #   make clean	- Clean all build artifacts
@@ -49,7 +49,7 @@ BUILD_DIR = bin/build
 LIB_DIR = bin/lib
 TEST_BUILD_DIR = bint/unit
 
-# Coverage analysis directories  
+# Coverage analysis directories
 COVERAGE_DIR = .coverage
 COVERAGE_INFO = $(COVERAGE_DIR)/coverage.info
 COVERAGE_REPORT = $(COVERAGE_DIR)/report
@@ -114,7 +114,7 @@ all: $(SHARED_LIB)
 debug:
 	@scripts/build/build_mode.sh debug
 
-# Explicit release build  
+# Explicit release build
 release:
 	@scripts/build/build_mode.sh release
 
@@ -155,7 +155,7 @@ coverage: $(TEST_EXECUTABLE) | check-debug-mode
 
 
 # ------------------------------------------------------------------------------
-# Utility Targets  
+# Utility Targets
 # ------------------------------------------------------------------------------
 
 # Clean all build artifacts and generated files
@@ -165,7 +165,9 @@ clean:
 	rm -rf $(TEST_BUILD_DIR) $(COVERAGE_DIR) $(DEBUG_DIR) bint
 	rm -rf $(LOG_FILES) $(PGN_FILES)
 	rm -f .build_mode
-	find . -maxdepth 1 -name "*.gcov" -type f -delete 2>/dev/null || true
+	find . -name "*.gcov" -type f -delete 2>/dev/null || true
+	find . -name "*.gcda" -type f -delete 2>/dev/null || true
+	find . -name "*.gcno" -type f -delete 2>/dev/null || true
 	@echo "✅ Clean complete"
 
 # Display detailed help information
@@ -214,7 +216,7 @@ ifeq ($(BUILD_MODE),release)
 	@echo ""
 	@echo "💡 Solution: Use debug mode for testing:"
 	@echo "   make test			  (uses debug mode by default)"
-	@echo "   make coverage		  (uses debug mode by default)"  
+	@echo "   make coverage		  (uses debug mode by default)"
 	@echo "   make BUILD_MODE=debug test"
 	@echo ""
 	@exit 1

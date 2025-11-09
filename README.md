@@ -1,22 +1,24 @@
-# Fenrir Chess Engine
+# 🐺 Fenrir Chess Engine
 
-A modular C++ chess engine with FEN support, move generation, and comprehensive testing.
+A foundational C++ chess library providing board representation, FEN parsing, and complete piece movement logic for all 6 chess piece types.
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![C++](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Build](https://img.shields.io/badge/Build-Make-green.svg)](https://www.gnu.org/software/make/)
 [![Testing](https://img.shields.io/badge/Testing-Google%20Test-red.svg)](https://github.com/google/googletest)
-[![VS Code](https://img.shields.io/badge/VS%20Code-Recommended-007ACC.svg)](https://code.visualstudio.com/)
-[![Dev Container](https://img.shields.io/badge/Dev%20Container-Ready-brightgreen.svg)](https://containers.dev/)
+[![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-262%20passing-success.svg)]()
 
-> **Build System**: Fenrir uses **GNU Make** as the primary and currently supported build system. See the [Build System](#build-system) section for details.
+> **⚠️ Current Status**: This is a **foundation library** with complete piece movement logic but **no game rule enforcement** (no check detection, castling, or checkmate). It's a building block for chess applications, not a playable chess game.
 
-> **Development Environment**: This project uses a **dev container** for consistent development across different machines. **VS Code is highly recommended** as it provides seamless integration with the dev container, debugging tools, and project-specific extensions. See the [Development Environment](#development-environment) section for setup instructions.
+> **🔧 Build System**: GNU Make is the only supported build system. See [Build System](#build-system) for details.
 
-## Quick Start
+> **🐳 Development**: Uses dev containers for consistent environments. VS Code recommended. See [Development Environment](#development-environment).
+
+## ⚡ Quick Start
 
 ```bash
-# Clone and build the library (using GNU Make - the supported build system)
+# Clone and build the library
 git clone <repository-url>
 cd fenrir
 make
@@ -24,49 +26,65 @@ make
 # Run the example program
 ./scripts/run.sh
 
-# Run tests with coverage
-make test coverage
+# Run all 262 tests
+make test
 
-# For integration into your project, see "Using the Library" section below
+# Generate coverage report (requires 100%)
+make coverage
+
+# For integration, see "Using the Library" section below
 ```
 
-## ✨ Complete Chess Implementation
+## ✨ What Fenrir Does (And Doesn't Do)
 
-**Fenrir now features complete movement logic for all chess pieces!**
+### ✅ Implemented Features
 
-All six chess piece types are fully implemented with comprehensive rule compliance:
+**Complete Piece Movement Logic** - All 6 chess piece types can generate pseudo-legal moves:
 
-| Piece | Implementation Status | Features |
-|-------|---------------------|----------|
-| ♟️ **Pawn** | ✅ **Complete** | Single/double moves, diagonal captures, en passant |
-| ♜ **Rook** | ✅ **Complete** | Horizontal/vertical sliding, capture & blocking logic |
-| ♞ **Knight** | ✅ **Complete** | L-shaped jumps, obstacle jumping |
-| ♗ **Bishop** | ✅ **Complete** | Diagonal sliding, capture & blocking logic |
-| ♛ **Queen** | ✅ **Complete** | Combined rook + bishop movement |
-| ♚ **King** | ✅ **Complete** | Single-square movement in all 8 directions |
+| Piece | Movement Implementation | Special Features |
+|-------|------------------------|------------------|
+| ♟️ **Pawn** | ✅ Complete | Single/double moves, diagonal captures, **en passant** |
+| ♜ **Rook** | ✅ Complete | Horizontal/vertical sliding, blocking detection |
+| ♞ **Knight** | ✅ Complete | L-shaped jumps, can jump over pieces |
+| ♗ **Bishop** | ✅ Complete | Diagonal sliding, blocking detection |
+| ♛ **Queen** | ✅ Complete | Combined rook + bishop (8 directions) |
+| ♚ **King** | ✅ Complete | Single-square movement in all 8 directions |
 
-**Key Technical Achievements:**
-- **Elegant Architecture**: Shared `__slide__` algorithm for rook, bishop, queen, and king
-- **Smart King Implementation**: King leverages queen logic with single-square depth limitation
-- **100% Test Coverage**: Comprehensive test suite with 216+ unit tests covering all edge cases
-- **Performance Optimized**: Efficient move generation with proper boundary checking
-- **Rule Compliant**: Full adherence to chess movement rules and capture mechanics
+**Other Working Features:**
+- 📋 **FEN Support**: Parse and generate Forsyth-Edwards Notation
+- 🎯 **Move Generation**: Generate all pseudo-legal moves for any piece
+- 📦 **Shared Library**: `libfenrir.so` for integration
+- 🪵 **Logging System**: Production-ready with rotation and levels
+- 📝 **PGN Recording**: Basic game notation support
+- ✅ **100% Test Coverage**: 262 unit tests, all passing
 
-## Features
+### ❌ Not Yet Implemented
 
-- **Complete Chess Logic**: Full board representation with **all piece movement implementations**
-  - ♟️ **Pawns**: Single/double moves, captures, en passant
-  - ♜ **Rooks**: Horizontal and vertical sliding movements
-  - ♞ **Knights**: L-shaped jumping movements
-  - ♗ **Bishops**: Diagonal sliding movements
-  - ♛ **Queens**: Combined rook and bishop movements
-  - ♚ **Kings**: Single-square movement in all directions
-- **Advanced Move Generation**: Complete legal move validation for all piece types
-- **FEN Support**: Parse and generate Forsyth-Edwards Notation strings
-- **Shared Library**: `libfenrir.so` for integration into other projects
-- **PGN Handling**: Game recording and replay functionality
-- **Comprehensive Testing**: Unit tests with 100% code coverage requirement
-- **Development Tools**: VS Code integration, debugging support, and automation scripts
+**Critical Missing Features** (prevents this from being a playable chess game):
+- 🚫 **No Castling**: King-rook castling moves not implemented
+- 🚫 **No Check Detection**: Doesn't know when king is in check
+- 🚫 **No Move Validation**: Allows moves that leave king in check (pseudo-legal only)
+- 🚫 **No Checkmate/Stalemate**: Cannot detect game-ending conditions
+- 🚫 **No Pawn Promotion**: Pawns reaching end rank don't promote
+- 🚫 **No AI**: No computer opponent or position evaluation
+- 🚫 **No UCI Protocol**: Cannot interface with chess GUIs
+
+> **⚠️ Important**: This library generates **pseudo-legal moves** (moves that follow piece movement rules but may leave the king in check). It does NOT enforce chess game rules.
+
+## 🎯 Use Cases
+
+**What You Can Build With Fenrir:**
+- 🎓 **Learning Tool**: Study chess piece movement algorithms
+- 🧩 **Chess Puzzle Solver**: Generate moves for puzzle positions
+- 📊 **Position Analyzer**: Analyze FEN positions and mobility
+- 🔧 **Chess App Foundation**: Build upon this library to create a full chess game
+- 🧪 **Testing Framework**: Test chess-related algorithms
+
+**What You Cannot Do (Yet):**
+- ❌ Play a complete chess game (no rule enforcement)
+- ❌ Detect illegal moves (no check validation)
+- ❌ Use as a chess engine (no AI or evaluation)
+- ❌ Connect to chess GUIs (no UCI protocol)
 
 ## API Overview
 
@@ -108,9 +126,11 @@ engine.reset();
 - `engine.print_board()`: Display current position
 - `engine.reset()`: Return to starting position
 
-_Complete piece movement logic is implemented for all 6 chess piece types with full rule compliance._
-
-_For complete examples and compilation instructions, see the "Using the Library" section below._
+**⚠️ Important Notes:**
+- Moves are **pseudo-legal** (follow piece rules but may leave king in check)
+- No turn validation (can move opponent's pieces)
+- No game-over detection
+- See `AI_CONTEXT.md` for complete technical details
 
 ## Build System
 
@@ -252,90 +272,138 @@ clean:
 .PHONY: clean
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
-├── include/		  # Header files
-│   ├── chess/		# Complete chess logic (board, all 6 piece types, moves, FEN)
-│   ├── engine/	   # Main engine interface
-│   └── utils/		# Utilities and logging
-├── src/			  # Implementation files
-├── tests/unit/	   # Google Test unit tests (216+ tests, 100% coverage)
-├── scripts/		  # Automation scripts (run.sh, test.sh)
-└── bin/			  # Build artifacts
+fenrir/
+├── include/              # Public API headers
+│   ├── chess/           # Board, pieces, moves, FEN
+│   │   ├── board.h      # Board representation
+│   │   ├── piece.h      # Piece class
+│   │   ├── moves.h      # Move generation (singleton)
+│   │   └── fen.h        # FEN parser
+│   ├── engine/          # Main engine interface
+│   │   └── engine.h     # High-level API
+│   ├── logger/          # Logging system
+│   ├── pgn/             # PGN file handling
+│   ├── chrono/          # Timestamp utilities
+│   ├── modifier/        # String modifiers
+│   └── utils/           # Utility functions
+├── src/                 # Implementation files (mirrors include/)
+├── tests/unit/          # Google Test suite (262 tests)
+├── bin/lib/             # Build output (libfenrir.so)
+├── scripts/             # Build automation
+├── Makefile             # Build system
+├── README.md            # This file
+└── AI_CONTEXT.md        # Technical documentation for AI assistants
 ```
 
-## Development
-
-### Development Environment
-
-**Fenrir uses a dev container for consistent development across different machines.**
-
-#### Recommended Setup (VS Code + Dev Container)
-
-1. **Install VS Code** with the following extensions:
-   - Dev Containers extension (`ms-vscode-remote.remote-containers`)
-
-2. **Open in Dev Container**:
-   ```bash
-   # Clone the repository
-   git clone <repository-url>
-   cd fenrir
-   
-   # Open in VS Code
-   code .
-   
-   # VS Code will prompt to "Reopen in Container" - click Yes
-   # Or use Command Palette: "Dev Containers: Reopen in Container"
-   ```
-
-3. **Why VS Code + Dev Container?**
-   - **Consistent Environment**: Same development environment across all machines
-   - **Pre-configured Tools**: All dependencies, compilers, and tools are pre-installed
-   - **Integrated Debugging**: GDB integration with breakpoints and variable inspection
-   - **Extension Integration**: Project-specific extensions are automatically installed
-   - **No Local Setup**: No need to install GCC, Make, Google Test, or lcov locally
-
-#### Alternative Development (Not Recommended)
-
-If you cannot use the dev container, you'll need to manually install:
+## 🛠️ Development
 
 ### Prerequisites
 
-- GCC/G++ compiler (C++20 support required)
-- **GNU Make** (primary build system)
-- Google Test (for testing)
+**Required:**
+- GCC/G++ compiler with C++20 support
+- GNU Make
+- Google Test framework
 - lcov (for coverage reporting)
 
-### Build System Support
+**Recommended:**
+- VS Code with Dev Containers extension
+- Docker (for dev container)
 
-- **Supported**: GNU Make (recommended and actively maintained)
-- **Not Supported**: CMake, Autotools, or other build systems
-- **Future**: Other build systems may be added based on community needs
+### Development Environment
 
-### VS Code Setup
-
-Install recommended extensions via the task runner:
+**Option 1: Dev Container (Recommended)**
 
 ```bash
-# In VS Code Command Palette (Ctrl+Shift+P)
-Tasks: Run Task → extensions
+# Clone and open in VS Code
+git clone <repository-url>
+cd fenrir
+code .
+
+# VS Code will prompt to "Reopen in Container"
+# All dependencies are pre-installed in the container
 ```
 
-### Testing
+**Benefits:**
+- ✅ Consistent environment across machines
+- ✅ All tools pre-installed (GCC, Make, GTest, lcov)
+- ✅ Integrated debugging with GDB
+- ✅ No local setup required
 
-All code must maintain 100% test coverage:
+**Option 2: Local Development**
+
+Manually install all prerequisites, then:
 
 ```bash
-make coverage  # Fails if coverage < 100%
+git clone <repository-url>
+cd fenrir
+make
 ```
 
-### Debugging
+### Testing Requirements
 
-Use the predefined VS Code tasks for debugging with GDB.
+**100% code coverage is REQUIRED:**
 
-## License
+```bash
+make test      # Run all 262 tests
+make coverage  # Generate coverage report (fails if < 100%)
+```
 
-GNU General Public License v3.0 - see [LICENSE](LICENSE) file.
+**Test Structure:**
+- Framework: Google Test
+- Location: `tests/unit/*.test.cpp`
+- Count: 262 tests across 10 test suites
+- Coverage: 100% line coverage enforced
 
-**Author**: Juan Minor
+### Build System
+
+**Only GNU Make is supported.** Do not use CMake, Autotools, or other build systems.
+
+```bash
+make           # Build debug version (default)
+make release   # Build optimized release
+make clean     # Remove all build artifacts
+make help      # Show all available targets
+```
+
+## 📚 Documentation
+
+- **README.md** (this file): User-facing documentation and API reference
+- **AI_CONTEXT.md**: Technical documentation for AI assistants (read this first!)
+- **RELEASE_NOTES.md**: Version history and changelog
+
+## 🗺️ Roadmap
+
+**Current Version: 0.2.0-dev** (Foundation Complete)
+
+**Next Steps:**
+1. ✅ ~~Complete piece movement logic~~ (DONE)
+2. 🚧 Implement castling moves
+3. 🚧 Add check detection
+4. 🚧 Add move validation (prevent illegal moves)
+5. 🚧 Implement checkmate/stalemate detection
+6. 🚧 Add pawn promotion
+7. 🔮 Basic AI (minimax with alpha-beta pruning)
+8. 🔮 UCI protocol support
+9. 🔮 Opening book and endgame tablebases
+
+## 🤝 Contributing
+
+**Before contributing:**
+1. Read `AI_CONTEXT.md` to understand the architecture
+2. Write tests first (TDD approach)
+3. Ensure 100% coverage (`make coverage`)
+4. Follow existing naming conventions (`__private__()` pattern)
+5. Update documentation for API changes
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file.
+
+**Copyright (c) 2025 Juan Minor**
+
+## ⚠️ Disclaimer
+
+This is a **foundation library**, not a complete chess game. It provides piece movement logic but does not enforce chess rules like check, checkmate, or castling. Use it as a building block for chess applications.
