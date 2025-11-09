@@ -17,47 +17,31 @@
 
 ## 📋 Code Quality & Refactoring
 
-### 🟡 HIGH: Fix C++ Naming Conventions
+### ✅ ~~HIGH: Fix C++ Naming Conventions~~ **COMPLETED**
 
-**Issue**: Currently using Python-style `__private__()` naming, which is non-standard in C++ and technically reserved for implementation.
+**Status**: ✅ Completed in PR #23 (2025-11-09)
 
-**Current:**
-```cpp
-void __slide__(...);
-void __bishop__(...);
-void __log_generated_moves__(...);
-```
+**What was done:**
+- Eliminated Python-style `__private__()` naming (undefined behavior in C++)
+- Converted all private methods to camelCase: `__build_board__()` → `buildBoard()`
+- Converted all public methods from snake_case to camelCase
+  - `get_board()` → `getBoard()`
+  - `set_rank()` → `setRank()`
+  - `generate_moves()` → `generateMoves()`
+  - ~200+ method renames across 10 classes
+- Fixed Chrono class duplicate method declarations
+- Updated all 262 tests to use new naming
+- Maintained 100% test coverage (624/624 lines, 87/87 functions)
 
-**Should be:**
-```cpp
-void slide(...);           // Option 1: Simple private methods
-void bishop(...);
-void logGeneratedMoves();
+**Files updated:**
+- All 10 header files (Board, Piece, Fen, Moves, Engine, PGN, Chrono, Utils, Logger, Modifier)
+- All 10 implementation files
+- All 10 test files
+- Added `ARCHITECTURE_REFACTOR.md` documentation
 
-// OR
+**Result**: Full C++ naming convention compliance, API follows camelCase standard
 
-void slideImpl(...);       // Option 2: Explicit "implementation" suffix
-void bishopImpl(...);
-void logGeneratedMovesImpl();
-```
-
-**Tasks:**
-- [ ] Choose naming convention (recommend: simple lowercase for private methods)
-- [ ] Update all `__method__()` to new convention
-- [ ] Update all `__parameter` to `parameter` or `param`
-- [ ] Update tests if they reference private methods
-- [ ] Ensure 100% coverage maintained
-
-**Files to update:**
-- `include/chess/moves.h`
-- `src/chess/moves.cpp`
-- `include/chess/board.h`
-- `src/chess/board.cpp`
-- `include/chess/piece.h`
-- `src/chess/piece.cpp`
-- All test files
-
-**Estimated effort**: 2-3 hours
+**Actual effort**: ~6-8 hours (comprehensive refactor)
 
 ---
 
@@ -73,7 +57,7 @@ void generate_moves(const Piece *piece, const Board *board, vector<...> &moves);
 **Better approach:**
 ```cpp
 // Option 1: Pass only what's needed
-void generate_moves(const Piece *piece, 
+void generate_moves(const Piece *piece,
                    function<const Piece*(uint8_t, uint8_t)> getPiece,
                    const string &enPassant,
                    vector<...> &moves);
@@ -180,16 +164,16 @@ private:
     string to;
     MoveType type;  // NORMAL, CAPTURE, EN_PASSANT, CASTLE, PROMOTION
     char promotionPiece;  // For pawn promotion
-    
+
 public:
     Move(const string &from, const string &to, MoveType type = NORMAL);
-    
+
     const string& getFrom() const { return from; }
     const string& getTo() const { return to; }
     MoveType getType() const { return type; }
     bool isCapture() const { return type == CAPTURE; }
     bool isPromotion() const { return type == PROMOTION; }
-    
+
     string toAlgebraic() const;  // "e2e4" or "e7e8q"
     string toUCI() const;        // For UCI protocol
 };
@@ -297,7 +281,7 @@ bool Board::isMoveLegal(const Piece *piece, uint8_t toRank, uint8_t toFile) cons
 void Moves::generate_moves(...) {
     vector<Move> pseudoLegalMoves;
     // ... generate all pseudo-legal moves ...
-    
+
     // Filter out illegal moves
     for (const auto &move : pseudoLegalMoves) {
         if (board->isMoveLegal(piece, move.toRank, move.toFile)) {
@@ -476,7 +460,7 @@ class Board {
 private:
     class Impl;
     unique_ptr<Impl> pImpl;
-    
+
 public:
     Board(const string &fen);
     ~Board();
