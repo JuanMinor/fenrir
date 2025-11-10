@@ -23,10 +23,10 @@ namespace fenrir
 		: fen(fenString)
 	{
 		this->castling = fen.getCastling();
-		this->en_passant = fen.getEnPassant() == "-" ? "" : fen.getEnPassant();
+		this->enPassant = fen.getEnPassant() == "-" ? "" : fen.getEnPassant();
 		this->color = fen.getColor();
-		this->halfmove_clock = fen.getHalfmoveClock();
-		this->fullmoves = fen.getFullmoves();
+		this->halfMoveClock = fen.getHalfMoveClock();
+		this->fullMoves = fen.getFullMoves();
 
 		this->buildBoard(fen.getPlacement());
 
@@ -143,17 +143,17 @@ namespace fenrir
 	{
 		fen.setPlacement(this->generatePlacementFromBoard());
 		fen.setCastling(this->castling.empty() ? "-" : this->castling);
-		fen.setEnPassant(this->en_passant.empty() ? "-" : this->en_passant);
+		fen.setEnPassant(this->enPassant.empty() ? "-" : this->enPassant);
 		fen.setColor(this->color);
-		fen.setHalfmoveClock(this->halfmove_clock);
-		fen.setFullmoves(this->fullmoves);
+		fen.setHalfMoveClock(this->halfMoveClock);
+		fen.setFullMoves(this->fullMoves);
 
 		return fen.generateFen();
 	}
 
 	const std::string Board::getEnPassant(void) const
 	{
-		return this->en_passant;
+		return this->enPassant;
 	}
 
 	Piece *Board::getPiece(const uint8_t &rank, const uint8_t &file) const
@@ -196,10 +196,10 @@ namespace fenrir
 		}
 
 		// En passant
-		this->en_passant = "";
+		this->enPassant = "";
 		if (std::tolower(piece->getAlias()) == 'p' && std::abs(rank - piece->getRank()) == 2)
 		{
-			this->en_passant = std::string(utils::getAlgebraicNotation(
+			this->enPassant = std::string(utils::getAlgebraicNotation(
 				(rank + piece->getRank()) / 2,
 				piece->getFile()));
 		}

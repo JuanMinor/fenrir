@@ -31,13 +31,13 @@ namespace fenrir
 	class Fen
 	{
 	private:
-		GameMode game_mode;
+		GameMode gameMode;
 		std::string placement;
 		std::string castling;
-		std::string en_passant;
+		std::string enPassant;
 		uint8_t color;
-		uint32_t halfmove_clock;
-		uint32_t fullmoves;
+		uint32_t halfMoveClock;
+		uint32_t fullMoves;
 
 		// Helper method to split a FEN string into components
 		void splitString(const std::string &fenString, const std::string &delimiters, std::vector<std::string> &tokens) const;
@@ -55,16 +55,16 @@ namespace fenrir
 		std::string getCastling(void) const;
 		std::string getEnPassant(void) const;
 		uint8_t getColor(void) const;
-		uint32_t getHalfmoveClock(void) const;
-		uint32_t getFullmoves(void) const;
+		uint32_t getHalfMoveClock(void) const;
+		uint32_t getFullMoves(void) const;
 
 		// Setters for FEN components
 		void setPlacement(const std::string &placement);
 		void setCastling(const std::string &castling);
 		void setEnPassant(const std::string &enPassant);
 		void setColor(const uint8_t &color);
-		void setHalfmoveClock(const uint32_t &halfmoveClock);
-		void setFullmoves(const uint32_t &fullmoves);
+		void setHalfMoveClock(const uint32_t &halfMoveClock);
+		void setFullMoves(const uint32_t &fullMoves);
 
 		std::string generateFen(void) const;
 	};
