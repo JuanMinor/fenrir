@@ -17,33 +17,35 @@
 
 #pragma once
 
-#include "include/chess/board.h"
-#include "include/core/core.h"
-#include "include/logger/logger.h"
-#include "include/chess/moves.h"
-#include "include/utils/utils.h"
+#include <string>
+#include <include/core/core.h>
 
 namespace fenrir
 {
-
-	class FENRIR_API Engine final
+	class Move
 	{
-		static constexpr const char *defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-		std::string fen;
-		Board board;
+		std::string from;
+		MoveType moveType;
+		char promotionPiece;
+		std::string to;
 
 	public:
-		Engine(const std::string &fenString = defaultFen);
-		~Engine();
+		Move(const std::string &from, const std::string &to,
+			 MoveType moveType = MoveType::NORMAL, char promotionPiece = '\0');
+		~Move();
 
-		const std::vector<Move> generateMoves(const std::string &algebraicAddress) const;
-		std::string getFen(void);
-		void makeMove(const Move &move);
-		void printBoard(void) const;
-		void reset();
+		/* Getters */
+		const std::string &getFrom() const;
+		const std::string &getTo() const;
+		MoveType getMoveType() const;
+		char getPromotionPiece() const;
 
-#ifndef NDEBUG
-		char getPiece(const std::string &algebraicAddress) const;
-#endif
+		/* Utility methods */
+		bool isCapture() const;
+		bool isPromotion() const;
+		bool isCastling() const;
+		std::string toAlgebraicNotation() const;
+		std::string toString() const;
+		std::string toUCINotation() const;
 	};
 }

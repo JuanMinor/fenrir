@@ -195,7 +195,7 @@ namespace fenrir
 			return;
 		}
 
-		// En passant
+		/* En passant logic */
 		this->enPassant = "";
 		if (std::tolower(piece->getAlias()) == 'p' && std::abs(rank - piece->getRank()) == 2)
 		{
@@ -219,7 +219,7 @@ namespace fenrir
 		{
 			return;
 		}
-		std::cout << "	";
+		std::cout << "  ";
 		for (uint8_t j = 0; j < BOARD_SIZE; ++j)
 		{
 			std::cout << color::Modifier(color::Color::FG_YELLOW) << char(97 + j) << " ";
@@ -227,7 +227,7 @@ namespace fenrir
 		std::cout << color::Modifier(color::Color::RESET) << std::endl;
 		for (int i = BOARD_SIZE - 1; i >= 0; i--)
 		{
-			std::cout << color::Modifier(color::Color::FG_YELLOW) << unsigned(i + 1) << " - "
+			std::cout << color::Modifier(color::Color::FG_YELLOW) << unsigned(i + 1) << " "
 					  << color::Modifier(color::Color::RESET);
 			for (uint8_t j = 0; j < BOARD_SIZE; ++j)
 			{
@@ -242,10 +242,10 @@ namespace fenrir
 				}
 				std::cout << ". ";
 			}
-			std::cout << color::Modifier(color::Color::FG_YELLOW) << "- " << unsigned(i + 1)
+			std::cout << color::Modifier(color::Color::FG_YELLOW) << unsigned(i + 1)
 					  << color::Modifier(color::Color::RESET) << std::endl;
 		}
-		std::cout << "	";
+		std::cout << "  ";
 		for (uint8_t j = 0; j < BOARD_SIZE; ++j)
 		{
 			std::cout << color::Modifier(color::Color::FG_YELLOW) << char(97 + j) << " ";

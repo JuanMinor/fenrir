@@ -75,7 +75,9 @@
 		"regex": "cpp",
 		"ranges": "cpp",
 		"cinttypes": "cpp",
-		"chrono": "cpp"
+		"chrono": "cpp",
+		"queue": "cpp",
+		"stack": "cpp"
 	},
 	"editor.formatOnSave": true,
 	"editor.fontLigatures": true,

@@ -79,9 +79,19 @@ namespace fenrir
 
 	typedef enum
 	{
-		PERMISSIVE = 0,
-		TOURNAMENT = 1,
+		PERMISSIVE,
+		TOURNAMENT
 	} GameMode;
+
+	typedef enum
+	{
+		NORMAL,
+		CAPTURE,
+		EN_PASSANT,
+		CASTLE_KINGSIDE,
+		CASTLE_QUEENSIDE,
+		PROMOTION
+	} MoveType;
 }
 
 // Namespace for input/output-related constants

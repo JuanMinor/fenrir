@@ -26,13 +26,13 @@ namespace fenrir
 
 	Moves::~Moves() {}
 
-	void Moves::generateBishopMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves)
+	void Moves::generateBishopMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
 	{
 		int8_t directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 		this->slideInDirections(piece, board, moves, directions, 4);
 	}
 
-	void Moves::addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<std::pair<const std::string, const std::string>> &moves)
+	void Moves::addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<Move> &moves)
 	{
 		if (piece == nullptr || targetPiece == nullptr)
 		{
@@ -41,49 +41,50 @@ namespace fenrir
 		}
 		if (piece->getColor() != targetPiece->getColor())
 		{
-			moves.emplace_back(std::make_pair(utils::getAlgebraicNotation(piece->getRank(), piece->getFile()),
-											  utils::getAlgebraicNotation(targetPiece->getRank(), targetPiece->getFile())));
-			logger::DEBUG("Capture move generated from " + utils::getAlgebraicNotation(piece->getRank(), piece->getFile()) +
-						  " to " + utils::getAlgebraicNotation(targetPiece->getRank(), targetPiece->getFile()));
+			std::string from = utils::getAlgebraicNotation(piece->getRank(), piece->getFile());
+			std::string to = utils::getAlgebraicNotation(targetPiece->getRank(), targetPiece->getFile());
+			Move move = Move(from, to, MoveType::CAPTURE);
+			moves.emplace_back(move);
+			logger::DEBUG("Capture move generated from " + from + " to " + to);
 		}
 	}
 
-	void Moves::generateKingMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves)
+	void Moves::generateKingMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
 	{
-		constexpr int8_t direction_vectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
-		this->slideInDirections(piece, board, moves, direction_vectors, 8, true);
+		constexpr int8_t directionVectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
+		this->slideInDirections(piece, board, moves, directionVectors, 8, true);
 	}
 
-	void Moves::generateKnightMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves)
+	void Moves::generateKnightMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
 	{
-		const uint8_t current_rank = piece->getRank();
-		const uint8_t current_file = piece->getFile();
-		const std::string from_position = utils::getAlgebraicNotation(current_rank, current_file);
+		const uint8_t currentRank = piece->getRank();
+		const uint8_t currentFile = piece->getFile();
+		const std::string from = utils::getAlgebraicNotation(currentRank, currentFile);
 
-		constexpr int8_t knight_moves[8][2] = {
+		constexpr int8_t knightMoves[8][2] = {
 			{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {1, -2}, {-1, 2}, {-1, -2}};
 
-		for (const auto &move : knight_moves)
+		for (const auto &knightMove : knightMoves)
 		{
-			const int8_t new_rank = current_rank + move[0];
-			const int8_t new_file = current_file + move[1];
+			const int8_t newRank = currentRank + knightMove[0];
+			const int8_t newFile = currentFile + knightMove[1];
 
-			if (new_rank >= 0 && new_rank <= 7 && new_file >= 0 && new_file <= 7)
+			if (newRank >= 0 && newRank <= 7 && newFile >= 0 && newFile <= 7)
 			{
-				const Piece *target_piece = board->getPiece(new_rank, new_file);
-				if (!target_piece)
+				const Piece *targetPiece = board->getPiece(newRank, newFile);
+				if (!targetPiece)
 				{
-					moves.emplace_back(from_position, utils::getAlgebraicNotation(new_rank, new_file));
+					moves.emplace_back(Move(from, utils::getAlgebraicNotation(newRank, newFile), MoveType::NORMAL));
 					continue;
 				}
-				this->addCaptureMove(piece, target_piece, moves);
+				this->addCaptureMove(piece, targetPiece, moves);
 			}
 		}
 
 		logGeneratedMoves(piece, moves);
 	}
 
-	void Moves::logGeneratedMoves(const Piece *piece, const std::vector<std::pair<const std::string, const std::string>> &moves) const
+	void Moves::logGeneratedMoves(const Piece *piece, const std::vector<Move> &moves) const
 	{
 		std::stringstream ss;
 		ss << "Generated moves for "
@@ -98,18 +99,20 @@ namespace fenrir
 			ss << "No moves were generated 😢";
 		}
 
-		for (size_t i = 0; i < moves.size(); ++i)
+		bool first = true;
+		for (const Move &move : moves)
 		{
-			ss << moves.at(i).first << "->" << moves.at(i).second;
-			if (i != moves.size() - 1)
+			if (!first)
 			{
 				ss << ", ";
 			}
+			ss << move.getFrom() << "->" << move.getTo();
+			first = false;
 		}
 		logger::DEBUG(ss.str());
 	}
 
-	void Moves::generatePawnMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves)
+	void Moves::generatePawnMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
 	{
 		uint8_t rank = piece->getRank();
 		uint8_t file = piece->getFile();
@@ -119,8 +122,8 @@ namespace fenrir
 		uint8_t newRank = rank + direction;
 		if (newRank >= 0 && newRank < BOARD_SIZE && !board->getPiece(newRank, file))
 		{
-			moves.emplace_back(std::make_pair(utils::getAlgebraicNotation(rank, file),
-											  utils::getAlgebraicNotation(newRank, file)));
+			Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(newRank, file), MoveType::NORMAL);
+			moves.emplace_back(move);
 		}
 
 		// Left diagonal capture
@@ -139,26 +142,24 @@ namespace fenrir
 			newRank = rank + (2 * direction);
 			if (newRank >= 0 && newRank < BOARD_SIZE && !board->getPiece(newRank, file))
 			{
-				moves.emplace_back(std::make_pair(utils::getAlgebraicNotation(rank, file),
-												  utils::getAlgebraicNotation(newRank, file)));
+				Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(newRank, file), MoveType::NORMAL);
+				moves.emplace_back(move);
 			}
 		}
 
 		// En passant
-		const std::string &en_passant = board->getEnPassant();
-		if (!en_passant.empty())
+		const std::string &enPassant = board->getEnPassant();
+		if (!enPassant.empty())
 		{
-			uint8_t en_passant_rank, en_passant_file;
-			utils::parseAlgebraicNotation(en_passant.c_str(), en_passant_rank, en_passant_file);
-			if (en_passant_rank == newRank && std::abs(int(en_passant_file) - int(file)) == 1)
+			uint8_t enPassantRank, enPassantFile;
+			utils::parseAlgebraicNotation(enPassant.c_str(), enPassantRank, enPassantFile);
+			if (enPassantRank == newRank && std::abs(int(enPassantFile) - int(file)) == 1)
 			{
-				const Piece *target_piece = board->getPiece(rank, en_passant_file);
-				if (target_piece && std::tolower(target_piece->getAlias()) == 'p')
+				const Piece *targetPiece = board->getPiece(rank, enPassantFile);
+				if (targetPiece && std::tolower(targetPiece->getAlias()) == 'p')
 				{
-					moves.emplace_back(
-						std::make_pair(
-							utils::getAlgebraicNotation(rank, file),
-							utils::getAlgebraicNotation(en_passant_rank, en_passant_file)));
+					Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(enPassantRank, enPassantFile), MoveType::EN_PASSANT);
+					moves.emplace_back(move);
 				}
 			}
 		}
@@ -166,31 +167,31 @@ namespace fenrir
 		logGeneratedMoves(piece, moves);
 	}
 
-	void Moves::generateQueenMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves)
+	void Moves::generateQueenMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
 	{
-		constexpr int8_t direction_vectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
-		this->slideInDirections(piece, board, moves, direction_vectors, 8);
+		constexpr int8_t directionVectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
+		this->slideInDirections(piece, board, moves, directionVectors, 8);
 	}
 
-	void Moves::generateRookMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves)
+	void Moves::generateRookMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
 	{
-		constexpr int8_t direction_vectors[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-		this->slideInDirections(piece, board, moves, direction_vectors, 4);
+		constexpr int8_t directionVectors[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+		this->slideInDirections(piece, board, moves, directionVectors, 4);
 	}
 
-	void Moves::slideInDirections(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth)
+	void Moves::slideInDirections(const Piece *piece, const Board *board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth)
 	{
-		const uint8_t current_rank = piece->getRank();
-		const uint8_t current_file = piece->getFile();
-		const std::string from_position = utils::getAlgebraicNotation(current_rank, current_file);
+		const uint8_t currentRank = piece->getRank();
+		const uint8_t currentFile = piece->getFile();
+		const std::string from = utils::getAlgebraicNotation(currentRank, currentFile);
 
 		for (size_t i = 0; i < numDirections; ++i)
 		{
-			const int8_t rank_delta = directionVectors[i][0];
-			const int8_t file_delta = directionVectors[i][1];
+			const int8_t rankDelta = directionVectors[i][0];
+			const int8_t fileDelta = directionVectors[i][1];
 
-			int8_t newRank = current_rank + rank_delta;
-			int8_t newFile = current_file + file_delta;
+			int8_t newRank = currentRank + rankDelta;
+			int8_t newFile = currentFile + fileDelta;
 			uint8_t depth = 0;
 
 			while (newRank >= 0 && newRank <= 7 && newFile >= 0 && newFile <= 7)
@@ -200,15 +201,15 @@ namespace fenrir
 					break;
 				}
 				depth++;
-				const Piece *target_piece = board->getPiece(newRank, newFile);
-				if (!target_piece)
+				const Piece *targetPiece = board->getPiece(newRank, newFile);
+				if (!targetPiece)
 				{
-					moves.emplace_back(from_position, utils::getAlgebraicNotation(newRank, newFile));
-					newRank += rank_delta;
-					newFile += file_delta;
+					moves.emplace_back(Move(from, utils::getAlgebraicNotation(newRank, newFile), MoveType::NORMAL));
+					newRank += rankDelta;
+					newFile += fileDelta;
 					continue;
 				}
-				this->addCaptureMove(piece, target_piece, moves);
+				this->addCaptureMove(piece, targetPiece, moves);
 				break;
 			}
 		}
@@ -224,7 +225,7 @@ namespace fenrir
 		return instance;
 	}
 
-	void Moves::generateMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves)
+	void Moves::generateMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
 	{
 		if (piece == nullptr)
 		{
