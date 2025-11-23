@@ -28,17 +28,17 @@ namespace fenrir
 
 	class FENRIR_API Engine final
 	{
-		static constexpr const char *default_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+		static constexpr const char *defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 		std::string fen;
 		Board board;
 
 	public:
-		Engine(const std::string &fenString = default_fen);
+		Engine(const std::string &fenString = defaultFen);
 		~Engine();
 
-		std::vector<std::pair<const std::string, const std::string>> generateMoves(const std::string &algebraicAddress) const;
+		const std::vector<Move> generateMoves(const std::string &algebraicAddress) const;
 		std::string getFen(void);
-		void makeMove(const std::string &fromAlgebraicAddress, const std::string &toAlgebraicAddress);
+		void makeMove(const Move &move);
 		void printBoard(void) const;
 		void reset();
 

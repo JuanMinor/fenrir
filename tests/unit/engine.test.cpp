@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 #include "include/engine/engine.h"
+#include "include/chess/move.h"
 
 class EngineTest : public ::testing::Test
 {
@@ -50,7 +51,7 @@ TEST_F(EngineTest, DefaultBoardSetup)
 
 TEST_F(EngineTest, MakeMove)
 {
-	engine.makeMove("b2", "b4");
+	engine.makeMove(fenrir::Move("b2", "b4"));
 
 	EXPECT_EQ(get_piece("b2"), '.');
 	EXPECT_EQ(get_piece("b4"), 'P');
@@ -61,7 +62,7 @@ TEST_F(EngineTest, MakeMove)
 
 TEST_F(EngineTest, ResetBoard)
 {
-	engine.makeMove("b2", "b4");
+	engine.makeMove(fenrir::Move("b2", "b4"));
 	EXPECT_EQ(get_piece("b4"), 'P');
 
 	engine.reset();
@@ -82,7 +83,7 @@ TEST_F(EngineTest, GetFenInitialBoard)
 
 TEST_F(EngineTest, GetFenAfterMove)
 {
-	engine.makeMove("e2", "e4");
+	engine.makeMove(fenrir::Move("e2", "e4"));
 	std::string fen = engine.getFen();
 
 	EXPECT_FALSE(fen.empty());
@@ -99,9 +100,9 @@ TEST_F(EngineTest, GenerateMovesValidPiece)
 	bool found_b4 = false;
 	for (const auto &move : moves)
 	{
-		if (move.second == "b3")
+		if (move.getTo() == "b3")
 			found_b3 = true;
-		if (move.second == "b4")
+		if (move.getTo() == "b4")
 			found_b4 = true;
 	}
 	EXPECT_TRUE(found_b3 || found_b4);
@@ -124,7 +125,7 @@ TEST_F(EngineTest, MakeMoveFromEmptySquare)
 {
 
 	testing::internal::CaptureStderr();
-	engine.makeMove("e4", "e5");
+	engine.makeMove(fenrir::Move("e4", "e5"));
 	std::string error_output = testing::internal::GetCapturedStderr();
 
 	EXPECT_EQ(get_piece("e4"), '.');
@@ -152,8 +153,8 @@ TEST_F(EngineTest, StressTestManyMovesAndResets)
 
 	for (int i = 0; i < num_iterations; ++i)
 	{
-		engine.makeMove("b2", "b4");
-		engine.makeMove("b4", "b2");
+		engine.makeMove(fenrir::Move("b2", "b4"));
+		engine.makeMove(fenrir::Move("b4", "b2"));
 
 		engine.reset();
 

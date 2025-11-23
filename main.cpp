@@ -18,6 +18,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "include/chess/move.h"
 #include "include/engine/engine.h"
 
 int main(int argc, char *argv[])
@@ -25,28 +26,32 @@ int main(int argc, char *argv[])
 	try
 	{
 		fenrir::Engine engine = fenrir::Engine();
-		engine.print_board();
-		engine.make_move("b2", "b4");
-		engine.make_move("b8", "c6");
-		engine.make_move("d2", "d3");
-		engine.make_move("a7", "a5");
-		engine.print_board();
+		engine.printBoard();
+		engine.makeMove(fenrir::Move("b2", "b4", fenrir::MoveType::NORMAL));
+		engine.makeMove(fenrir::Move("b8", "c6", fenrir::MoveType::NORMAL));
+		engine.makeMove(fenrir::Move("d2", "d3", fenrir::MoveType::NORMAL));
+		engine.makeMove(fenrir::Move("a7", "a5", fenrir::MoveType::NORMAL));
+		engine.printBoard();
 
 		engine.reset();
-		engine.print_board();
+		engine.printBoard();
 
 		// test rook moves
-		engine.make_move("a2", "b3");
+		// engine.make_move("a2", "b3");
+		engine.makeMove(fenrir::Move("a2", "b3", fenrir::MoveType::NORMAL));
+		engine.printBoard();
 
 		// move generation
-		const std::vector<std::pair<const std::string, const std::string>> moves = engine.generate_moves("a1");
+		const std::vector<fenrir::Move> moves = engine.generateMoves("a1");
 
 		std::cout << "Generated moves for piece" << std::endl;
 		for (const auto &move : moves)
 		{
-			std::cout << move.first << " -> " << move.second << std::endl;
+			std::cout << move.getFrom() << " -> " << move.getTo() << std::endl;
 		}
 		std::cout << "Total moves: " << moves.size() << std::endl;
+		engine.reset();
+		engine.printBoard();
 	}
 	catch (const std::exception &e)
 	{

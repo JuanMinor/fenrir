@@ -42,9 +42,9 @@ namespace fenrir
 	}
 #endif
 
-	std::vector<std::pair<const std::string, const std::string>> Engine::generateMoves(const std::string &algebraicAddress) const
+	const std::vector<Move> Engine::generateMoves(const std::string &algebraicAddress) const
 	{
-		std::vector<std::pair<const std::string, const std::string>> moves;
+		std::vector<Move> moves;
 		u_int8_t rank, file;
 		utils::parseAlgebraicNotation(algebraicAddress, rank, file);
 		if (!board.getBoard().at(rank).at(file))
@@ -70,21 +70,20 @@ namespace fenrir
 		return current_fen;
 	}
 
-	void Engine::makeMove(const std::string &fromAlgebraicAddress, const std::string &toAlgebraicAddress)
+	void Engine::makeMove(const Move &move)
 	{
 		u_int8_t fromRank, fromFile, toRank, toFile;
-		utils::parseAlgebraicNotation(fromAlgebraicAddress, fromRank, fromFile);
-		utils::parseAlgebraicNotation(toAlgebraicAddress, toRank, toFile);
-
+		utils::parseAlgebraicNotation(move.getFrom(), fromRank, fromFile);
+		utils::parseAlgebraicNotation(move.getTo(), toRank, toFile);
 		Piece *piece = board.getBoard().at(fromRank).at(fromFile);
 		if (!piece)
 		{
-			logger::ERROR("No piece found at " + fromAlgebraicAddress);
+			logger::ERROR("No piece found at " + move.getFrom());
 			return;
 		}
 		board.move(piece, toRank, toFile);
 
-		logger::DEBUG("Made move from " + fromAlgebraicAddress + " to " + toAlgebraicAddress);
+		logger::DEBUG("Made move from " + move.getFrom() + " to " + move.getTo());
 	}
 
 	void Engine::printBoard(void) const

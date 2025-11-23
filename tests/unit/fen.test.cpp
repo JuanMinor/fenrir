@@ -64,13 +64,13 @@ TEST_F(FenTest, ParseEnPassant)
 TEST_F(FenTest, ParseHalfmoveClock)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_EQ(fen.getHalfmoveClock(), 0);
+	EXPECT_EQ(fen.getHalfMoveClock(), 0);
 }
 
 TEST_F(FenTest, ParseFullmoves)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_EQ(fen.getFullmoves(), 1);
+	EXPECT_EQ(fen.getFullMoves(), 1);
 }
 
 /* Invalid arguments */
@@ -101,8 +101,8 @@ TEST_F(FenTest, EnPassantSquareSet)
 TEST_F(FenTest, BoundaryValues)
 {
 	fenrir::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 255 255");
-	EXPECT_EQ(fen.getHalfmoveClock(), 255);
-	EXPECT_EQ(fen.getFullmoves(), 255);
+	EXPECT_EQ(fen.getHalfMoveClock(), 255);
+	EXPECT_EQ(fen.getFullMoves(), 255);
 }
 
 /* Memory management */
@@ -127,8 +127,8 @@ TEST_F(FenTest, StressTest)
 		EXPECT_EQ(fen.getColor(), fenrir::WHITE);
 		EXPECT_EQ(fen.getCastling(), "KQkq");
 		EXPECT_EQ(fen.getEnPassant(), "-");
-		EXPECT_EQ(fen.getHalfmoveClock(), 0);
-		EXPECT_EQ(fen.getFullmoves(), 1);
+		EXPECT_EQ(fen.getHalfMoveClock(), 0);
+		EXPECT_EQ(fen.getFullMoves(), 1);
 	}
 }
 
@@ -216,33 +216,33 @@ TEST_F(FenTest, SetColorInvalid)
 TEST_F(FenTest, SetHalfmoveClock)
 {
 	fenrir::Fen fen(test_fen_string);
-	fen.setHalfmoveClock(50);
-	EXPECT_EQ(fen.getHalfmoveClock(), 50);
+	fen.setHalfMoveClock(50);
+	EXPECT_EQ(fen.getHalfMoveClock(), 50);
 
-	fen.setHalfmoveClock(0);
-	EXPECT_EQ(fen.getHalfmoveClock(), 0);
+	fen.setHalfMoveClock(0);
+	EXPECT_EQ(fen.getHalfMoveClock(), 0);
 
-	fen.setHalfmoveClock(100);
-	EXPECT_EQ(fen.getHalfmoveClock(), 100);
+	fen.setHalfMoveClock(100);
+	EXPECT_EQ(fen.getHalfMoveClock(), 100);
 }
 
 TEST_F(FenTest, SetFullmovesValid)
 {
 	fenrir::Fen fen(test_fen_string);
-	fen.setFullmoves(1);
-	EXPECT_EQ(fen.getFullmoves(), 1);
+	fen.setFullMoves(1);
+	EXPECT_EQ(fen.getFullMoves(), 1);
 
-	fen.setFullmoves(10);
-	EXPECT_EQ(fen.getFullmoves(), 10);
+	fen.setFullMoves(10);
+	EXPECT_EQ(fen.getFullMoves(), 10);
 
-	fen.setFullmoves(1000);
-	EXPECT_EQ(fen.getFullmoves(), 1000);
+	fen.setFullMoves(1000);
+	EXPECT_EQ(fen.getFullMoves(), 1000);
 }
 
 TEST_F(FenTest, SetFullmovesInvalid)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_THROW(fen.setFullmoves(0), std::runtime_error);
+	EXPECT_THROW(fen.setFullMoves(0), std::runtime_error);
 }
 
 TEST_F(FenTest, EmptyFenString)
@@ -263,8 +263,8 @@ TEST_F(FenTest, GenerateFENAfterModifications)
 	fen.setCastling("KQ");
 	fen.setEnPassant("e3");
 	fen.setColor(fenrir::BLACK);
-	fen.setHalfmoveClock(10);
-	fen.setFullmoves(2);
+	fen.setHalfMoveClock(10);
+	fen.setFullMoves(2);
 
 	std::string generated_fen = fen.generateFen();
 	EXPECT_EQ(generated_fen, "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQ e3 10 2");
@@ -277,8 +277,8 @@ TEST_F(FenTest, PermissiveModeDefaultConstructor)
 	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
 	EXPECT_EQ(fen.getCastling(), "KQkq");
 	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfmoveClock(), 0);
-	EXPECT_EQ(fen.getFullmoves(), 1);
+	EXPECT_EQ(fen.getHalfMoveClock(), 0);
+	EXPECT_EQ(fen.getFullMoves(), 1);
 }
 
 TEST_F(FenTest, PermissiveModeExplicitConstructor)
@@ -288,8 +288,8 @@ TEST_F(FenTest, PermissiveModeExplicitConstructor)
 	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
 	EXPECT_EQ(fen.getCastling(), "KQkq");
 	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfmoveClock(), 0);
-	EXPECT_EQ(fen.getFullmoves(), 1);
+	EXPECT_EQ(fen.getHalfMoveClock(), 0);
+	EXPECT_EQ(fen.getFullMoves(), 1);
 }
 
 TEST_F(FenTest, TournamentModeValidFen)
@@ -299,15 +299,15 @@ TEST_F(FenTest, TournamentModeValidFen)
 	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
 	EXPECT_EQ(fen.getCastling(), "KQkq");
 	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfmoveClock(), 0);
-	EXPECT_EQ(fen.getFullmoves(), 1);
+	EXPECT_EQ(fen.getHalfMoveClock(), 0);
+	EXPECT_EQ(fen.getFullMoves(), 1);
 }
 
 TEST_F(FenTest, PermissiveModeAllowsHalfmoveClockOver100)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 150 1";
 	fenrir::Fen fen(fen_string, fenrir::GameMode::PERMISSIVE);
-	EXPECT_EQ(fen.getHalfmoveClock(), 150);
+	EXPECT_EQ(fen.getHalfMoveClock(), 150);
 }
 
 TEST_F(FenTest, TournamentModeRejectsHalfmoveClockOver100)
@@ -320,7 +320,7 @@ TEST_F(FenTest, TournamentModeAllowsHalfmoveClock100)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 100 1";
 	fenrir::Fen fen(fen_string, fenrir::GameMode::TOURNAMENT);
-	EXPECT_EQ(fen.getHalfmoveClock(), 100);
+	EXPECT_EQ(fen.getHalfMoveClock(), 100);
 }
 
 TEST_F(FenTest, TournamentModeRejectsFullmovesZero)
@@ -377,21 +377,21 @@ TEST_F(FenTest, TournamentModeRejectsInvalidPieceCounts)
 TEST_F(FenTest, PermissiveModeSetterAllowsHalfmoveClockOver100)
 {
 	fenrir::Fen fen(test_fen_string, fenrir::GameMode::PERMISSIVE);
-	fen.setHalfmoveClock(200);
-	EXPECT_EQ(fen.getHalfmoveClock(), 200);
+	fen.setHalfMoveClock(200);
+	EXPECT_EQ(fen.getHalfMoveClock(), 200);
 }
 
 TEST_F(FenTest, TournamentModeSetterRejectsHalfmoveClockOver100)
 {
 	fenrir::Fen fen(test_fen_string, fenrir::GameMode::TOURNAMENT);
-	EXPECT_THROW(fen.setHalfmoveClock(101), std::runtime_error);
+	EXPECT_THROW(fen.setHalfMoveClock(101), std::runtime_error);
 }
 
 TEST_F(FenTest, TournamentModeSetterAllowsHalfmoveClock100)
 {
 	fenrir::Fen fen(test_fen_string, fenrir::GameMode::TOURNAMENT);
-	fen.setHalfmoveClock(100);
-	EXPECT_EQ(fen.getHalfmoveClock(), 100);
+	fen.setHalfMoveClock(100);
+	EXPECT_EQ(fen.getHalfMoveClock(), 100);
 }
 
 TEST_F(FenTest, BothModesSetterRejectsFullmovesZero)
@@ -399,8 +399,8 @@ TEST_F(FenTest, BothModesSetterRejectsFullmovesZero)
 	fenrir::Fen fen_permissive(test_fen_string, fenrir::GameMode::PERMISSIVE);
 	fenrir::Fen fen_tournament(test_fen_string, fenrir::GameMode::TOURNAMENT);
 
-	EXPECT_THROW(fen_permissive.setFullmoves(0), std::runtime_error);
-	EXPECT_THROW(fen_tournament.setFullmoves(0), std::runtime_error);
+	EXPECT_THROW(fen_permissive.setFullMoves(0), std::runtime_error);
+	EXPECT_THROW(fen_tournament.setFullMoves(0), std::runtime_error);
 }
 
 TEST_F(FenTest, PermissiveModeSetterAllowsInvalidPlacements)
@@ -426,8 +426,8 @@ TEST_F(FenTest, TournamentModeValidComplexPosition)
 	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
 	EXPECT_EQ(fen.getCastling(), "KQkq");
 	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfmoveClock(), 2);
-	EXPECT_EQ(fen.getFullmoves(), 4);
+	EXPECT_EQ(fen.getHalfMoveClock(), 2);
+	EXPECT_EQ(fen.getFullMoves(), 4);
 }
 
 TEST_F(FenTest, PermissiveModeValidComplexPosition)
@@ -438,8 +438,8 @@ TEST_F(FenTest, PermissiveModeValidComplexPosition)
 	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
 	EXPECT_EQ(fen.getCastling(), "KQkq");
 	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfmoveClock(), 2);
-	EXPECT_EQ(fen.getFullmoves(), 4);
+	EXPECT_EQ(fen.getHalfMoveClock(), 2);
+	EXPECT_EQ(fen.getFullMoves(), 4);
 }
 
 TEST_F(FenTest, TournamentModeRejectsInvalidPieceCharacter)

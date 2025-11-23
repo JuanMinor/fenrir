@@ -19,7 +19,7 @@
 
 namespace fenrir
 {
-	Fen::Fen(const std::string &fenString, GameMode gameMode) : game_mode(gameMode)
+	Fen::Fen(const std::string &fenString, GameMode gameMode) : gameMode(gameMode)
 	{
 		if (fenString.empty())
 		{
@@ -40,23 +40,23 @@ namespace fenrir
 		this->placement = tokens[0];
 		this->color = (tokens[1] == "w" || tokens[1] == "W") ? WHITE : BLACK;
 		this->castling = tokens[2];
-		this->en_passant = tokens[3];
-		this->halfmove_clock = static_cast<uint32_t>(std::stoi(tokens[4]));
-		this->fullmoves = static_cast<uint32_t>(std::stoi(tokens[5]));
+		this->enPassant = tokens[3];
+		this->halfMoveClock = static_cast<uint32_t>(std::stoi(tokens[4]));
+		this->fullMoves = static_cast<uint32_t>(std::stoi(tokens[5]));
 
-		if (game_mode == GameMode::TOURNAMENT)
+		if (gameMode == GameMode::TOURNAMENT)
 		{
-			if (this->halfmove_clock > 100)
+			if (this->halfMoveClock > 100)
 			{
 				LOG_THROW_ERROR("Invalid FEN: halfmove clock cannot exceed 100 (50-move rule)", true);
 			}
-			if (this->fullmoves == 0)
+			if (this->fullMoves == 0)
 			{
 				LOG_THROW_ERROR("Invalid FEN: fullmoves must be at least 1", true);
 			}
 		}
 
-		const std::string mode_str = (game_mode == GameMode::PERMISSIVE) ? "PERMISSIVE" : "TOURNAMENT";
+		const std::string mode_str = (gameMode == GameMode::PERMISSIVE) ? "PERMISSIVE" : "TOURNAMENT";
 		logger::INFO("FEN initialized with " + mode_str + " mode: " + fenString);
 	}
 
@@ -185,7 +185,7 @@ namespace fenrir
 			LOG_THROW_ERROR("Invalid FEN string: placement section does not represent 64 squares", true);
 		}
 
-		if (this->game_mode == GameMode::TOURNAMENT)
+		if (this->gameMode == GameMode::TOURNAMENT)
 		{
 			this->validateChessRules(placement);
 		}
@@ -204,7 +204,7 @@ namespace fenrir
 
 	std::string Fen::getEnPassant(void) const
 	{
-		return this->en_passant;
+		return this->enPassant;
 	}
 
 	uint8_t Fen::getColor(void) const
@@ -212,14 +212,14 @@ namespace fenrir
 		return this->color;
 	}
 
-	uint32_t Fen::getHalfmoveClock(void) const
+	uint32_t Fen::getHalfMoveClock(void) const
 	{
-		return this->halfmove_clock;
+		return this->halfMoveClock;
 	}
 
-	uint32_t Fen::getFullmoves(void) const
+	uint32_t Fen::getFullMoves(void) const
 	{
-		return this->fullmoves;
+		return this->fullMoves;
 	}
 
 	// Setters for FEN components
@@ -248,13 +248,13 @@ namespace fenrir
 		return;
 	}
 
-	void Fen::setEnPassant(const std::string &en_passant)
+	void Fen::setEnPassant(const std::string &enPassant)
 	{
-		if (en_passant != "-" && !std::regex_match(en_passant, std::regex("^[a-h][36]$")))
+		if (enPassant != "-" && !std::regex_match(enPassant, std::regex("^[a-h][36]$")))
 		{
-			LOG_THROW_ERROR("Invalid en passant square: " + en_passant, true);
+			LOG_THROW_ERROR("Invalid en passant square: " + enPassant, true);
 		}
-		this->en_passant = en_passant;
+		this->enPassant = enPassant;
 		return;
 	}
 
@@ -268,23 +268,23 @@ namespace fenrir
 		return;
 	}
 
-	void Fen::setHalfmoveClock(const uint32_t &halfmove_clock)
+	void Fen::setHalfMoveClock(const uint32_t &halfMoveClock)
 	{
-		if (this->game_mode == GameMode::TOURNAMENT && halfmove_clock > 100)
+		if (this->gameMode == GameMode::TOURNAMENT && halfMoveClock > 100)
 		{
-			LOG_THROW_ERROR("Invalid halfmove clock: cannot exceed 100 in tournament mode (50-move rule)", true);
+			LOG_THROW_ERROR("Invalid half move clock: cannot exceed 100 in tournament mode (50-move rule)", true);
 		}
-		this->halfmove_clock = halfmove_clock;
+		this->halfMoveClock = halfMoveClock;
 		return;
 	}
 
-	void Fen::setFullmoves(const uint32_t &fullmoves)
+	void Fen::setFullMoves(const uint32_t &fullMoves)
 	{
-		if (fullmoves == 0)
+		if (fullMoves == 0)
 		{
-			LOG_THROW_ERROR("Fullmoves must be at least 1: " + std::to_string(fullmoves), true);
+			LOG_THROW_ERROR("Full moves must be at least 1: " + std::to_string(fullMoves), true);
 		}
-		this->fullmoves = fullmoves;
+		this->fullMoves = fullMoves;
 		return;
 	}
 
@@ -294,9 +294,9 @@ namespace fenrir
 		oss << this->placement << " "
 			<< (this->color == WHITE ? "w" : "b") << " "
 			<< this->castling << " "
-			<< (this->en_passant.empty() ? "-" : this->en_passant) << " "
-			<< this->halfmove_clock << " "
-			<< this->fullmoves;
+			<< (this->enPassant.empty() ? "-" : this->enPassant) << " "
+			<< this->halfMoveClock << " "
+			<< this->fullMoves;
 		return oss.str();
 	}
 

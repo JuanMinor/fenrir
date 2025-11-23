@@ -17,42 +17,35 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <unordered_map>
-#include <locale>
-#include "include/core/core.h"
-#include "include/utils/utils.h"
+#include <string>
+#include <include/core/core.h>
 
 namespace fenrir
 {
-	class Piece
+	class Move
 	{
-	private:
-		char alias;
-		uint8_t value;
-		uint8_t color;
-		uint8_t rank;
-		uint8_t file;
-		bool moved;
-
-		// Helper method to check if the piece has moved
-		bool hasPieceMoved(void) const;
+		std::string from;
+		MoveType moveType;
+		char promotionPiece;
+		std::string to;
 
 	public:
-		Piece(const char &alias, const uint8_t &rank, const uint8_t &file);
-		~Piece();
+		Move(const std::string &from, const std::string &to,
+			 MoveType moveType = MoveType::NORMAL, char promotionPiece = '\0');
+		~Move();
 
-		// Getters
-		char getAlias(void) const;
-		uint8_t getColor(void) const;
-		uint8_t getFile(void) const;
-		bool getMoved(void) const;
-		uint8_t getRank(void) const;
-		uint8_t getValue(void) const;
+		/* Getters */
+		const std::string &getFrom() const;
+		const std::string &getTo() const;
+		MoveType getMoveType() const;
+		char getPromotionPiece() const;
 
-		// Setters
-		void setFile(const uint8_t &file);
-		void setMoved(const bool &moved);
-		void setRank(const uint8_t &rank);
+		/* Utility methods */
+		bool isCapture() const;
+		bool isPromotion() const;
+		bool isCastling() const;
+		std::string toAlgebraicNotation() const;
+		std::string toString() const;
+		std::string toUCINotation() const;
 	};
 }
