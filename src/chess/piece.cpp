@@ -45,14 +45,19 @@ namespace fenrir
 		return this->alias;
 	}
 
-	uint8_t Piece::getValue(void) const
-	{
-		return this->value;
-	}
-
 	uint8_t Piece::getColor(void) const
 	{
 		return this->color;
+	}
+
+	uint8_t Piece::getFile(void) const
+	{
+		return this->file;
+	}
+
+	bool Piece::getMoved(void) const
+	{
+		return this->moved;
 	}
 
 	uint8_t Piece::getRank(void) const
@@ -60,19 +65,9 @@ namespace fenrir
 		return this->rank;
 	}
 
-	void Piece::setRank(const uint8_t &rank)
+	uint8_t Piece::getValue(void) const
 	{
-		if (rank < 0 || rank > 7)
-		{
-			LOG_THROW_ERROR("Rank must be between 1 and 8", true);
-		}
-		this->rank = rank;
-		this->moved = this->hasPieceMoved();
-	}
-
-	uint8_t Piece::getFile(void) const
-	{
-		return this->file;
+		return this->value;
 	}
 
 	void Piece::setFile(const uint8_t &file)
@@ -84,13 +79,18 @@ namespace fenrir
 		this->file = file;
 	}
 
-	bool Piece::getMoved(void) const
-	{
-		return this->moved;
-	}
-
 	void Piece::setMoved(const bool &moved)
 	{
 		this->moved = moved;
+	}
+
+	void Piece::setRank(const uint8_t &rank)
+	{
+		if (rank < 0 || rank > 7)
+		{
+			LOG_THROW_ERROR("Rank must be between 1 and 8", true);
+		}
+		this->rank = rank;
+		this->moved = this->hasPieceMoved();
 	}
 }

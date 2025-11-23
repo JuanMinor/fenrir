@@ -22,6 +22,7 @@
 #include <vector>
 #include "include/chess/board.h"
 #include "include/logger/logger.h"
+#include "include/chess/move.h"
 #include "include/chess/piece.h"
 #include "include/utils/utils.h"
 
@@ -34,19 +35,19 @@ namespace fenrir
 		Moves(const Moves &) = delete;
 		Moves &operator=(const Moves &) = delete;
 
-		void generateBishopMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves);
-		void addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<std::pair<const std::string, const std::string>> &moves);
-		void generateKingMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves);
-		void generateKnightMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves);
-		void logGeneratedMoves(const Piece *piece, const std::vector<std::pair<const std::string, const std::string>> &moves) const;
-		void generatePawnMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves);
-		void generateQueenMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves);
-		void generateRookMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves);
-		void slideInDirections(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth = false);
+		void generateBishopMoves(const Piece *piece, const Board *board, std::vector<Move> &moves);
+		void addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<Move> &moves);
+		void generateKingMoves(const Piece *piece, const Board *board, std::vector<Move> &moves);
+		void generateKnightMoves(const Piece *piece, const Board *board, std::vector<Move> &moves);
+		void logGeneratedMoves(const Piece *piece, const std::vector<Move> &moves) const;
+		void generatePawnMoves(const Piece *piece, const Board *board, std::vector<Move> &moves);
+		void generateQueenMoves(const Piece *piece, const Board *board, std::vector<Move> &moves);
+		void generateRookMoves(const Piece *piece, const Board *board, std::vector<Move> &moves);
+		void slideInDirections(const Piece *piece, const Board *board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth = false);
 
 	public:
 		static Moves &getInstance();
 
-		void generateMoves(const Piece *piece, const Board *board, std::vector<std::pair<const std::string, const std::string>> &moves);
+		void generateMoves(const Piece *piece, const Board *board, std::vector<Move> &moves);
 	};
 }

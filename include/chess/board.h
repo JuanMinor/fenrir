@@ -36,10 +36,10 @@ namespace fenrir
 	private:
 		std::vector<std::vector<Piece *>> board;
 		std::string castling;
-		std::string en_passant;
+		std::string enPassant;
 		uint8_t color;
-		uint8_t halfmove_clock;
-		uint8_t fullmoves;
+		uint8_t halfMoveClock;
+		uint8_t fullMoves;
 		Fen fen;
 
 		void buildBoard(const std::string &placement);

@@ -7,7 +7,7 @@ A foundational C++ chess library providing board representation, FEN parsing, an
 [![Build](https://img.shields.io/badge/Build-Make-green.svg)](https://www.gnu.org/software/make/)
 [![Testing](https://img.shields.io/badge/Testing-Google%20Test-red.svg)](https://github.com/google/googletest)
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-262%20passing-success.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-309%20passing-success.svg)]()
 
 > **⚠️ Current Status**: This is a **foundation library** with complete piece movement logic but **no game rule enforcement** (no check detection, castling, or checkmate). It's a building block for chess applications, not a playable chess game.
 
@@ -26,7 +26,7 @@ make
 # Run the example program
 ./scripts/run.sh
 
-# Run all 262 tests
+# Run all 309 tests
 make test
 
 # Generate coverage report (requires 100%)
@@ -56,7 +56,7 @@ make coverage
 - 📦 **Shared Library**: `libfenrir.so` for integration
 - 🪵 **Logging System**: Production-ready with rotation and levels
 - 📝 **PGN Recording**: Basic game notation support
-- ✅ **100% Test Coverage**: 262 unit tests, all passing
+- ✅ **100% Test Coverage**: 309 unit tests, all passing
 
 ### ❌ Not Yet Implemented
 
@@ -92,26 +92,33 @@ make coverage
 
 ```cpp
 #include "include/engine/engine.h"
+#include "include/chess/move.h"
 
 // Initialize with default starting position
 fenrir::Engine engine;
 
-// Make moves using algebraic notation (recommended)
-engine.make_move("e2", "e4");  // Pawn e2 to e4
-engine.make_move("e7", "e5");  // Pawn e7 to e5
-engine.make_move("g1", "f3");  // Knight g1 to f3
-engine.make_move("b8", "c6");  // Knight b8 to c6
+// Make moves using the Move class
+engine.makeMove(fenrir::Move("e2", "e4"));  // Pawn e2 to e4
+engine.makeMove(fenrir::Move("e7", "e5"));  // Pawn e7 to e5
+engine.makeMove(fenrir::Move("g1", "f3"));  // Knight g1 to f3
+engine.makeMove(fenrir::Move("b8", "c6"));  // Knight b8 to c6
 
-// Alternative: coordinate-based moves (rank, file - 0-indexed)
-engine.make_move(1, 4, 3, 4);  // Same as e2-e4
+// Specify move types for special moves
+engine.makeMove(fenrir::Move("e4", "d5", fenrir::MoveType::CAPTURE));  // Capture
+engine.makeMove(fenrir::Move("e7", "e8", fenrir::MoveType::PROMOTION, 'Q'));  // Promotion
 
-// Generate legal moves for any piece type
-auto pawn_moves = engine.generate_moves("e4");	// Pawn moves
-auto knight_moves = engine.generate_moves("f3");  // Knight moves
-auto all_moves = engine.generate_moves("d1");	 // Queen moves
+// Generate legal moves for any piece type (returns vector<Move>)
+const std::vector<fenrir::Move> pawn_moves = engine.generateMoves("e4");  // Pawn moves
+const std::vector<fenrir::Move> knight_moves = engine.generateMoves("f3");  // Knight moves
+const std::vector<fenrir::Move> all_moves = engine.generateMoves("d1");  // Queen moves
+
+// Access move information
+for (const auto& move : pawn_moves) {
+    std::cout << move.getFrom() << " -> " << move.getTo() << std::endl;
+}
 
 // Display current board state
-engine.print_board();
+engine.printBoard();
 
 // Reset to starting position
 engine.reset();
@@ -120,11 +127,26 @@ engine.reset();
 ### Key Classes and Methods
 
 - `fenrir::Engine`: Main interface for chess operations
-- `engine.make_move(from, to)`: Execute a move for any piece type
-- `engine.generate_moves(square)`: Get legal moves for any piece (pawns, rooks, knights, bishops, queens, kings)
-- `engine.get_fen()`: Get current position in FEN notation
-- `engine.print_board()`: Display current position
-- `engine.reset()`: Return to starting position
+  - `engine.makeMove(const Move&)`: Execute a move using Move object
+  - `engine.generateMoves(square)`: Get legal moves (returns `vector<Move>`)
+  - `engine.getFen()`: Get current position in FEN notation
+  - `engine.printBoard()`: Display current position
+  - `engine.reset()`: Return to starting position
+
+- `fenrir::Move`: Represents a chess move
+  - Constructor: `Move(from, to, moveType=NORMAL, promotionPiece='\0')`
+  - `move.getFrom()`: Get source square (e.g., "e2")
+  - `move.getTo()`: Get destination square (e.g., "e4")
+  - `move.getMoveType()`: Get move type (NORMAL, CAPTURE, EN_PASSANT, etc.)
+  - `move.toUCINotation()`: Convert to UCI format (e.g., "e2e4")
+
+- `fenrir::MoveType`: Enum for move types
+  - `NORMAL`: Regular move
+  - `CAPTURE`: Capturing move
+  - `EN_PASSANT`: En passant capture
+  - `CASTLE_KINGSIDE`: Kingside castling
+  - `CASTLE_QUEENSIDE`: Queenside castling
+  - `PROMOTION`: Pawn promotion
 
 **⚠️ Important Notes:**
 - Moves are **pseudo-legal** (follow piece rules but may leave king in check)
@@ -177,6 +199,7 @@ make release
    #include <iostream>
    #include <vector>
    #include "include/engine/engine.h"
+   #include "include/chess/move.h"
 
    int main() {
 	   try {
@@ -185,29 +208,29 @@ make release
 
 		   // Display the initial board
 		   std::cout << "Initial position:" << std::endl;
-		   engine.print_board();
+		   engine.printBoard();
 
-		   // Demonstrate movement for different piece types
-		   engine.make_move("e2", "e4");  // White pawn to e4
-		   engine.make_move("e7", "e5");  // Black pawn to e5
-		   engine.make_move("g1", "f3");  // White knight to f3
-		   engine.make_move("b8", "c6");  // Black knight to c6
-		   engine.make_move("f1", "c4");  // White bishop to c4
+		   // Demonstrate movement for different piece types using Move class
+		   engine.makeMove(fenrir::Move("e2", "e4"));  // White pawn to e4
+		   engine.makeMove(fenrir::Move("e7", "e5"));  // Black pawn to e5
+		   engine.makeMove(fenrir::Move("g1", "f3"));  // White knight to f3
+		   engine.makeMove(fenrir::Move("b8", "c6"));  // Black knight to c6
+		   engine.makeMove(fenrir::Move("f1", "c4"));  // White bishop to c4
 
 		   std::cout << "\nAfter multiple piece movements:" << std::endl;
-		   engine.print_board();
+		   engine.printBoard();
 
-		   // Generate legal moves for different piece types
-		   auto knight_moves = engine.generate_moves("f3");
+		   // Generate legal moves for different piece types (returns vector<Move>)
+		   const std::vector<fenrir::Move> knight_moves = engine.generateMoves("f3");
 		   std::cout << "\nLegal moves for white knight on f3:" << std::endl;
 		   for (const auto& move : knight_moves) {
-			   std::cout << move.first << " -> " << move.second << std::endl;
+			   std::cout << move.getFrom() << " -> " << move.getTo() << std::endl;
 		   }
 
-		   auto bishop_moves = engine.generate_moves("c4");
+		   const std::vector<fenrir::Move> bishop_moves = engine.generateMoves("c4");
 		   std::cout << "\nLegal moves for white bishop on c4:" << std::endl;
 		   for (const auto& move : bishop_moves) {
-			   std::cout << move.first << " -> " << move.second << std::endl;
+			   std::cout << move.getFrom() << " -> " << move.getTo() << std::endl;
 		   }
 
 		   // Reset to starting position
@@ -280,6 +303,7 @@ fenrir/
 │   ├── chess/           # Board, pieces, moves, FEN
 │   │   ├── board.h      # Board representation
 │   │   ├── piece.h      # Piece class
+│   │   ├── move.h       # Move class (replaces pair<string,string>)
 │   │   ├── moves.h      # Move generation (singleton)
 │   │   └── fen.h        # FEN parser
 │   ├── engine/          # Main engine interface
@@ -354,7 +378,7 @@ make coverage  # Generate coverage report (fails if < 100%)
 **Test Structure:**
 - Framework: Google Test
 - Location: `tests/unit/*.test.cpp`
-- Count: 262 tests across 10 test suites
+- Count: 309 tests across 11 test suites
 - Coverage: 100% line coverage enforced
 
 ### Build System

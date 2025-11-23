@@ -17,6 +17,7 @@
 
 #include <gtest/gtest.h>
 #include "include/chess/moves.h"
+#include "include/chess/move.h"
 #include "include/chess/board.h"
 #include "include/chess/piece.h"
 #include "include/core/core.h"
@@ -37,12 +38,12 @@ protected:
 	static std::string pawn_position;
 	static std::string en_passant_position;
 
-	bool moveExists(const std::vector<std::pair<const std::string, const std::string>> &moves,
+	bool moveExists(const std::vector<fenrir::Move> &moves,
 					const std::string &from, const std::string &to) const
 	{
 		for (const auto &move : moves)
 		{
-			if (move.first == from && move.second == to)
+			if (move.getFrom() == from && move.getTo() == to)
 			{
 				return true;
 			}
@@ -68,7 +69,7 @@ TEST_F(MovesTest, GetInstance)
 TEST_F(MovesTest, WhitePawnSingleMove)
 {
 	fenrir::Board board(pawn_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.getPiece(2, 4);
 
 	ASSERT_NE(pawn, nullptr);
@@ -83,7 +84,7 @@ TEST_F(MovesTest, WhitePawnSingleMove)
 TEST_F(MovesTest, BlackPawnSingleMove)
 {
 	fenrir::Board board(pawn_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.getPiece(3, 3);
 
 	ASSERT_NE(pawn, nullptr);
@@ -98,7 +99,7 @@ TEST_F(MovesTest, BlackPawnSingleMove)
 TEST_F(MovesTest, WhitePawnDoubleMove)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.getPiece(1, 4);
 
 	ASSERT_NE(pawn, nullptr);
@@ -114,7 +115,7 @@ TEST_F(MovesTest, WhitePawnDoubleMove)
 TEST_F(MovesTest, BlackPawnDoubleMove)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.getPiece(6, 4);
 
 	ASSERT_NE(pawn, nullptr);
@@ -131,7 +132,7 @@ TEST_F(MovesTest, PawnCapture)
 {
 
 	fenrir::Board board("8/8/8/3p4/2P5/8/8/8 w KQkq - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.getPiece(3, 2);
 
 	ASSERT_NE(pawn, nullptr);
@@ -147,7 +148,7 @@ TEST_F(MovesTest, EnPassantCapture)
 	fenrir::Board board(en_passant_position);
 	EXPECT_EQ(board.getEnPassant(), "a6");
 
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.getPiece(4, 1);
 
 	ASSERT_NE(pawn, nullptr);
@@ -162,7 +163,7 @@ TEST_F(MovesTest, BlockedPawn)
 {
 
 	fenrir::Board board("8/8/8/3p4/3P4/8/8/8 w KQkq - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *pawn = board.getPiece(3, 3);
 
@@ -178,7 +179,7 @@ TEST_F(MovesTest, PawnAtEdge)
 {
 
 	fenrir::Board board("P7/8/8/8/8/8/8/8 w KQkq - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *pawn = board.getPiece(7, 0);
 
@@ -194,7 +195,7 @@ TEST_F(MovesTest, PawnAtEdge)
 TEST_F(MovesTest, NullPiece)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	fenrir::Moves::getInstance().generateMoves(nullptr, &board, moves);
 
@@ -204,7 +205,7 @@ TEST_F(MovesTest, NullPiece)
 TEST_F(MovesTest, EmptySquare)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *empty = board.getPiece(3, 4);
 
@@ -220,7 +221,7 @@ TEST_F(MovesTest, LogGeneratedMoves)
 {
 
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.getPiece(1, 4);
 
 	ASSERT_NE(pawn, nullptr);
@@ -234,7 +235,7 @@ TEST_F(MovesTest, LogGeneratedMoves)
 TEST_F(MovesTest, NonPawnPiece)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *knight = board.getPiece(0, 1);
 
@@ -253,7 +254,7 @@ TEST_F(MovesTest, NonPawnPiece)
 TEST_F(MovesTest, RookPiece)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *rook = board.getPiece(0, 0);
 
@@ -268,7 +269,7 @@ TEST_F(MovesTest, RookPiece)
 TEST_F(MovesTest, RookVerticalMovement)
 {
 	fenrir::Board board("8/8/8/8/3R4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *rook = board.getPiece(3, 3);
 
@@ -290,7 +291,7 @@ TEST_F(MovesTest, RookVerticalMovement)
 TEST_F(MovesTest, RookHorizontalMovement)
 {
 	fenrir::Board board("8/8/8/8/3R4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *rook = board.getPiece(3, 3);
 
@@ -312,7 +313,7 @@ TEST_F(MovesTest, RookHorizontalMovement)
 TEST_F(MovesTest, RookBlockedByFriendlyPiece)
 {
 	fenrir::Board board("8/8/8/3P4/3R4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *rook = board.getPiece(3, 3);
 
@@ -334,7 +335,7 @@ TEST_F(MovesTest, RookBlockedByFriendlyPiece)
 TEST_F(MovesTest, RookCaptureEnemyPiece)
 {
 	fenrir::Board board("8/8/8/3p4/3R4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *rook = board.getPiece(3, 3);
 
@@ -356,7 +357,7 @@ TEST_F(MovesTest, RookCaptureEnemyPiece)
 TEST_F(MovesTest, RookMultipleDirectionBlocking)
 {
 	fenrir::Board board("8/8/8/2pPp3/3R4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *rook = board.getPiece(3, 3);
 
@@ -382,7 +383,7 @@ TEST_F(MovesTest, RookMultipleDirectionBlocking)
 TEST_F(MovesTest, RookCornerPosition)
 {
 	fenrir::Board board("R7/8/8/8/8/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *rook = board.getPiece(7, 0);
 
@@ -403,7 +404,7 @@ TEST_F(MovesTest, RookCornerPosition)
 TEST_F(MovesTest, RookEdgePosition)
 {
 	fenrir::Board board("8/8/8/8/R7/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *rook = board.getPiece(3, 0);
 
@@ -421,7 +422,7 @@ TEST_F(MovesTest, RookEdgePosition)
 TEST_F(MovesTest, BlackRookMovement)
 {
 	fenrir::Board board("8/8/8/8/3r4/8/8/8 b - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *rook = board.getPiece(3, 3);
 
@@ -441,7 +442,7 @@ TEST_F(MovesTest, BlackRookMovement)
 TEST_F(MovesTest, BishopDiagonalMovement)
 {
 	fenrir::Board board("8/8/8/8/3B4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *bishop = board.getPiece(3, 3);
 
@@ -469,7 +470,7 @@ TEST_F(MovesTest, BishopDiagonalMovement)
 TEST_F(MovesTest, BishopBlockedByFriendlyPiece)
 {
 	fenrir::Board board("8/8/8/2P1P3/3B4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *bishop = board.getPiece(3, 3);
 
@@ -492,7 +493,7 @@ TEST_F(MovesTest, BishopBlockedByFriendlyPiece)
 TEST_F(MovesTest, BishopCaptureEnemyPiece)
 {
 	fenrir::Board board("8/8/8/2p1p3/3B4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *bishop = board.getPiece(3, 3);
 
@@ -517,7 +518,7 @@ TEST_F(MovesTest, BishopCaptureEnemyPiece)
 TEST_F(MovesTest, BishopCornerPosition)
 {
 	fenrir::Board board("B7/8/8/8/8/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *bishop = board.getPiece(7, 0);
 
@@ -539,7 +540,7 @@ TEST_F(MovesTest, BishopCornerPosition)
 TEST_F(MovesTest, BishopEdgePosition)
 {
 	fenrir::Board board("8/8/8/8/B7/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *bishop = board.getPiece(3, 0);
 
@@ -561,7 +562,7 @@ TEST_F(MovesTest, BishopEdgePosition)
 TEST_F(MovesTest, BlackBishopMovement)
 {
 	fenrir::Board board("8/8/8/8/3b4/8/8/8 b - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *bishop = board.getPiece(3, 3);
 
@@ -581,7 +582,7 @@ TEST_F(MovesTest, BlackBishopMovement)
 TEST_F(MovesTest, QueenCombinedMovement)
 {
 	fenrir::Board board("8/8/8/8/3Q4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *queen = board.getPiece(3, 3);
 
@@ -604,7 +605,7 @@ TEST_F(MovesTest, QueenCombinedMovement)
 TEST_F(MovesTest, QueenBlockedByFriendlyPieces)
 {
 	fenrir::Board board("8/8/8/2PPP3/2PQP3/2PPP3/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *queen = board.getPiece(3, 3);
 
@@ -620,7 +621,7 @@ TEST_F(MovesTest, QueenBlockedByFriendlyPieces)
 TEST_F(MovesTest, QueenCaptureEnemyPieces)
 {
 	fenrir::Board board("8/8/8/2ppp3/2pQp3/2ppp3/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *queen = board.getPiece(3, 3);
 
@@ -643,7 +644,7 @@ TEST_F(MovesTest, QueenCaptureEnemyPieces)
 TEST_F(MovesTest, QueenCornerPosition)
 {
 	fenrir::Board board("Q7/8/8/8/8/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *queen = board.getPiece(7, 0);
 
@@ -661,7 +662,7 @@ TEST_F(MovesTest, QueenCornerPosition)
 TEST_F(MovesTest, BlackQueenMovement)
 {
 	fenrir::Board board("8/8/8/8/3q4/8/8/8 b - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *queen = board.getPiece(3, 3);
 
@@ -680,7 +681,7 @@ TEST_F(MovesTest, BlackQueenMovement)
 TEST_F(MovesTest, BishopPiece)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *bishop = board.getPiece(0, 2);
 
@@ -695,7 +696,7 @@ TEST_F(MovesTest, BishopPiece)
 TEST_F(MovesTest, QueenPiece)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *queen = board.getPiece(0, 3);
 
@@ -711,7 +712,7 @@ TEST_F(MovesTest, QueenPiece)
 TEST_F(MovesTest, KnightLShapeMovement)
 {
 	fenrir::Board board("8/8/8/8/3N4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *knight = board.getPiece(3, 3);
 
@@ -734,7 +735,7 @@ TEST_F(MovesTest, KnightLShapeMovement)
 TEST_F(MovesTest, KnightBlockedByFriendlyPieces)
 {
 	fenrir::Board board("8/8/2P1P3/1P3P2/3N4/1P3P2/2P1P3/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *knight = board.getPiece(3, 3);
 
@@ -757,7 +758,7 @@ TEST_F(MovesTest, KnightBlockedByFriendlyPieces)
 TEST_F(MovesTest, KnightCaptureEnemyPieces)
 {
 	fenrir::Board board("8/8/2p1p3/1p3p2/3N4/1p3p2/2p1p3/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *knight = board.getPiece(3, 3);
 
@@ -780,7 +781,7 @@ TEST_F(MovesTest, KnightCaptureEnemyPieces)
 TEST_F(MovesTest, KnightCornerPosition)
 {
 	fenrir::Board board("N7/8/8/8/8/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *knight = board.getPiece(7, 0);
 
@@ -797,7 +798,7 @@ TEST_F(MovesTest, KnightCornerPosition)
 TEST_F(MovesTest, KnightEdgePosition)
 {
 	fenrir::Board board("8/8/8/8/N7/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *knight = board.getPiece(3, 0);
 
@@ -816,7 +817,7 @@ TEST_F(MovesTest, KnightEdgePosition)
 TEST_F(MovesTest, KnightNearEdgePosition)
 {
 	fenrir::Board board("8/8/8/8/1N6/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *knight = board.getPiece(3, 1);
 
@@ -837,7 +838,7 @@ TEST_F(MovesTest, KnightNearEdgePosition)
 TEST_F(MovesTest, BlackKnightMovement)
 {
 	fenrir::Board board("8/8/8/8/3n4/8/8/8 b - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *knight = board.getPiece(3, 3);
 
@@ -856,7 +857,7 @@ TEST_F(MovesTest, BlackKnightMovement)
 TEST_F(MovesTest, KnightJumpOverPieces)
 {
 	fenrir::Board board("8/8/8/3p4/2pNp3/3p4/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *knight = board.getPiece(3, 3);
 
@@ -879,7 +880,7 @@ TEST_F(MovesTest, KnightJumpOverPieces)
 TEST_F(MovesTest, KingPiece)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *king = board.getPiece(0, 4);
 
@@ -894,7 +895,7 @@ TEST_F(MovesTest, KingPiece)
 TEST_F(MovesTest, KingSingleSquareMovement)
 {
 	fenrir::Board board("8/8/8/8/3K4/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *king = board.getPiece(3, 3);
 
@@ -919,7 +920,7 @@ TEST_F(MovesTest, KingSingleSquareMovement)
 TEST_F(MovesTest, KingBlockedByFriendlyPieces)
 {
 	fenrir::Board board("8/8/8/2PPP3/2PKP3/2PPP3/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *king = board.getPiece(3, 3);
 
@@ -934,7 +935,7 @@ TEST_F(MovesTest, KingBlockedByFriendlyPieces)
 TEST_F(MovesTest, KingCaptureEnemyPieces)
 {
 	fenrir::Board board("8/8/8/2ppp3/2pKp3/2ppp3/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *king = board.getPiece(3, 3);
 
@@ -958,7 +959,7 @@ TEST_F(MovesTest, KingCaptureEnemyPieces)
 TEST_F(MovesTest, KingCornerPosition)
 {
 	fenrir::Board board("8/8/8/8/8/8/8/K7 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *king = board.getPiece(0, 0);
 
@@ -977,7 +978,7 @@ TEST_F(MovesTest, KingCornerPosition)
 TEST_F(MovesTest, KingEdgePosition)
 {
 	fenrir::Board board("8/8/8/8/K7/8/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *king = board.getPiece(3, 0);
 
@@ -998,7 +999,7 @@ TEST_F(MovesTest, KingEdgePosition)
 TEST_F(MovesTest, BlackKingMovement)
 {
 	fenrir::Board board("8/8/8/8/3k4/8/8/8 b - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *king = board.getPiece(3, 3);
 
@@ -1022,7 +1023,7 @@ TEST_F(MovesTest, BlackKingMovement)
 TEST_F(MovesTest, KingMixedBlocking)
 {
 	fenrir::Board board("8/8/8/2Pp4/2pK1P2/4P3/8/8 w - - 0 1");
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *king = board.getPiece(3, 3);
 
@@ -1048,7 +1049,7 @@ TEST_F(MovesTest, KingMixedBlocking)
 TEST_F(MovesTest, KingInitialPosition)
 {
 	fenrir::Board board(standard_position);
-	std::vector<std::pair<const std::string, const std::string>> moves;
+	std::vector<fenrir::Move> moves;
 
 	const fenrir::Piece *king = board.getPiece(0, 4);
 
@@ -1076,7 +1077,7 @@ TEST_F(MovesTest, StressTestGenerateMoves)
 		const fenrir::Piece *pawn = board_state[1][0];
 		if (pawn && pawn->getAlias() == 'P')
 		{
-			std::vector<std::pair<const std::string, const std::string>> moves;
+			std::vector<fenrir::Move> moves;
 			fenrir::Moves::getInstance().generateMoves(pawn, &board, moves);
 		}
 	}

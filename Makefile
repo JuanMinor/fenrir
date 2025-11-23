@@ -70,6 +70,7 @@ SRC_FILES = src/chess/board.cpp \
 		   src/chess/fen.cpp \
 		   src/logger/logger.cpp \
 		   src/modifier/modifier.cpp \
+		   src/chess/move.cpp \
 		   src/chess/moves.cpp \
 		   src/pgn/pgn.cpp \
 		   src/chess/piece.cpp \
