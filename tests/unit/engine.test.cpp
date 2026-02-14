@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2025 Juan Minor
+ *   Copyright (c) 2026 Juan Minor
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -18,6 +18,8 @@
 #include <gtest/gtest.h>
 #include "include/engine/engine.h"
 #include "include/chess/move.h"
+#include "include/chess/piece.h"
+#include "include/utils/utils.h"
 
 class EngineTest : public ::testing::Test
 {
@@ -26,12 +28,14 @@ protected:
 
 	char get_piece(const std::string &square)
 	{
-#ifndef NDEBUG
-		return engine.getPiece(square);
-#else
-
+		uint8_t rank, file;
+		utils::parseAlgebraicNotation(square, rank, file);
+		const fenrir::Piece *piece = engine.getBoardView().getPiece(rank, file);
+		if (piece)
+		{
+			return piece->getAlias();
+		}
 		return '.';
-#endif
 	}
 };
 

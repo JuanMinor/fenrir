@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2025 Juan Minor
+ *   Copyright (c) 2026 Juan Minor
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@ namespace fenrir
 
 	Moves::~Moves() {}
 
-	void Moves::generateBishopMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
+	void Moves::generateBishopMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
 	{
 		int8_t directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 		this->slideInDirections(piece, board, moves, directions, 4);
@@ -49,13 +49,13 @@ namespace fenrir
 		}
 	}
 
-	void Moves::generateKingMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
+	void Moves::generateKingMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
 	{
 		constexpr int8_t directionVectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
 		this->slideInDirections(piece, board, moves, directionVectors, 8, true);
 	}
 
-	void Moves::generateKnightMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
+	void Moves::generateKnightMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
 	{
 		const uint8_t currentRank = piece->getRank();
 		const uint8_t currentFile = piece->getFile();
@@ -71,7 +71,7 @@ namespace fenrir
 
 			if (newRank >= 0 && newRank <= 7 && newFile >= 0 && newFile <= 7)
 			{
-				const Piece *targetPiece = board->getPiece(newRank, newFile);
+				const Piece *targetPiece = board.getPiece(newRank, newFile);
 				if (!targetPiece)
 				{
 					moves.emplace_back(Move(from, utils::getAlgebraicNotation(newRank, newFile), MoveType::NORMAL));
@@ -112,7 +112,7 @@ namespace fenrir
 		logger::DEBUG(ss.str());
 	}
 
-	void Moves::generatePawnMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
+	void Moves::generatePawnMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
 	{
 		uint8_t rank = piece->getRank();
 		uint8_t file = piece->getFile();
@@ -120,7 +120,7 @@ namespace fenrir
 		uint8_t direction = (color == WHITE) ? 1 : -1;
 
 		uint8_t newRank = rank + direction;
-		if (newRank >= 0 && newRank < BOARD_SIZE && !board->getPiece(newRank, file))
+		if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(newRank, file))
 		{
 			Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(newRank, file), MoveType::NORMAL);
 			moves.emplace_back(move);
@@ -129,18 +129,18 @@ namespace fenrir
 		// Left diagonal capture
 		if (file > 0)
 		{
-			this->addCaptureMove(piece, board->getPiece(newRank, file - 1), moves);
+			this->addCaptureMove(piece, board.getPiece(newRank, file - 1), moves);
 		}
 		// Right diagonal capture
 		if (file < BOARD_SIZE - 1)
 		{
-			this->addCaptureMove(piece, board->getPiece(newRank, file + 1), moves);
+			this->addCaptureMove(piece, board.getPiece(newRank, file + 1), moves);
 		}
 
 		if (!piece->getMoved())
 		{
 			newRank = rank + (2 * direction);
-			if (newRank >= 0 && newRank < BOARD_SIZE && !board->getPiece(newRank, file))
+			if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(newRank, file))
 			{
 				Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(newRank, file), MoveType::NORMAL);
 				moves.emplace_back(move);
@@ -148,14 +148,14 @@ namespace fenrir
 		}
 
 		// En passant
-		const std::string &enPassant = board->getEnPassant();
+		const std::string &enPassant = board.getEnPassant();
 		if (!enPassant.empty())
 		{
 			uint8_t enPassantRank, enPassantFile;
 			utils::parseAlgebraicNotation(enPassant.c_str(), enPassantRank, enPassantFile);
 			if (enPassantRank == newRank && std::abs(int(enPassantFile) - int(file)) == 1)
 			{
-				const Piece *targetPiece = board->getPiece(rank, enPassantFile);
+				const Piece *targetPiece = board.getPiece(rank, enPassantFile);
 				if (targetPiece && std::tolower(targetPiece->getAlias()) == 'p')
 				{
 					Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(enPassantRank, enPassantFile), MoveType::EN_PASSANT);
@@ -167,19 +167,19 @@ namespace fenrir
 		logGeneratedMoves(piece, moves);
 	}
 
-	void Moves::generateQueenMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
+	void Moves::generateQueenMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
 	{
 		constexpr int8_t directionVectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
 		this->slideInDirections(piece, board, moves, directionVectors, 8);
 	}
 
-	void Moves::generateRookMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
+	void Moves::generateRookMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
 	{
 		constexpr int8_t directionVectors[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 		this->slideInDirections(piece, board, moves, directionVectors, 4);
 	}
 
-	void Moves::slideInDirections(const Piece *piece, const Board *board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth)
+	void Moves::slideInDirections(const Piece *piece, const IBoardView &board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth)
 	{
 		const uint8_t currentRank = piece->getRank();
 		const uint8_t currentFile = piece->getFile();
@@ -201,7 +201,7 @@ namespace fenrir
 					break;
 				}
 				depth++;
-				const Piece *targetPiece = board->getPiece(newRank, newFile);
+				const Piece *targetPiece = board.getPiece(newRank, newFile);
 				if (!targetPiece)
 				{
 					moves.emplace_back(Move(from, utils::getAlgebraicNotation(newRank, newFile), MoveType::NORMAL));
@@ -225,7 +225,7 @@ namespace fenrir
 		return instance;
 	}
 
-	void Moves::generateMoves(const Piece *piece, const Board *board, std::vector<Move> &moves)
+	void Moves::generateMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
 	{
 		if (piece == nullptr)
 		{
