@@ -260,11 +260,11 @@ TEST_F(ChronoTest, ThreadSafetyMultipleThreads)
 			{
 				time_t raw_time = chrono_obj->getRawTime();
 				tm* local_time = chrono_obj->getLocalTime(nullptr);
-				
+
 				EXPECT_GT(raw_time, 0);
 				EXPECT_NE(local_time, nullptr);
 				EXPECT_TRUE(isValidTm(local_time));
-				
+
 				results[i].push_back(raw_time);
 			} });
 	}
@@ -352,7 +352,6 @@ TEST_F(ChronoTest, BoundaryValuesNegativeTime)
 {
 
 	time_t negative_time = -86400;
-	tm *local_time = chrono_obj->getLocalTime(&negative_time);
 
 	EXPECT_NO_THROW(chrono_obj->getLocalTime(&negative_time));
 }

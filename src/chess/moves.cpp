@@ -71,7 +71,7 @@ namespace fenrir
 
 			if (newRank >= 0 && newRank <= 7 && newFile >= 0 && newFile <= 7)
 			{
-				const Piece *targetPiece = board.getPiece(newRank, newFile);
+				const Piece *targetPiece = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile));
 				if (!targetPiece)
 				{
 					moves.emplace_back(Move(from, utils::getAlgebraicNotation(newRank, newFile), MoveType::NORMAL));
@@ -117,10 +117,10 @@ namespace fenrir
 		uint8_t rank = piece->getRank();
 		uint8_t file = piece->getFile();
 		uint8_t color = piece->getColor();
-		uint8_t direction = (color == WHITE) ? 1 : -1;
+		int direction = (color == WHITE) ? 1 : -1;
 
-		uint8_t newRank = rank + direction;
-		if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(newRank, file))
+		int newRank = rank + direction;
+		if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(static_cast<uint8_t>(newRank), file))
 		{
 			Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(newRank, file), MoveType::NORMAL);
 			moves.emplace_back(move);
@@ -129,18 +129,18 @@ namespace fenrir
 		// Left diagonal capture
 		if (file > 0)
 		{
-			this->addCaptureMove(piece, board.getPiece(newRank, file - 1), moves);
+			this->addCaptureMove(piece, board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(file - 1)), moves);
 		}
 		// Right diagonal capture
 		if (file < BOARD_SIZE - 1)
 		{
-			this->addCaptureMove(piece, board.getPiece(newRank, file + 1), moves);
+			this->addCaptureMove(piece, board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(file + 1)), moves);
 		}
 
 		if (!piece->getMoved())
 		{
 			newRank = rank + (2 * direction);
-			if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(newRank, file))
+			if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(static_cast<uint8_t>(newRank), file))
 			{
 				Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(newRank, file), MoveType::NORMAL);
 				moves.emplace_back(move);
@@ -201,7 +201,7 @@ namespace fenrir
 					break;
 				}
 				depth++;
-				const Piece *targetPiece = board.getPiece(newRank, newFile);
+				const Piece *targetPiece = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile));
 				if (!targetPiece)
 				{
 					moves.emplace_back(Move(from, utils::getAlgebraicNotation(newRank, newFile), MoveType::NORMAL));

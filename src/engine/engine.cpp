@@ -35,7 +35,7 @@ namespace fenrir
 	const std::vector<Move> Engine::generateMoves(const std::string &algebraicAddress) const
 	{
 		std::vector<Move> moves;
-		u_int8_t rank, file;
+		uint8_t rank, file;
 		utils::parseAlgebraicNotation(algebraicAddress, rank, file);
 		if (!board.getBoard().at(rank).at(file))
 		{
@@ -62,7 +62,7 @@ namespace fenrir
 
 	void Engine::makeMove(const Move &move)
 	{
-		u_int8_t fromRank, fromFile, toRank, toFile;
+		uint8_t fromRank, fromFile, toRank, toFile;
 		utils::parseAlgebraicNotation(move.getFrom(), fromRank, fromFile);
 		utils::parseAlgebraicNotation(move.getTo(), toRank, toFile);
 		Piece *piece = board.getBoard().at(fromRank).at(fromFile);
