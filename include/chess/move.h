@@ -25,9 +25,9 @@ namespace fenrir
 	class Move
 	{
 		std::string from;
+		std::string to;
 		MoveType moveType;
 		char promotionPiece;
-		std::string to;
 
 	public:
 		Move(const std::string &from, const std::string &to,

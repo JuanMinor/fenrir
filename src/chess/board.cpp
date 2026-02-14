@@ -54,7 +54,7 @@ namespace fenrir
 	void Board::buildBoard(const std::string &placement)
 	{
 		size_t size = placement.size();
-		uint8_t rank = BOARD_SIZE - 1, file = 0, squares = 0;
+		uint8_t rank = BOARD_SIZE - 1, file = 0;
 
 		this->board.resize(BOARD_SIZE, std::vector<Piece *>(BOARD_SIZE, nullptr));
 
@@ -158,7 +158,7 @@ namespace fenrir
 
 	Piece *Board::getPiece(const uint8_t &rank, const uint8_t &file) const
 	{
-		if (rank < 0 || rank >= BOARD_SIZE || file < 0 || file >= BOARD_SIZE)
+		if (rank >= BOARD_SIZE || file >= BOARD_SIZE)
 		{
 			LOG_THROW_ERROR(
 				("Address <" + std::to_string(unsigned(rank)) + ", " + std::to_string(unsigned(file)) + "> is invalid").c_str(),

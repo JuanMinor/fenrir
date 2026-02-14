@@ -26,7 +26,7 @@
 
 namespace utils
 {
-	const bool areChessPieceCountRulesValid(const std::unordered_map<char, uint8_t> &piece_counts);
+	bool areChessPieceCountRulesValid(const std::unordered_map<char, uint8_t> &piece_counts);
 	const std::string getAlgebraicNotation(const uint8_t &rank, const uint8_t &file);
 	void logThrowError(const std::string &error, const bool &throw_error, const char *file, const int &lineno);
 	void parseAlgebraicNotation(const std::string &algebraic_notation, uint8_t &rank, uint8_t &file);
