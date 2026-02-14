@@ -6,6 +6,7 @@
 		"esbenp.prettier-vscode",
 		"Gruntfuggly.todo-tree",
 		"eamodio.gitlens",
-		"ms-vscode.cpptools-extension-pack"
+		"ms-vscode.cpptools-extension-pack",
+		"google.geminicodeassist"
 	]
 }

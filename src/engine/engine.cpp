@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2025 Juan Minor
+ *   Copyright (c) 2026 Juan Minor
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -27,20 +27,10 @@ namespace fenrir
 
 	Engine::~Engine() {}
 
-#ifndef NDEBUG
-	char Engine::getPiece(const std::string &algebraicAddress) const
+	const IBoardView &Engine::getBoardView() const
 	{
-		uint8_t rank, file;
-		utils::parseAlgebraicNotation(algebraicAddress, rank, file);
-
-		const Piece *piece = board.getPiece(rank, file);
-		if (piece == nullptr)
-		{
-			return '.'; // Empty square
-		}
-		return piece->getAlias();
+		return board;
 	}
-#endif
 
 	const std::vector<Move> Engine::generateMoves(const std::string &algebraicAddress) const
 	{
@@ -56,7 +46,7 @@ namespace fenrir
 		}
 		const Piece *piece = board.getPiece(rank, file);
 
-		Moves::getInstance().generateMoves(piece, &board, moves);
+		Moves::getInstance().generateMoves(piece, board, moves);
 
 		logger::DEBUG("Generated moves for piece at address: " + algebraicAddress);
 

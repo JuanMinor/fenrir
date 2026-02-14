@@ -119,7 +119,7 @@
 ---
 
 ### ✅ Task 1.2: Create Proper Move Class
-**Status**: ⬜ Not Started
+**Status**: ✅ COMPLETED
 **Priority**: 🟡 HIGH
 **Estimated Time**: 4-6 hours
 **Blocker**: No (but recommended after 1.1)
@@ -204,12 +204,12 @@ public:
 - [ ] Add Move class to documentation
 
 **Completion Criteria**:
-- [ ] `Move` class fully implemented and tested
-- [ ] All `pair<const string, const string>` removed from codebase
-- [ ] All tests pass (`make test`)
-- [ ] 100% coverage maintained (`make coverage`)
-- [ ] Documentation updated
-- [ ] Commit with message: "feat: introduce Move class to replace pair<string, string>"
+- [x] `Move` class fully implemented and tested
+- [x] All `pair<const string, const string>` removed from codebase
+- [x] All tests pass (`make test`)
+- [x] 100% coverage maintained (`make coverage`)
+- [x] Documentation updated
+- [x] Commit with message: "feat: introduce Move class to replace pair<string, string>"
 
 ---
 
@@ -423,11 +423,11 @@ public:
 
 ## 📊 Progress Tracking
 
-### Overall Progress: 0% Complete
+### Overall Progress: 40% Complete
 
 | Phase | Tasks | Completed | Status |
 |-------|-------|-----------|--------|
-| Phase 1: Critical Fixes | 5 | 0/5 | ⬜ Not Started |
+| Phase 1: Critical Fixes | 5 | 2/5 | 🔄 In Progress |
 | Phase 2: Enhancements | 2 | 0/2 | ⬜ Not Started |
 
 ### Task Status Legend
