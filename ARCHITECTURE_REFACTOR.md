@@ -119,7 +119,7 @@
 ---
 
 ### ✅ Task 1.2: Create Proper Move Class
-**Status**: ✅ COMPLETED
+**Status**: ✅ COMPLETED (2026-02-14)
 **Priority**: 🟡 HIGH
 **Estimated Time**: 4-6 hours
 **Blocker**: No (but recommended after 1.1)
@@ -214,7 +214,7 @@ public:
 ---
 
 ### ✅ Task 1.3: Create Board Interface (IBoardView)
-**Status**: ⬜ Not Started
+**Status**: ✅ COMPLETED (2026-02-14)
 **Priority**: 🟡 HIGH
 **Estimated Time**: 3-4 hours
 **Blocker**: Recommended after 1.1 and 1.2
