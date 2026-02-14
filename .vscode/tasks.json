@@ -33,7 +33,8 @@
 				"code --install-extension esbenp.prettier-vscode",
 				"code --install-extension Gruntfuggly.todo-tree",
 				"code --install-extension eamodio.gitlens",
-				"code --install-extension ms-vscode.cpptools-extension-pack"
+				"code --install-extension ms-vscode.cpptools-extension-pack",
+				"code --install-extension google.geminicodeassist"
 			],
 			"icon": {
 				"id": "symbol-event",

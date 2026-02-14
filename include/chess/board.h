@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2025 Juan Minor
+ *   Copyright (c) 2026 Juan Minor
 
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -28,10 +28,11 @@
 #include "include/pgn/pgn.h"
 #include "include/chess/piece.h"
 #include "include/utils/utils.h"
+#include "include/interfaces/iboardview.h"
 
 namespace fenrir
 {
-	class Board
+	class Board : public IBoardView
 	{
 	private:
 		std::vector<std::vector<Piece *>> board;
@@ -53,8 +54,8 @@ namespace fenrir
 		// Accessors and mutators
 		std::vector<std::vector<Piece *>> getBoard(void) const;
 		std::string getFen(void);
-		const std::string getEnPassant(void) const;
-		Piece *getPiece(const uint8_t &rank, const uint8_t &file) const;
+		const std::string &getEnPassant(void) const override;
+		Piece *getPiece(const uint8_t &rank, const uint8_t &file) const override;
 		void move(Piece *&piece, const uint8_t &rank, const uint8_t &file);
 		void print(void) const;
 	};
