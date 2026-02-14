@@ -72,7 +72,7 @@ namespace fenrir
 
 	void Piece::setFile(const uint8_t &file)
 	{
-		if (file < 0 || file > 7)
+		if (file > 7)
 		{
 			LOG_THROW_ERROR("File must be between 1 and 8", true);
 		}
@@ -86,7 +86,7 @@ namespace fenrir
 
 	void Piece::setRank(const uint8_t &rank)
 	{
-		if (rank < 0 || rank > 7)
+		if (rank > 7)
 		{
 			LOG_THROW_ERROR("Rank must be between 1 and 8", true);
 		}

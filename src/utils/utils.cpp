@@ -19,7 +19,7 @@
 
 namespace utils
 {
-	const bool areChessPieceCountRulesValid(const std::unordered_map<char, uint8_t> &piece_counts)
+	bool areChessPieceCountRulesValid(const std::unordered_map<char, uint8_t> &piece_counts)
 	{
 		if (piece_counts.at('K') != 1 || piece_counts.at('k') != 1)
 		{
@@ -78,7 +78,7 @@ namespace utils
 
 	const std::string getAlgebraicNotation(const uint8_t &rank, const uint8_t &file)
 	{
-		if (rank >= fenrir::BOARD_SIZE || rank < 0 || file >= fenrir::BOARD_SIZE || file < 0)
+		if (rank >= fenrir::BOARD_SIZE || file >= fenrir::BOARD_SIZE)
 		{
 			LOG_THROW_ERROR("Cannot get algebraic notation for invalid board address", true);
 		}
@@ -110,12 +110,15 @@ namespace utils
 			LOG_THROW_ERROR("Invalid algebraic notation", true);
 		}
 
-		file = std::tolower(algebraic_notation[0]) - 'a';
-		rank = algebraic_notation[1] - '1';
+		int f = std::tolower(algebraic_notation[0]) - 'a';
+		int r = algebraic_notation[1] - '1';
 
-		if (rank < 0 || rank >= fenrir::BOARD_SIZE || file < 0 || file >= fenrir::BOARD_SIZE)
+		if (r < 0 || r >= fenrir::BOARD_SIZE || f < 0 || f >= fenrir::BOARD_SIZE)
 		{
 			LOG_THROW_ERROR("Invalid algebraic notation", true);
 		}
+
+		rank = static_cast<uint8_t>(r);
+		file = static_cast<uint8_t>(f);
 	}
 }
