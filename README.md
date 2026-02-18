@@ -1,15 +1,17 @@
-# 🐺 Fenrir Chess Engine
+# Fenrir - Chess Rules Engine
 
-A foundational C++ chess library providing board representation, FEN parsing, and complete piece movement logic for all 6 chess piece types.
+Fenrir is a C++ shared library (`libfenrir.so`) that serves as the **rules and validation layer** for a three-tier chess ecosystem. It handles every hard chess problem - legal move generation, FEN/PGN, board state, move validation - so that agents, UIs, and applications built on top of it never have to.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![C++](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Build](https://img.shields.io/badge/Build-Make-green.svg)](https://www.gnu.org/software/make/)
 [![Testing](https://img.shields.io/badge/Testing-Google%20Test-red.svg)](https://github.com/google/googletest)
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-309%20passing-success.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-300%20passing-success.svg)]()
 
-> **⚠️ Current Status**: This is a **foundation library** with complete piece movement logic but **no game rule enforcement** (no check detection, castling, or checkmate). It's a building block for chess applications, not a playable chess game.
+> **Architecture**: Fenrir is the base of a three-layer system: **Fenrir** (rules, validation, move generation) -> **Agents** (Python, JS, or any language - they search and decide) -> **UIs** (mobile, web, desktop - they present and explain). Fenrir's job is to be correct, fast, and stable so everything built on top of it can be trusted.
+
+> **Current Status**: Move generation is pseudo-legal (complete piece movement logic including en passant). Full legal move enforcement (check detection, castling, promotion, checkmate) is in progress as v0.3.0.
 
 > **🔧 Build System**: GNU Make is the only supported build system. See [Build System](#build-system) for details.
 
@@ -26,7 +28,7 @@ make
 # Run the example program
 ./scripts/run.sh
 
-# Run all 309 tests
+# Run all 300 tests
 make test
 
 # Generate coverage report (requires 100%)
@@ -43,12 +45,12 @@ make coverage
 
 | Piece | Movement Implementation | Special Features |
 |-------|------------------------|------------------|
-| ♟️ **Pawn** | ✅ Complete | Single/double moves, diagonal captures, **en passant** |
+| ♟️ **Pawn** | ✅ Complete | Single/double push, diagonal captures, **en passant** — ❌ no promotion yet |
 | ♜ **Rook** | ✅ Complete | Horizontal/vertical sliding, blocking detection |
 | ♞ **Knight** | ✅ Complete | L-shaped jumps, can jump over pieces |
 | ♗ **Bishop** | ✅ Complete | Diagonal sliding, blocking detection |
 | ♛ **Queen** | ✅ Complete | Combined rook + bishop (8 directions) |
-| ♚ **King** | ✅ Complete | Single-square movement in all 8 directions |
+| ♚ **King** | ✅ Complete | Single-square movement in all 8 directions — ❌ no castling yet |
 
 **Other Working Features:**
 - 📋 **FEN Support**: Parse and generate Forsyth-Edwards Notation
@@ -56,35 +58,53 @@ make coverage
 - 📦 **Shared Library**: `libfenrir.so` for integration
 - 🪵 **Logging System**: Production-ready with rotation and levels
 - 📝 **PGN Recording**: Basic game notation support
-- ✅ **100% Test Coverage**: 309 unit tests, all passing
+- ✅ **100% Test Coverage**: 300 unit tests, all passing
+- ✅ **Memory Safety**: `unique_ptr<Piece>` ownership, Rule of Five enforced on `Board`
+- ✅ **Const Correctness**: All move-generation methods are `const`
 
 ### ❌ Not Yet Implemented
 
-**Critical Missing Features** (prevents this from being a playable chess game):
-- 🚫 **No Castling**: King-rook castling moves not implemented
-- 🚫 **No Check Detection**: Doesn't know when king is in check
-- 🚫 **No Move Validation**: Allows moves that leave king in check (pseudo-legal only)
-- 🚫 **No Checkmate/Stalemate**: Cannot detect game-ending conditions
-- 🚫 **No Pawn Promotion**: Pawns reaching end rank don't promote
+**v0.3.0 target — game rule enforcement:**
+- 🚫 **No Check Detection**: Doesn't know when a king is in check *(needed first — unlocks everything below)*
+- 🚫 **No Legal Move Filtering**: `generateMoves()` is pseudo-legal (may leave king in check)
+- 🚫 **No Castling**: `CASTLE_KINGSIDE`/`CASTLE_QUEENSIDE` move types exist but are not generated
+- 🚫 **No Pawn Promotion**: `PROMOTION` move type exists but pawns reaching rank 1/8 don't trigger it
+- 🚫 **No Checkmate/Stalemate**: No game-ending condition detection
+
+**Future work (beyond v0.3.0):**
 - 🚫 **No AI**: No computer opponent or position evaluation
 - 🚫 **No UCI Protocol**: Cannot interface with chess GUIs
+- 🚫 **No Turn Enforcement**: Can move either side's pieces
 
-> **⚠️ Important**: This library generates **pseudo-legal moves** (moves that follow piece movement rules but may leave the king in check). It does NOT enforce chess game rules.
+> **⚠️ Important**: `generateMoves()` returns **pseudo-legal moves** — moves that follow piece movement rules but may leave the king in check. Legal move filtering (check validation) is planned for v0.3.0.
 
-## 🎯 Use Cases
+## The Ecosystem Fenrir Enables
 
-**What You Can Build With Fenrir:**
-- 🎓 **Learning Tool**: Study chess piece movement algorithms
-- 🧩 **Chess Puzzle Solver**: Generate moves for puzzle positions
-- 📊 **Position Analyzer**: Analyze FEN positions and mobility
-- 🔧 **Chess App Foundation**: Build upon this library to create a full chess game
-- 🧪 **Testing Framework**: Test chess-related algorithms
+Fenrir is not a standalone chess program. It is the foundation of a larger system:
 
-**What You Cannot Do (Yet):**
-- ❌ Play a complete chess game (no rule enforcement)
-- ❌ Detect illegal moves (no check validation)
-- ❌ Use as a chess engine (no AI or evaluation)
-- ❌ Connect to chess GUIs (no UCI protocol)
+```
+Layer 3 - UIs
+  Mobile apps (React Native, Swift)
+  Web apps (JS/WASM)
+  Desktop apps (Electron)
+  Purpose: present, visualize, explain moves to humans
+
+Layer 2 - Agents
+  Python bots, JS agents, RL training loops
+  Purpose: search, evaluate, decide which moves to make
+  They ask Fenrir what is legal; they decide what is best
+
+Layer 1 - Fenrir (this library)
+  C++ shared library: libfenrir.so
+  Purpose: rules, validation, move generation, FEN, PGN
+  Agents and UIs trust Fenrir completely for correctness
+```
+
+**Why this matters for Fenrir's design:**
+- **Correctness is non-negotiable.** Agents learn from the moves Fenrir says are legal. A wrong answer corrupts training data and every layer above it.
+- **Performance is structural.** An agent doing reinforcement learning plays millions of games during training. A minimax search at depth 5 makes roughly 24 million `generateMoves()` calls. Fenrir must handle that workload efficiently.
+- **The API must be stable.** Every language binding (Python ctypes, JS WASM, Swift FFI) breaks when the API changes. Breaking changes have cascading costs across all consumers.
+- **Fenrir owns the hard chess problems.** FEN, PGN, algebraic notation, legal move generation, move validation - none of this should be reimplemented in agents or UIs.
 
 ## API Overview
 
@@ -143,10 +163,10 @@ engine.reset();
 - `fenrir::MoveType`: Enum for move types
   - `NORMAL`: Regular move
   - `CAPTURE`: Capturing move
-  - `EN_PASSANT`: En passant capture
-  - `CASTLE_KINGSIDE`: Kingside castling
-  - `CASTLE_QUEENSIDE`: Queenside castling
-  - `PROMOTION`: Pawn promotion
+  - `EN_PASSANT`: En passant capture *(generated)*
+  - `CASTLE_KINGSIDE`: Kingside castling *(data model ready — not yet generated)*
+  - `CASTLE_QUEENSIDE`: Queenside castling *(data model ready — not yet generated)*
+  - `PROMOTION`: Pawn promotion *(data model ready — not yet generated)*
 
 **⚠️ Important Notes:**
 - Moves are **pseudo-legal** (follow piece rules but may leave king in check)
@@ -371,14 +391,14 @@ make
 **100% code coverage is REQUIRED:**
 
 ```bash
-make test      # Run all 262 tests
+make test      # Run all 300 tests
 make coverage  # Generate coverage report (fails if < 100%)
 ```
 
 **Test Structure:**
 - Framework: Google Test
 - Location: `tests/unit/*.test.cpp`
-- Count: 309 tests across 11 test suites
+- Count: 300 tests across 11 test suites (9 skipped in CI environment)
 - Coverage: 100% line coverage enforced
 
 ### Build System
@@ -395,23 +415,39 @@ make help      # Show all available targets
 ## 📚 Documentation
 
 - **README.md** (this file): User-facing documentation and API reference
-- **AI_CONTEXT.md**: Technical documentation for AI assistants (read this first!)
+- **AI_CONTEXT.md**: Technical documentation for AI assistants (architecture, move support table, next steps)
 - **RELEASE_NOTES.md**: Version history and changelog
 
-## 🗺️ Roadmap
+## Roadmap
 
-**Current Version: 0.2.0-dev** (Foundation Complete)
+**Current Version: 0.2.0-dev** (Foundation + Memory Safety Complete)
 
-**Next Steps:**
-1. ✅ ~~Complete piece movement logic~~ (DONE)
-2. 🚧 Implement castling moves
-3. 🚧 Add check detection
-4. 🚧 Add move validation (prevent illegal moves)
-5. 🚧 Implement checkmate/stalemate detection
-6. 🚧 Add pawn promotion
-7. 🔮 Basic AI (minimax with alpha-beta pruning)
-8. 🔮 UCI protocol support
-9. 🔮 Opening book and endgame tablebases
+**v0.3.0 - Full Legal Move Enforcement** *(in progress)*
+1. ✅ ~~All piece movement logic~~ (DONE)
+2. ✅ ~~Memory safety (unique_ptr, Rule of Five)~~ (DONE)
+3. 🚧 AbstractBoard extensions (`getCastlingRights`, `getColor`)
+4. 🚧 Check detection
+5. 🚧 Legal move filtering (strip moves leaving king in check)
+6. 🚧 Castling (kingside + queenside)
+7. 🚧 Pawn promotion
+8. 🚧 Checkmate / stalemate detection
+9. 🚧 Make/unmake + `Engine::undoMove()` (zero-allocation search support)
+
+**v0.4.0 - Reference Search Agent** *(C++, links libfenrir.so directly)*
+- Minimax with alpha-beta pruning
+- Basic position evaluation (material, mobility)
+- Required before UCI is meaningful - UCI needs a `go` command response
+
+**v0.5.0 - UCI Protocol** *(C++ wrapper around reference agent)*
+- Standard UCI stdin/stdout interface
+- Compatible with chess.com analysis, Lichess bots, Arena, Fritz, Chessbase
+- Benchmark against Stockfish
+- Agents written by others can wrap themselves in UCI to join the same ecosystem
+
+**v0.6.0 - Language Bindings**
+- Python bindings (ctypes or pybind11) - unlocks Python RL agents
+- WebAssembly build - unlocks browser-based agents and UIs
+- Python UCI wrapper for Python agents to play on Lichess/chess.com
 
 ## 🤝 Contributing
 
@@ -419,7 +455,7 @@ make help      # Show all available targets
 1. Read `AI_CONTEXT.md` to understand the architecture
 2. Write tests first (TDD approach)
 3. Ensure 100% coverage (`make coverage`)
-4. Follow existing naming conventions (`__private__()` pattern)
+4. Follow existing naming conventions (camelCase methods, PascalCase classes)
 5. Update documentation for API changes
 
 ## 📄 License
@@ -428,6 +464,6 @@ MIT License - see [LICENSE](LICENSE) file.
 
 **Copyright (c) 2025 Juan Minor**
 
-## ⚠️ Disclaimer
+## Disclaimer
 
-This is a **foundation library**, not a complete chess game. It provides piece movement logic but does not enforce chess rules like check, checkmate, or castling. Use it as a building block for chess applications.
+Fenrir currently generates **pseudo-legal moves** - move generation follows piece movement rules but does not yet filter moves that leave the king in check. Full legal move enforcement is the v0.3.0 target. Do not use the current version in production agents or applications that require complete rule correctness.
