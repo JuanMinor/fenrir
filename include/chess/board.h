@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <iostream>
@@ -32,10 +33,16 @@
 
 namespace fenrir
 {
+	/**
+	 * Board is the sole owner of all Piece objects on the board.
+	 * Pointers returned by getPiece() are non-owning and are only valid
+	 * for the lifetime of this Board instance.
+	 * Board is non-copyable and non-movable by design.
+	 */
 	class Board : public AbstractBoard
 	{
 	private:
-		std::vector<std::vector<Piece *>> board;
+		std::vector<std::vector<std::unique_ptr<Piece>>> board;
 		std::string castling;
 		std::string enPassant;
 		uint8_t color;
@@ -48,15 +55,21 @@ namespace fenrir
 		void logPieceAction(const std::string &action, const Piece *piece, const std::string &position, const std::string &emoji) const;
 
 	public:
-		Board(const std::string &fenString);
-		~Board();
+		explicit Board(const std::string &fenString);
+		~Board() = default;
+
+		// Non-copyable, non-movable — Board owns all Piece memory
+		Board(const Board &) = delete;
+		Board &operator=(const Board &) = delete;
+		Board(Board &&) = delete;
+		Board &operator=(Board &&) = delete;
 
 		// Accessors and mutators
-		std::vector<std::vector<Piece *>> getBoard(void) const;
 		std::string getFen(void);
 		const std::string &getEnPassant(void) const override;
 		Piece *getPiece(const uint8_t &rank, const uint8_t &file) const override;
-		void move(Piece *&piece, const uint8_t &rank, const uint8_t &file);
+		void move(Piece *piece, const uint8_t &rank, const uint8_t &file);
 		void print(void) const;
+		void reset(const std::string &fenString);
 	};
 }
