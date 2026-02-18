@@ -1045,11 +1045,10 @@ TEST_F(MovesTest, StressTestGenerateMoves)
 	}
 
 	fenrir::Board board(standard_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	for (int i = 0; i < 100000; i++)
 	{
-		const fenrir::Piece *pawn = board_state[1][0];
+		const fenrir::Piece *pawn = board.getPiece(1, 0);
 		if (pawn && pawn->getAlias() == 'P')
 		{
 			std::vector<fenrir::Move> moves;

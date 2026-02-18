@@ -43,32 +43,30 @@ std::string BoardTest::empty_fen_position = "";
 TEST_F(BoardTest, ParseValidFENPosition)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
-	ASSERT_EQ(board_state.size(), fenrir::BOARD_SIZE);
-
-	/* Check pieces */
+	/* Check pieces via getPiece() */
 	/* White rook */
-	EXPECT_NE(board_state[0][0], nullptr);
-	EXPECT_EQ(board_state[0][0]->getAlias(), 'R');
-	EXPECT_EQ(board_state[0][0]->getColor(), fenrir::WHITE);
+	const fenrir::Piece *rook = board.getPiece(0, 0);
+	EXPECT_NE(rook, nullptr);
+	EXPECT_EQ(rook->getAlias(), 'R');
+	EXPECT_EQ(rook->getColor(), fenrir::WHITE);
 
 	/* Black king */
-	EXPECT_NE(board_state[7][4], nullptr);
-	EXPECT_EQ(board_state[7][4]->getAlias(), 'k');
-	EXPECT_EQ(board_state[7][4]->getColor(), fenrir::BLACK);
+	const fenrir::Piece *king = board.getPiece(7, 4);
+	EXPECT_NE(king, nullptr);
+	EXPECT_EQ(king->getAlias(), 'k');
+	EXPECT_EQ(king->getColor(), fenrir::BLACK);
 }
 
 TEST_F(BoardTest, ParseEmptyFENPosition)
 {
 	fenrir::Board board(empty_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
-	for (const std::vector<fenrir::Piece *> &rank : board_state)
+	for (uint8_t r = 0; r < fenrir::BOARD_SIZE; ++r)
 	{
-		for (const fenrir::Piece *const &square : rank)
+		for (uint8_t f = 0; f < fenrir::BOARD_SIZE; ++f)
 		{
-			EXPECT_EQ(square, nullptr);
+			EXPECT_EQ(board.getPiece(r, f), nullptr);
 		}
 	}
 }
@@ -102,10 +100,9 @@ TEST_F(BoardTest, GetPiece_AtInvalidPosition)
 TEST_F(BoardTest, MovePiece)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	/* White pawn @ a2 */
-	fenrir::Piece *pawn = board_state[1][0];
+	fenrir::Piece *pawn = board.getPiece(1, 0);
 
 	ASSERT_NE(pawn, nullptr);
 	EXPECT_EQ(pawn->getAlias(), 'P');
@@ -114,55 +111,49 @@ TEST_F(BoardTest, MovePiece)
 	/* Move the pawn from a2 to a4 */
 	board.move(pawn, 3, 0);
 
-	board_state = board.getBoard();
-	EXPECT_EQ(board_state[3][0], pawn);
-	EXPECT_EQ(board_state[1][0], nullptr);
-	EXPECT_EQ(pawn->getRank(), 3);
-	EXPECT_EQ(pawn->getFile(), 0);
+	EXPECT_NE(board.getPiece(3, 0), nullptr);
+	EXPECT_EQ(board.getPiece(1, 0), nullptr);
+	EXPECT_EQ(board.getPiece(3, 0)->getRank(), 3);
+	EXPECT_EQ(board.getPiece(3, 0)->getFile(), 0);
 }
 
 TEST_F(BoardTest, MoveToOccupiedSquare)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	/* White pawn @ a2 */
-	fenrir::Piece *pawn = board_state[1][0];
+	fenrir::Piece *pawn = board.getPiece(1, 0);
 	ASSERT_NE(pawn, nullptr);
 
 	/* Attempt to move the pawn to an occupied square (a1) */
 	board.move(pawn, 0, 0);
 
 	/* Ensure the move was not performed */
-	board_state = board.getBoard();
-	EXPECT_EQ(board_state[1][0], pawn);
-	EXPECT_NE(board_state[0][0], nullptr);
+	EXPECT_NE(board.getPiece(1, 0), nullptr);
+	EXPECT_NE(board.getPiece(0, 0), nullptr);
 }
 
 TEST_F(BoardTest, MoveOutOfBounds)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
-	/* White pawn @ a2 */
-	fenrir::Piece *pawn = board_state[6][0];
+	/* Black pawn @ a7 (rank 6) */
+	fenrir::Piece *pawn = board.getPiece(6, 0);
 
 	ASSERT_NE(pawn, nullptr);
 
 	/* Attempt to move out of bounds */
 	board.move(pawn, 8, 0);
 
-	board_state = board.getBoard();
-	EXPECT_EQ(board_state[6][0], pawn);
+	EXPECT_NE(board.getPiece(6, 0), nullptr);
 }
 
 TEST_F(BoardTest, MovePawnAndEnPassantIsSet)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	/* White pawn @ a2 */
-	fenrir::Piece *pawn = board_state[1][0];
+	fenrir::Piece *pawn = board.getPiece(1, 0);
 	ASSERT_NE(pawn, nullptr);
 
 	/* Move the pawn to a4 */
@@ -174,10 +165,9 @@ TEST_F(BoardTest, MovePawnAndEnPassantIsSet)
 TEST_F(BoardTest, MovePawnAndEnPassantIsCleared)
 {
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
 	/* White pawn @ a2 */
-	fenrir::Piece *pawn = board_state[1][0];
+	fenrir::Piece *pawn = board.getPiece(1, 0);
 	ASSERT_NE(pawn, nullptr);
 
 	/* Move the pawn to a4 */
@@ -220,18 +210,15 @@ TEST_F(BoardTest, InvalidFENTooManySquaresInRank)
 
 TEST_F(BoardTest, MoveFromInvalidBoardPosition)
 {
-
 	fenrir::Board board(valid_fen_position);
 
-	fenrir::Piece *invalid_piece = new fenrir::Piece('P', 4, 4);
+	/* A piece not on the board */
+	fenrir::Piece detached_piece('P', 4, 4);
 
-	board.move(invalid_piece, 5, 4);
+	board.move(&detached_piece, 5, 4);
 
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
-	EXPECT_EQ(board_state[4][4], nullptr);
-	EXPECT_EQ(board_state[5][4], nullptr);
-
-	delete invalid_piece;
+	EXPECT_EQ(board.getPiece(4, 4), nullptr);
+	EXPECT_EQ(board.getPiece(5, 4), nullptr);
 }
 
 TEST_F(BoardTest, StressTestManyMoves)
@@ -242,33 +229,26 @@ TEST_F(BoardTest, StressTestManyMoves)
 	}
 
 	fenrir::Board board(valid_fen_position);
-	std::vector<std::vector<fenrir::Piece *>> board_state = board.getBoard();
 
-	ASSERT_EQ(board_state.size(), fenrir::BOARD_SIZE);
-
-	/* Track the positions of the white and black pawns */
 	uint8_t white_pawn_rank = 1, white_pawn_file = 0;
 	uint8_t black_pawn_rank = 6, black_pawn_file = 0;
-	uint8_t white_pawn_direction = 1, black_pawn_direction = -1;
+	int white_pawn_direction = 1, black_pawn_direction = -1;
 
-	/* Perform a large number of moves */
 	for (int i = 0; i < 100000; ++i)
 	{
 		if (i % 2 == 0)
 		{
-			/* Move the white pawn forward if possible */
-			fenrir::Piece *pawn = board_state[white_pawn_rank][white_pawn_file];
+			fenrir::Piece *pawn = board.getPiece(white_pawn_rank, white_pawn_file);
 			ASSERT_NE(pawn, nullptr);
 			ASSERT_EQ(pawn->getAlias(), 'P');
 			ASSERT_EQ(pawn->getColor(), fenrir::WHITE);
 
-			uint8_t target_rank = white_pawn_rank + white_pawn_direction;
-			if (board_state[target_rank][white_pawn_file] == nullptr)
+			uint8_t target_rank = static_cast<uint8_t>(white_pawn_rank + white_pawn_direction);
+			if (!board.getPiece(target_rank, white_pawn_file))
 			{
 				board.move(pawn, target_rank, white_pawn_file);
-				board_state = board.getBoard();
-				EXPECT_EQ(board_state[target_rank][white_pawn_file], pawn);
-				EXPECT_EQ(board_state[white_pawn_rank][white_pawn_file], nullptr);
+				EXPECT_NE(board.getPiece(target_rank, white_pawn_file), nullptr);
+				EXPECT_EQ(board.getPiece(white_pawn_rank, white_pawn_file), nullptr);
 				white_pawn_rank = target_rank;
 			}
 			if (white_pawn_rank == 0 || white_pawn_rank == fenrir::BOARD_SIZE - 1)
@@ -278,19 +258,17 @@ TEST_F(BoardTest, StressTestManyMoves)
 		}
 		else
 		{
-			/* Move the black pawn forward if possible */
-			fenrir::Piece *pawn = board_state[black_pawn_rank][black_pawn_file];
+			fenrir::Piece *pawn = board.getPiece(black_pawn_rank, black_pawn_file);
 			ASSERT_NE(pawn, nullptr);
 			ASSERT_EQ(pawn->getAlias(), 'p');
 			ASSERT_EQ(pawn->getColor(), fenrir::BLACK);
 
-			uint8_t target_rank = black_pawn_rank + black_pawn_direction;
-			if (board_state[target_rank][black_pawn_file] == nullptr)
+			uint8_t target_rank = static_cast<uint8_t>(black_pawn_rank + black_pawn_direction);
+			if (!board.getPiece(target_rank, black_pawn_file))
 			{
 				board.move(pawn, target_rank, black_pawn_file);
-				board_state = board.getBoard();
-				EXPECT_EQ(board_state[target_rank][black_pawn_file], pawn);
-				EXPECT_EQ(board_state[black_pawn_rank][black_pawn_file], nullptr);
+				EXPECT_NE(board.getPiece(target_rank, black_pawn_file), nullptr);
+				EXPECT_EQ(board.getPiece(black_pawn_rank, black_pawn_file), nullptr);
 				black_pawn_rank = target_rank;
 			}
 			if (black_pawn_rank == 0 || black_pawn_rank == fenrir::BOARD_SIZE - 1)
@@ -300,17 +278,16 @@ TEST_F(BoardTest, StressTestManyMoves)
 		}
 	}
 
-	/* Ensure the board is still valid after all moves */
-	for (const std::vector<fenrir::Piece *> &rank : board_state)
+	/* Verify all remaining pieces are within bounds */
+	for (uint8_t r = 0; r < fenrir::BOARD_SIZE; ++r)
 	{
-		for (const fenrir::Piece *const &square : rank)
+		for (uint8_t f = 0; f < fenrir::BOARD_SIZE; ++f)
 		{
-			if (square != nullptr)
+			const fenrir::Piece *p = board.getPiece(r, f);
+			if (p)
 			{
-				EXPECT_GE(square->getRank(), 0);
-				EXPECT_LT(square->getRank(), fenrir::BOARD_SIZE);
-				EXPECT_GE(square->getFile(), 0);
-				EXPECT_LT(square->getFile(), fenrir::BOARD_SIZE);
+				EXPECT_LT(p->getRank(), fenrir::BOARD_SIZE);
+				EXPECT_LT(p->getFile(), fenrir::BOARD_SIZE);
 			}
 		}
 	}
