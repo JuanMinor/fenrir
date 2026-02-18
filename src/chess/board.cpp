@@ -119,7 +119,7 @@ namespace fenrir
 		return placement;
 	}
 
-	void Board::logPieceAction(const std::string &action, const Piece *piece, const std::string &position, const std::string &emoji)
+	void Board::logPieceAction(const std::string &action, const Piece *piece, const std::string &position, const std::string &emoji) const
 	{
 		const std::string color = piece->getColor() == WHITE ? "white" : "black";
 		std::stringstream oss;

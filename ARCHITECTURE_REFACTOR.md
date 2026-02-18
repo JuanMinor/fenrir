@@ -286,7 +286,7 @@ public:
 ---
 
 ### ✅ Task 1.4: Add Const Correctness
-**Status**: ⬜ Not Started
+**Status**: ✅ COMPLETED (2026-02-18)
 **Priority**: 🟢 MEDIUM
 **Estimated Time**: 2-3 hours
 **Blocker**: Recommended after 1.1
@@ -298,36 +298,36 @@ public:
 **Implementation**:
 
 #### Step 1: Audit All Classes
-- [ ] Review `Board` class methods
-- [ ] Review `Piece` class methods
-- [ ] Review `Moves` class methods
-- [ ] Review `Engine` class methods
-- [ ] Review `Fen` class methods
-- [ ] Review all other classes
+- [x] Review `Board` class methods
+- [x] Review `Piece` class methods
+- [x] Review `Moves` class methods
+- [x] Review `Engine` class methods
+- [x] Review `Fen` class methods
+- [x] Review all other classes
 
 #### Step 2: Add Const to Methods
-- [ ] Mark all non-mutating methods as `const`
-- [ ] Mark all parameters that aren't modified as `const` or `const&`
-- [ ] Use `const` references for parameters where appropriate
-- [ ] Update headers and implementations
+- [x] Mark all non-mutating methods as `const`
+- [x] Mark all parameters that aren't modified as `const` or `const&`
+- [x] Use `const` references for parameters where appropriate
+- [x] Update headers and implementations
 
 #### Step 3: Fix Compilation Errors
-- [ ] Resolve any const-correctness errors that arise
-- [ ] May need to mark some members as `mutable` (e.g., for logging mutexes)
-- [ ] Verify behavior unchanged
+- [x] Resolve any const-correctness errors that arise
+- [x] May need to mark some members as `mutable` (e.g., for logging mutexes)
+- [x] Verify behavior unchanged
 
 #### Step 4: Update Tests
-- [ ] Ensure tests work with new const signatures
-- [ ] Add tests that verify const correctness (e.g., can call methods on const objects)
-- [ ] Verify all tests pass
+- [x] Ensure tests work with new const signatures
+- [x] Add tests that verify const correctness (e.g., can call methods on const objects)
+- [x] Verify all tests pass
 
 **Completion Criteria**:
-- [ ] All appropriate methods marked `const`
-- [ ] All appropriate parameters marked `const` or `const&`
-- [ ] Code compiles without warnings
-- [ ] All tests pass (`make test`)
-- [ ] 100% coverage maintained (`make coverage`)
-- [ ] Commit with message: "refactor: add const correctness throughout codebase"
+- [x] All appropriate methods marked `const`
+- [x] All appropriate parameters marked `const` or `const&`
+- [x] Code compiles without warnings
+- [x] All tests pass (`make test`)
+- [x] 100% coverage maintained (`make coverage`)
+- [x] Commit with message: "refactor: add const correctness throughout codebase"
 
 ---
 
@@ -427,7 +427,7 @@ public:
 
 | Phase | Tasks | Completed | Status |
 |-------|-------|-----------|--------|
-| Phase 1: Critical Fixes | 5 | 2/5 | 🔄 In Progress |
+| Phase 1: Critical Fixes | 5 | 4/5 | 🔄 In Progress |
 | Phase 2: Enhancements | 2 | 0/2 | ⬜ Not Started |
 
 ### Task Status Legend

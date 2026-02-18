@@ -24,10 +24,10 @@ namespace fenrir
 {
 	class Piece; // Forward declaration
 
-	class IBoardView
+	class AbstractBoard
 	{
 	public:
-		virtual ~IBoardView() = default;
+		virtual ~AbstractBoard() = default;
 
 		virtual Piece *getPiece(const uint8_t &rank, const uint8_t &file) const = 0;
 		virtual const std::string &getEnPassant(void) const = 0;

@@ -24,7 +24,7 @@
 #include "include/chess/move.h"
 #include "include/chess/piece.h"
 #include "include/utils/utils.h"
-#include "include/interfaces/iboardview.h"
+#include "include/abstract/board.h"
 
 namespace fenrir
 {
@@ -35,19 +35,19 @@ namespace fenrir
 		Moves(const Moves &) = delete;
 		Moves &operator=(const Moves &) = delete;
 
-		void generateBishopMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves);
-		void addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<Move> &moves);
-		void generateKingMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves);
-		void generateKnightMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves);
+		void generateBishopMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<Move> &moves) const;
+		void generateKingMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void generateKnightMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
 		void logGeneratedMoves(const Piece *piece, const std::vector<Move> &moves) const;
-		void generatePawnMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves);
-		void generateQueenMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves);
-		void generateRookMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves);
-		void slideInDirections(const Piece *piece, const IBoardView &board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth = false);
+		void generatePawnMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void generateQueenMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void generateRookMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void slideInDirections(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth = false) const;
 
 	public:
 		static Moves &getInstance();
 
-		void generateMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves);
+		void generateMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
 	};
 }

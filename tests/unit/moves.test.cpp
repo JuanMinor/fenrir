@@ -24,7 +24,7 @@
 #include "include/chess/piece.h"
 #include "include/core/core.h"
 
-class MockBoard : public fenrir::IBoardView
+class MockBoard : public fenrir::AbstractBoard
 {
 public:
 	std::map<std::pair<uint8_t, uint8_t>, std::unique_ptr<fenrir::Piece>> pieces;

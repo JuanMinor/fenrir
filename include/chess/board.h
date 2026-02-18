@@ -28,11 +28,11 @@
 #include "include/pgn/pgn.h"
 #include "include/chess/piece.h"
 #include "include/utils/utils.h"
-#include "include/interfaces/iboardview.h"
+#include "include/abstract/board.h"
 
 namespace fenrir
 {
-	class Board : public IBoardView
+	class Board : public AbstractBoard
 	{
 	private:
 		std::vector<std::vector<Piece *>> board;
@@ -45,7 +45,7 @@ namespace fenrir
 
 		void buildBoard(const std::string &placement);
 		std::string generatePlacementFromBoard(void) const;
-		void logPieceAction(const std::string &action, const Piece *piece, const std::string &position, const std::string &emoji);
+		void logPieceAction(const std::string &action, const Piece *piece, const std::string &position, const std::string &emoji) const;
 
 	public:
 		Board(const std::string &fenString);
