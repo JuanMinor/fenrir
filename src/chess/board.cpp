@@ -32,23 +32,7 @@ namespace fenrir
 
 		logger::INFO("Board initialized with FEN: " + fen.getPlacement());
 	}
-
-	Board::~Board()
-	{
-		for (int rank = BOARD_SIZE - 1; rank >= 0; --rank)
-		{
-			for (uint8_t file = 0; file < BOARD_SIZE; ++file)
-			{
-				Piece *piece = this->board.at(rank).at(file);
-				if (piece != nullptr)
-				{
-					this->logPieceAction("Destroyed", piece, utils::getAlgebraicNotation(rank, file), "❌");
-					delete piece;
-				}
-			}
-		}
-		logger::INFO("Board destroyed and all pieces cleaned up.");
-	}
+	// ~Board() = default — unique_ptr<Piece> members clean themselves up automatically
 
 	/* Private */
 	void Board::buildBoard(const std::string &placement)
@@ -56,7 +40,12 @@ namespace fenrir
 		size_t size = placement.size();
 		uint8_t rank = BOARD_SIZE - 1, file = 0;
 
-		this->board.resize(BOARD_SIZE, std::vector<Piece *>(BOARD_SIZE, nullptr));
+		this->board.clear();
+		this->board.resize(BOARD_SIZE);
+		for (auto &row : this->board)
+		{
+			row.resize(BOARD_SIZE);
+		}
 
 		for (size_t i = 0; i < size && rank < BOARD_SIZE; ++i)
 		{
@@ -76,9 +65,9 @@ namespace fenrir
 				}
 				continue;
 			}
-			Piece *piece = new Piece(c, rank, file);
-			this->board[rank][file++] = piece;
-			this->logPieceAction("Created", piece, utils::getAlgebraicNotation(rank, file - 1), "✅");
+			this->board[rank][file] = std::make_unique<Piece>(c, rank, file);
+			this->logPieceAction("Created", this->board[rank][file].get(), utils::getAlgebraicNotation(rank, file), "✅");
+			++file;
 		}
 	}
 
@@ -92,7 +81,7 @@ namespace fenrir
 			uint8_t empty_squares = 0;
 			for (uint8_t file = 0; file < BOARD_SIZE; ++file)
 			{
-				const Piece *piece = this->board[rank][file];
+				const Piece *piece = this->board[rank][file].get();
 				if (!piece)
 				{
 					++empty_squares;
@@ -134,11 +123,6 @@ namespace fenrir
 		logger::DEBUG(detailed_oss.str());
 	}
 
-	std::vector<std::vector<Piece *>> Board::getBoard(void) const
-	{
-		return this->board;
-	}
-
 	std::string Board::getFen(void)
 	{
 		fen.setPlacement(this->generatePlacementFromBoard());
@@ -165,10 +149,10 @@ namespace fenrir
 				false);
 			return nullptr;
 		}
-		return this->board.at(rank).at(file);
+		return this->board.at(rank).at(file).get();
 	}
 
-	void Board::move(Piece *&piece, const uint8_t &rank, const uint8_t &file)
+	void Board::move(Piece *piece, const uint8_t &rank, const uint8_t &file)
 	{
 		if (rank >= BOARD_SIZE || file >= BOARD_SIZE)
 		{
@@ -206,11 +190,24 @@ namespace fenrir
 
 		piece->setRank(rank);
 		piece->setFile(file);
-		this->board[rank][file] = piece;
+		this->board[rank][file] = std::move(this->board[oldRank][oldFile]);
 		this->board[oldRank][oldFile] = nullptr;
 
 		this->logPieceAction("Moved", piece, utils::getAlgebraicNotation(rank, file), "🚀");
 		io::PGN_RECORD(std::string(utils::getAlgebraicNotation(oldRank, oldFile)) + " " + utils::getAlgebraicNotation(rank, file));
+	}
+
+	void Board::reset(const std::string &fenString)
+	{
+		this->board.clear();
+		this->fen = Fen(fenString);
+		this->castling = fen.getCastling();
+		this->enPassant = fen.getEnPassant() == "-" ? "" : fen.getEnPassant();
+		this->color = fen.getColor();
+		this->halfMoveClock = fen.getHalfMoveClock();
+		this->fullMoves = fen.getFullMoves();
+		this->buildBoard(fen.getPlacement());
+		logger::INFO("Board reset to FEN: " + fenString);
 	}
 
 	void Board::print(void) const

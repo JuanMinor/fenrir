@@ -37,14 +37,14 @@ namespace fenrir
 		std::vector<Move> moves;
 		uint8_t rank, file;
 		utils::parseAlgebraicNotation(algebraicAddress, rank, file);
-		if (!board.getBoard().at(rank).at(file))
+		const Piece *piece = board.getPiece(rank, file);
+		if (!piece)
 		{
 			LOG_THROW_ERROR(
 				(std::string("Board address ") + algebraicAddress + " does not contain a piece").c_str(),
 				false);
 			return moves;
 		}
-		const Piece *piece = board.getPiece(rank, file);
 
 		Moves::getInstance().generateMoves(piece, board, moves);
 
@@ -65,7 +65,7 @@ namespace fenrir
 		uint8_t fromRank, fromFile, toRank, toFile;
 		utils::parseAlgebraicNotation(move.getFrom(), fromRank, fromFile);
 		utils::parseAlgebraicNotation(move.getTo(), toRank, toFile);
-		Piece *piece = board.getBoard().at(fromRank).at(fromFile);
+		Piece *piece = board.getPiece(fromRank, fromFile);
 		if (!piece)
 		{
 			logger::ERROR("No piece found at " + move.getFrom());
@@ -83,8 +83,7 @@ namespace fenrir
 
 	void Engine::reset()
 	{
-		board.~Board();
-		new (&board) Board(fen);
+		board.reset(fen);
 		logger::INFO("Reset the board to the initial state with FEN: " + fen);
 	}
 }
