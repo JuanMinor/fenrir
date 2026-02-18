@@ -30,8 +30,8 @@ namespace chrono
 		~Chrono();
 
 		// Public methods
-		tm *getLocalTime(time_t *timer) noexcept(true);
-		time_t getRawTime(void) noexcept(true);
-		std::_Put_time<char> getTimeWithFormat(const char *format);
+		tm *getLocalTime(time_t *timer) const noexcept(true);
+		time_t getRawTime(void) const noexcept(true);
+		std::_Put_time<char> getTimeWithFormat(const char *format) const;
 	};
 }

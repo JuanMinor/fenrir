@@ -26,13 +26,13 @@ namespace fenrir
 
 	Moves::~Moves() {}
 
-	void Moves::generateBishopMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
+	void Moves::generateBishopMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		int8_t directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 		this->slideInDirections(piece, board, moves, directions, 4);
 	}
 
-	void Moves::addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<Move> &moves)
+	void Moves::addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<Move> &moves) const
 	{
 		if (piece == nullptr || targetPiece == nullptr)
 		{
@@ -49,13 +49,13 @@ namespace fenrir
 		}
 	}
 
-	void Moves::generateKingMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
+	void Moves::generateKingMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		constexpr int8_t directionVectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
 		this->slideInDirections(piece, board, moves, directionVectors, 8, true);
 	}
 
-	void Moves::generateKnightMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
+	void Moves::generateKnightMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		const uint8_t currentRank = piece->getRank();
 		const uint8_t currentFile = piece->getFile();
@@ -112,7 +112,7 @@ namespace fenrir
 		logger::DEBUG(ss.str());
 	}
 
-	void Moves::generatePawnMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
+	void Moves::generatePawnMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		uint8_t rank = piece->getRank();
 		uint8_t file = piece->getFile();
@@ -167,19 +167,19 @@ namespace fenrir
 		logGeneratedMoves(piece, moves);
 	}
 
-	void Moves::generateQueenMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
+	void Moves::generateQueenMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		constexpr int8_t directionVectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
 		this->slideInDirections(piece, board, moves, directionVectors, 8);
 	}
 
-	void Moves::generateRookMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
+	void Moves::generateRookMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		constexpr int8_t directionVectors[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 		this->slideInDirections(piece, board, moves, directionVectors, 4);
 	}
 
-	void Moves::slideInDirections(const Piece *piece, const IBoardView &board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth)
+	void Moves::slideInDirections(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth) const
 	{
 		const uint8_t currentRank = piece->getRank();
 		const uint8_t currentFile = piece->getFile();
@@ -225,7 +225,7 @@ namespace fenrir
 		return instance;
 	}
 
-	void Moves::generateMoves(const Piece *piece, const IBoardView &board, std::vector<Move> &moves)
+	void Moves::generateMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		if (piece == nullptr)
 		{
