@@ -22,7 +22,7 @@
 #include "include/logger/logger.h"
 #include "include/chess/moves.h"
 #include "include/utils/utils.h"
-#include "include/interfaces/iboardview.h"
+#include "include/abstract/board.h"
 
 namespace fenrir
 {
@@ -43,6 +43,6 @@ namespace fenrir
 		void printBoard(void) const;
 		void reset();
 
-		const IBoardView &getBoardView() const;
+		const AbstractBoard &getBoardView() const;
 	};
 }

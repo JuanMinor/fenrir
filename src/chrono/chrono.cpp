@@ -22,7 +22,7 @@ namespace chrono
 	Chrono::Chrono() {}
 	Chrono::~Chrono() {}
 
-	tm *Chrono::getLocalTime(time_t *timer) noexcept
+	tm *Chrono::getLocalTime(time_t *timer) const noexcept
 	{
 		if (!timer)
 		{
@@ -33,12 +33,12 @@ namespace chrono
 		return std::localtime(timer);
 	}
 
-	time_t Chrono::getRawTime(void) noexcept
+	time_t Chrono::getRawTime(void) const noexcept
 	{
 		return std::time(nullptr);
 	}
 
-	std::_Put_time<char> Chrono::getTimeWithFormat(const char *format)
+	std::_Put_time<char> Chrono::getTimeWithFormat(const char *format) const
 	{
 		tm *local_time = this->getLocalTime(nullptr);
 		return std::put_time(local_time, format);

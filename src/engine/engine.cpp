@@ -27,7 +27,7 @@ namespace fenrir
 
 	Engine::~Engine() {}
 
-	const IBoardView &Engine::getBoardView() const
+	const AbstractBoard &Engine::getBoardView() const
 	{
 		return board;
 	}
