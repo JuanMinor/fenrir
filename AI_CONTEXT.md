@@ -1,364 +1,315 @@
-# 🤖 AI Context Document - Fenrir Chess Engine
+# AI Context Document - Fenrir Chess Engine
 
-> **Purpose**: This document provides AI assistants with complete context about the Fenrir chess engine project. Read this first to understand the codebase, architecture, and development goals.
-
----
-
-## 📋 Project Overview
-
-**Fenrir** is a C++ chess engine library that provides:
-- Complete chess board representation and piece management
-- FEN (Forsyth-Edwards Notation) parsing and generation
-- Move generation for all 6 chess piece types
-- Shared library (`libfenrir.so`) for integration into other projects
-- Comprehensive logging and debugging infrastructure
-
-**Current Status**: Foundation complete with all piece movement logic implemented. Ready for game state management and AI search algorithms.
+> **Purpose**: This document provides AI assistants with complete context about the Fenrir chess engine project. Read this first before making any changes.
 
 ---
 
-## 🎯 Project Goals & Roadmap
+## Project Overview
 
-### ✅ Completed (Current State)
-1. **Chess Board Representation**: 8x8 board with proper piece management
-2. **FEN Parser**: Complete FEN string parsing and generation
-3. **All Piece Movement Logic**:
-   - ♟️ Pawns: Single/double moves, diagonal captures, en passant
-   - ♜ Rooks: Horizontal/vertical sliding with blocking
-   - ♞ Knights: L-shaped jumps (can jump over pieces)
-   - ♗ Bishops: Diagonal sliding with blocking
-   - ♛ Queens: Combined rook + bishop movement
-   - ♚ Kings: Single-square movement in all 8 directions
-4. **Move Generation**: Legal move generation for all pieces
-5. **Logging System**: Production-ready logging with rotation and levels
-6. **PGN Recording**: Basic PGN file support
-7. **Build System**: Makefile with debug/release modes
-8. **Testing**: 262 unit tests with 100% coverage requirement
+Fenrir is the **rules and validation layer** of a three-tier chess ecosystem:
 
-### 🚧 Not Yet Implemented (Future Work)
-1. **Castling**: King-rook castling moves (kingside/queenside)
-2. **Check Detection**: Determining if king is in check
-3. **Checkmate Detection**: Game-ending conditions
-4. **Move Validation**: Preventing moves that leave king in check
-5. **Stalemate Detection**: Draw conditions
-6. **Promotion**: Pawn promotion to queen/rook/bishop/knight
-7. **AI Search**: Minimax, alpha-beta pruning, position evaluation
-8. **UCI Protocol**: Universal Chess Interface for GUI integration
-9. **Opening Book**: Database of opening moves
-10. **Endgame Tablebases**: Perfect play in endgames
+```
+Layer 3 - UIs (mobile, web, desktop)
+  React Native / Swift / JS / Electron
+  Present, visualize, and explain chess to humans.
+
+Layer 2 - Agents (Python, JS, RL training loops, minimax bots)
+  Consume Fenrir via FFI. Search, evaluate, decide.
+  They ask Fenrir what is legal. They decide what is best.
+
+Layer 1 - Fenrir (this library)
+  C++ shared library: libfenrir.so
+  Rules, validation, legal move generation, FEN, PGN.
+  Agents and UIs trust Fenrir completely for correctness.
+```
+
+**Fenrir's contract with its consumers:**
+- Every move returned by `generateMoves()` is legal (no illegal moves in the list)
+- `makeMove()` **validates the move internally** — it calls `generateMoves()` and rejects any move not in the legal set. Agents cannot bypass move validation by constructing a `Move` directly. Passing an illegal or absurd move returns an error; the board state is unchanged.
+- FEN and PGN are correct - consumers never reimplement chess notation
+- The API is stable - language bindings (Python ctypes, WASM, Swift FFI) do not break on updates
+
+> **Current limitation (v0.2.0-dev):** `makeMove()` validates against **pseudo-legal** moves only (piece movement rules, not legality). Full legal validation (move cannot leave king in check) is added in v0.3.0 once `generateMoves()` produces legal moves.
+
+**Why performance matters here:** Agents doing reinforcement learning play millions of games during training. A minimax search at depth 5 with a branching factor of ~30 makes roughly 24 million `generateMoves()` calls. Fenrir must handle that load. Every allocation and serialization inside `generateMoves()` is multiplied by that volume.
+
+**Current Version**: 0.2.0-dev
+**Last Updated**: 2026-02-18
+**License**: GPL-3.0
 
 ---
 
-## 🏗️ Architecture
+## Project Goals & Roadmap
 
-### Core Components
+### Completed (v0.1.0 - v0.2.0)
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Chess board representation (8x8) | Done | Mailbox (`unique_ptr<Piece>`) — **being replaced by bitboards in v0.3.0** |
+| FEN parsing and generation | Done | Full FEN string support |
+| `Move` class with `MoveType` enum | Done | Replaces old `pair<string,string>` |
+| `AbstractBoard` interface | Done | Decouples `Moves` from `Board` |
+| Pawn moves (single + double push) | Done | Direction based on color |
+| Pawn diagonal captures | Done | Left and right |
+| En passant capture | Done | Detected from FEN `getEnPassant()` |
+| Rook sliding moves | Done | 4 directions, blocking detection |
+| Knight L-shaped jumps | Done | Can jump over pieces |
+| Bishop diagonal sliding | Done | 4 directions, blocking detection |
+| Queen moves (rook + bishop) | Done | 8 directions |
+| King single-square moves | Done | 8 directions, depth=1 |
+| Logging system (rotating, leveled) | Done | Production-ready |
+| PGN recording (basic) | Done | `pgn/fenrir.pgn` |
+| Shared library build | Done | `bin/lib/libfenrir.so` |
+| 300 unit tests, 100% coverage | Done | Google Test, enforced |
+| Memory safety (`unique_ptr`) | Done | No raw owning pointers, Rule of Five |
+| Const correctness | Done | All `Moves` methods are `const` |
+
+### Not Yet Implemented (v0.3.0 target)
+
+| Feature | Priority | Prerequisite |
+|---------|----------|-------------|
+| **Bitboard foundation rewrite** | Critical | Phase 0 — must complete before all below. Replaces `unique_ptr<Piece>` grid with 12 `uint64_t` bitboards. New `attacks.h/cpp` with precomputed knight, king, pawn, and ray tables. All 300 existing tests must pass after. |
+| **AbstractBoard extensions** (`getCastlingRights` as bitmask, `getColor`, `getBB`, `getOccupancy`, `getEnPassantBB`) | Critical | Bitboard rewrite |
+| **Check detection** | Critical | Attack tables + AbstractBoard extensions. With bitboards: O(1) via `attackers & king_bb`. |
+| **Make/unmake** (`Board::applyMove()` / `Board::undoMove()` with `UndoState`) | Critical | Check detection. With bitboards: save 12 integers + ~10 bytes. Zero allocation. |
+| **Legal move filtering** (strip pseudo-legal moves leaving king in check) | Critical | Make/unmake (apply -> isInCheck -> undo, no copies) |
+| **`Engine::undoMove()`** (public undo, pops internal `vector<UndoState>`) | Critical | Make/unmake |
+| **Castling move generation** | High | Check detection |
+| **Pawn promotion detection** | High | Legal move filtering |
+| **Checkmate detection** | High | Legal move filtering |
+| **Stalemate detection** | High | Legal move filtering |
+| Turn enforcement | Medium | None |
+| Fifty-move rule | Medium | None |
+| Threefold repetition | Medium | None |
+
+### Planned (v0.4.0 - v0.6.0)
+
+| Version | Feature | Notes |
+|---------|---------|-------|
+| v0.4.0 | Reference search agent (C++) | Minimax + alpha-beta, links libfenrir.so directly. Required before UCI. |
+| v0.5.0 | UCI protocol (C++) | Wraps reference agent. Unlocks chess.com, Lichess, Arena, Stockfish benchmarking. |
+| v0.6.0 | Python bindings | ctypes or pybind11. Unlocks Python RL agents. |
+| v0.6.0 | WebAssembly build | Browser agents and web UIs. |
+
+> **Current limitation**: `generateMoves()` returns **pseudo-legal moves** - moves that follow piece movement rules but may leave the king in check. External consumers must be aware of this.
+
+---
+
+## Architecture
+
+### Folder Structure
 
 ```
 fenrir/
 ├── include/              # Public API headers
-│   ├── chess/           # Chess-specific logic
-│   │   ├── board.h      # Board representation and management
-│   │   ├── piece.h      # Piece class (position, color, type)
-│   │   ├── moves.h      # Move generation (singleton pattern)
-│   │   └── fen.h        # FEN parsing and generation
-│   ├── engine/          # Main engine interface
-│   │   └── engine.h     # High-level API for users
-│   ├── logger/          # Logging system
-│   ├── pgn/             # PGN file handling
+│   ├── abstract/
+│   │   └── board.h      # AbstractBoard interface (Moves <-> Board decoupling seam)
+│   ├── chess/
+│   │   ├── board.h      # Board: 12 bitboards (uint64_t bb[12]) — v0.3.0 rewrite in progress
+│   │   ├── attacks.h    # Attack tables + slider generation (new in v0.3.0)
+│   │   ├── piece.h      # Piece: value type, reconstructed from bitboards on demand
+│   │   ├── move.h       # Move: from/to/MoveType/promotionPiece
+│   │   ├── moves.h      # Moves singleton: pseudo-legal move generation
+│   │   └── fen.h        # Fen: FEN string parsing and generation
+│   ├── core/
+│   │   └── core.h       # Constants, MoveType enum, GameMode enum
+│   ├── engine/
+│   │   └── engine.h     # Engine: high-level public API facade
+│   ├── logger/          # Logging (levels, rotation)
+│   ├── pgn/             # PGN file writing
 │   ├── chrono/          # Timestamp utilities
 │   ├── modifier/        # String modifiers
-│   └── utils/           # Utility functions
-├── src/                 # Implementation files (mirrors include/)
-├── tests/unit/          # Google Test unit tests (262 tests)
-├── bin/lib/             # Build output (libfenrir.so)
-└── scripts/             # Build automation scripts
+│   └── utils/           # Algebraic notation helpers
+├── src/                 # Implementations (mirror include/)
+├── tests/unit/          # Google Test suites (300 tests)
+├── bin/lib/             # libfenrir.so build output
+└── scripts/             # build_mode.sh, test.sh, etc.
 ```
 
-### Key Design Patterns
+### Key Design Decisions
 
-1. **Singleton Pattern**: `Moves` class uses singleton for move generation
-2. **RAII**: Proper resource management throughout
-3. **Shared Library**: Compiled as `.so` for reusability
-4. **Separation of Concerns**: Clear boundaries between board, pieces, moves, engine
+1. **Bitboard representation** (v0.3.0): `Board` stores state as 12 `uint64_t` (one per piece-type/color). Bit n = square n (a1=0, h8=63). `getPiece(rank, file)` reconstructs piece info on demand by probing the bitboards. Before v0.3.0 this was `vector<vector<unique_ptr<Piece>>>`.
+2. **Precomputed attack tables** (`attacks.h/cpp`): knight, king, pawn push/attack tables indexed by square. Slider attacks (rook, bishop, queen) use classical ray blocker algorithm. Initialized once at startup.
+3. **`AbstractBoard` interface** (`include/abstract/board.h`) exposes `getPiece()`, `getEnPassant()`, and (v0.3.0) `getCastlingRights()`, `getColor()`, `getBB()`, `getOccupancy()`, `getEnPassantBB()`. `Moves` depends on this interface only.
+4. **Make/unmake** (`Board::applyMove()` / `Board::undoMove()`): saves a delta `UndoState` (changed castling rights, en passant, captured piece index + square). Zero allocation. Used internally for legal move filtering and externally via `Engine::undoMove()`.
+5. **`Moves` singleton** — one instance for the process lifetime. All methods are `const`.
+6. **`Engine`** is the public facade. External consumers only need `#include "include/engine/engine.h"`.
 
 ### Class Responsibilities
 
 | Class | Responsibility | Key Methods |
 |-------|---------------|-------------|
-| `Engine` | High-level API facade | `make_move()`, `generate_moves()`, `get_fen()`, `reset()` |
-| `Board` | Board state management | `get_piece()`, `move()`, `print()`, `get_fen()` |
-| `Piece` | Individual piece data | `get_rank()`, `get_file()`, `get_color()`, `get_alias()` |
-| `Moves` | Move generation logic | `generate_moves()` (delegates to piece-specific methods) |
-| `Fen` | FEN parsing/generation | `parse()`, `get_placement()`, `get_color()`, etc. |
+| `Engine` | Public API facade | `generateMoves()`, `makeMove()`, `getFen()`, `reset()`, `getBoardView()` |
+| `Board` | Board state, piece ownership | `getPiece()`, `move()`, `reset()`, `getFen()`, `print()` |
+| `Piece` | Individual piece data | `getRank()`, `getFile()`, `getColor()`, `getAlias()`, `getMoved()` |
+| `Moves` | Pseudo-legal move generation | `generateMoves()` (dispatches to piece-specific methods) |
+| `Fen` | FEN parsing/generation | `parse()`, `getPlacement()`, `getColor()`, `getEnPassant()`, etc. |
+| `Move` | Move data | `getFrom()`, `getTo()`, `getMoveType()`, `getPromotionPiece()`, `toUCINotation()` |
+| `AbstractBoard` | Board interface for `Moves` | `getPiece()`, `getEnPassant()` |
 
 ---
 
-## 🔧 Technical Details
+## Move Rules - What Is and Is Not Supported
 
-### Build System
-- **Primary**: GNU Make (only supported build system)
-- **Compiler**: GCC/G++ with C++20 standard
-- **Flags**: `-std=c++20 -fPIC -DFENRIR_BUILD_DLL`
-- **Debug Mode**: `-g` (default)
-- **Release Mode**: `-O2 -DNDEBUG`
+### `MoveType` Enum (defined in `include/core/core.h`)
 
-### Build Commands
+| Value | Meaning | Generated? |
+|-------|---------|-----------|
+| `NORMAL` | Standard move to empty square | Yes |
+| `CAPTURE` | Move to square occupied by opponent | Yes |
+| `EN_PASSANT` | Pawn captures en passant via FEN square | Yes |
+| `CASTLE_KINGSIDE` | King-side castling (O-O) | Not yet generated |
+| `CASTLE_QUEENSIDE` | Queen-side castling (O-O-O) | Not yet generated |
+| `PROMOTION` | Pawn reaching rank 1 or 8 | Not yet detected/generated |
+
+### Per-Piece Move Generation
+
+| Piece | Normal | Capture | Special |
+|-------|--------|---------|---------|
+| **Pawn** | single push, double push from start | diagonal | en passant (done), promotion (not yet) |
+| **Rook** | slides 4 directions | stops on first enemy | none |
+| **Knight** | 8 L-moves, jumps over pieces | yes | none |
+| **Bishop** | slides 4 diagonals | stops on first enemy | none |
+| **Queen** | slides 8 directions | stops on first enemy | none |
+| **King** | 1 square, 8 directions | yes | castling (not yet) |
+
+### What Pseudo-Legal Means
+
+`generateMoves()` returns moves that are geometrically valid for the piece but does **not** validate:
+- Whether the resulting position leaves the moving side's king in check
+- Whether it is the correct side's turn
+- Game-over conditions (checkmate, stalemate)
+
+---
+
+## Technical Details
+
+### Build
+
 ```bash
-make              # Build debug version (default)
-make release      # Build optimized release
-make test         # Run 262 unit tests
-make coverage     # Generate coverage report (requires 100%)
+make              # Debug build
+make release      # Optimized build (-O2 -DNDEBUG)
+make test         # Run all 300 unit tests
+make coverage     # Generate HTML coverage (must be 100%)
 make clean        # Remove all build artifacts
-make help         # Show all available targets
 ```
 
-### Testing Requirements
+### Testing
+
 - **Framework**: Google Test
-- **Coverage**: 100% line coverage REQUIRED (build fails if < 100%)
-- **Test Count**: 262 tests across 10 test suites
-- **Test Files**: `tests/unit/*.test.cpp`
-
-### Move Generation Algorithm
-
-**Sliding Pieces** (Rook, Bishop, Queen, King):
-- Uses shared `__slide__()` algorithm with direction vectors
-- Rook: 4 directions (horizontal/vertical)
-- Bishop: 4 directions (diagonals)
-- Queen: 8 directions (rook + bishop)
-- King: 8 directions with `single_depth=true` (1 square only)
-
-**Knight**:
-- 8 L-shaped moves from current position
-- Can jump over other pieces
-- Validates boundaries and captures
-
-**Pawn**:
-- Direction based on color (white=+1, black=-1)
-- Single move forward (if not blocked)
-- Double move from starting position (if not moved)
-- Diagonal captures (left and right)
-- En passant capture (special case)
-
----
-
-## 📝 Code Conventions
-
-### Naming Conventions
-- **Private methods**: `__method_name__()` (double underscore prefix/suffix)
-- **Parameters**: `__parameter_name` (double underscore prefix)
-- **Classes**: PascalCase (`Board`, `Piece`, `Engine`)
-- **Constants**: UPPER_SNAKE_CASE (`BOARD_SIZE`, `WHITE`, `BLACK`)
-- **Files**: lowercase with extension (`.h`, `.cpp`)
-
-### Piece Representation
-- **Aliases**: `P/p` (pawn), `R/r` (rook), `N/n` (knight), `B/b` (bishop), `Q/q` (queen), `K/k` (king)
-- **Color**: Uppercase = White, Lowercase = Black
-- **Color Constants**: `WHITE = 0`, `BLACK = 1`
-
-### Coordinate System
-- **Ranks**: 0-7 (0 = rank 1, 7 = rank 8)
-- **Files**: 0-7 (0 = a-file, 7 = h-file)
-- **Algebraic Notation**: "e4", "a1", "h8" (file + rank)
-
----
-
-## 🔍 What Works vs What Doesn't
-
-### ✅ What Currently Works
-1. **Board Setup**: Initialize from FEN string
-2. **Piece Movement**: All 6 piece types can move according to chess rules
-3. **Move Generation**: Generate all pseudo-legal moves for any piece
-4. **Captures**: Pieces can capture opponent pieces
-5. **En Passant**: Pawn en passant captures work
-6. **FEN Export**: Export current position to FEN string
-7. **Board Display**: Print ASCII board to console
-8. **Logging**: Comprehensive debug/info/warn/error logging
-
-### ❌ What Doesn't Work Yet
-1. **Castling Moves**: Cannot castle king and rook
-2. **Check Validation**: Doesn't prevent moving into check
-3. **Checkmate Detection**: Cannot detect game-ending positions
-4. **Pawn Promotion**: Pawns reaching end rank don't promote
-5. **Stalemate**: No draw detection
-6. **Move Validation**: Generates pseudo-legal moves (may leave king in check)
-7. **Game State**: No turn management or game-over detection
-8. **AI**: No computer opponent or position evaluation
-
----
-
-## 🚀 How to Extend the Project
-
-### Adding Castling Support
-1. Modify `Moves::__king__()` to check castling rights
-2. Verify king and rook haven't moved
-3. Ensure squares between are empty
-4. Validate king doesn't castle through check
-5. Add tests in `tests/unit/moves.test.cpp`
-
-### Adding Check Detection
-1. Create `Board::is_in_check(color)` method
-2. For each opponent piece, generate moves
-3. Check if any move targets the king
-4. Add tests for various check scenarios
-
-### Adding Move Validation
-1. Before making a move, simulate it on a copy of the board
-2. Check if the moving side's king is in check
-3. If yes, reject the move
-4. Update `Engine::make_move()` to validate
-
-### Adding Pawn Promotion
-1. In `Board::move()`, detect pawn reaching rank 0 or 7
-2. Prompt for promotion piece (Q/R/B/N)
-3. Replace pawn with chosen piece
-4. Update FEN generation to handle promoted pieces
-
----
-
-## 📊 Current Metrics
-
-- **Lines of Code**: ~4,240 (test files)
-- **Test Count**: 262 unit tests
-- **Test Suites**: 10 (FenTest, BoardTest, PieceTest, EngineTest, MovesTest, etc.)
-- **Coverage**: 100% required (enforced by build system)
-- **Build Artifacts**: `libfenrir.so` (shared library)
-- **Dependencies**: Google Test, lcov (for coverage)
-
----
-
-## 🛠️ Development Workflow
-
-### Making Changes
-1. **Read this document first** to understand the architecture
-2. **Check existing tests** in `tests/unit/` to understand expected behavior
-3. **Write tests first** for new functionality (TDD approach)
-4. **Implement changes** in `src/` and `include/`
-5. **Run tests**: `make test` (must pass all 262 tests)
-6. **Check coverage**: `make coverage` (must be 100%)
-7. **Update documentation** if API changes
-
-### Common Tasks
-
-**Add a new piece type** (hypothetical):
-1. Add alias to `PIECE_NAMES` map
-2. Create `__new_piece__()` method in `Moves` class
-3. Add case in `Moves::generate_moves()` switch statement
-4. Write comprehensive tests
-5. Update documentation
-
-**Fix a bug**:
-1. Write a failing test that reproduces the bug
-2. Fix the implementation
-3. Verify test passes
-4. Check coverage remains 100%
-5. Document the fix in commit message
-
-**Add a feature**:
-1. Update `AI_CONTEXT.md` roadmap (move from "Not Yet Implemented" to "In Progress")
-2. Write tests for the feature
-3. Implement the feature
-4. Update `README.md` with new API
-5. Update `RELEASE_NOTES.md` for next version
-
----
-
-## 🎓 Key Concepts for AI Assistants
-
-### When Asked to "Add Castling"
-- Castling is a special king move that also moves the rook
-- Kingside: King moves 2 squares toward h-file, rook jumps over
-- Queenside: King moves 2 squares toward a-file, rook jumps over
-- Requirements: Neither piece has moved, no pieces between, king not in check, doesn't castle through check
-- FEN castling rights: "KQkq" (White kingside, White queenside, Black kingside, Black queenside)
-
-### When Asked to "Add Check Detection"
-- Check = opponent can capture the king on next move
-- Iterate through all opponent pieces, generate their moves
-- If any move targets the king's square, it's check
-- This is needed before implementing move validation
-
-### When Asked to "Add AI"
-- Start with minimax algorithm (recursive search)
-- Add alpha-beta pruning for efficiency
-- Implement position evaluation function (material, position, mobility)
-- Consider iterative deepening for time management
-- This requires move validation and check detection first
-
-### When Asked to "Fix Tests"
-- Tests are in `tests/unit/*.test.cpp`
-- Use Google Test framework (`TEST_F`, `EXPECT_EQ`, `ASSERT_NE`)
-- Run specific test: `./bint/unit/tests --gtest_filter=TestSuite.TestName`
+- **Count**: 300 tests, 9 skipped in CI environment (env-gated)
+- **Coverage**: 100% line coverage enforced - build fails below 100%
+- **Suites**: `BoardTest`, `MovesTest`, `EngineTest`, `FenTest`, `PieceTest`, `MoveTest`, `UtilsTest`, `LoggerTest`, `ChronoTest`, `ModifierTest`, `PgnTest`
+- Run single test: `./bint/unit/tests --gtest_filter=SuiteName.TestName`
 - Coverage report: `.coverage/report/index.html`
 
+### Coordinate System
+
+- **Ranks**: 0-7 (0 = rank 1, 7 = rank 8)
+- **Files**: 0-7 (0 = a-file, 7 = h-file)
+- **Algebraic notation**: "a1" to "h8" (file letter + rank number, 1-based)
+
+### Piece Aliases
+
+| Alias (upper=White, lower=Black) | Piece |
+|----------------------------------|-------|
+| `P` / `p` | Pawn |
+| `R` / `r` | Rook |
+| `N` / `n` | Knight |
+| `B` / `b` | Bishop |
+| `Q` / `q` | Queen |
+| `K` / `k` | King |
+
 ---
 
-## 📚 Important Files to Know
+## Implementing the Next Steps (v0.3.0)
+
+### 1. Check Detection (implement first - everything depends on it)
+
+Create `Board::isInCheck(int color) const`:
+
+- For every opponent piece on the board, call `Moves::generateMoves()`
+- If any generated move targets the square occupied by the `color` king - it is in check
+- Keep `Moves` decoupled from `Board` - check detection should go in `Board` or a new `Rules` class
+- `AbstractBoard` may need `getCurrentColor()` added for downstream use
+
+### 2. Legal Move Filtering
+
+After check detection exists, filter in `Engine::generateMoves()`:
+- For each pseudo-legal move, apply it to a board copy
+- If the resulting position has the moving side's king in check - discard
+- This makes `generateMoves()` return fully legal moves
+
+### 3. Castling
+
+- Prerequisite: check detection
+- In `Moves::generateKingMoves()`: read castling rights from FEN via `board.getCastlingRights()`
+  - `AbstractBoard` needs `getCastlingRights()` added
+- Conditions: king not in check, path squares empty and not attacked, rook/king have not moved
+- Emit `Move(kingFrom, kingTo, MoveType::CASTLE_KINGSIDE)` or `CASTLE_QUEENSIDE`
+- `Board::move()` must also move the rook when handling a castling move type
+
+### 4. Pawn Promotion
+
+- In `Moves::generatePawnMoves()`: detect if destination rank is 0 (black) or 7 (white)
+- Emit four `Move` objects with `MoveType::PROMOTION` and `promotionPiece` = `'Q'`, `'R'`, `'B'`, `'N'`
+- `Board::move()` must handle promotion by replacing the pawn with the chosen piece
+- `Move::promotionPiece` char field already exists in the data model - no struct changes needed
+
+### 5. Checkmate / Stalemate
+
+```cpp
+bool Engine::isCheckmate() const  // In check AND no legal moves
+bool Engine::isStalemate() const  // Not in check AND no legal moves
+```
+
+Both require legal move generation to already work.
+
+---
+
+## Code Conventions
+
+- **Naming**: camelCase for methods/parameters, PascalCase for classes, UPPER_SNAKE_CASE for constants
+- **Files**: `lowercase.cpp` / `lowercase.h`
+- **Coverage**: every new line of code must be exercised by tests
+- **No CMake**: GNU Make only
+
+---
+
+## Common Pitfalls
+
+1. **Do not break 100% coverage** - every new code path needs a test
+2. **Do not add CMake** - GNU Make only
+3. **`Board` is not copyable** - Rule of Five, copy/move deleted
+4. **All `Piece*` from `getPiece()` are non-owning** - never `delete` them
+5. **Moves are pseudo-legal** - check validation not yet implemented
+6. **`AbstractBoard`** is the interface `Moves` uses - do not let `Moves` depend on `Board` directly
+7. **FEN castling rights** tracked as a string in `Fen` - "KQkq", "-", etc.
+
+---
+
+## Important Files
 
 | File | Purpose | When to Modify |
 |------|---------|----------------|
-| `include/engine/engine.h` | Public API | Adding new high-level features |
-| `src/chess/moves.cpp` | Move generation | Fixing/adding piece movement logic |
-| `include/chess/board.h` | Board interface | Adding board state features |
-| `src/chess/board.cpp` | Board implementation | Modifying board behavior |
-| `tests/unit/moves.test.cpp` | Move tests | Testing piece movement |
-| `Makefile` | Build configuration | Changing build process |
-| `README.md` | User documentation | Documenting API changes |
-| `AI_CONTEXT.md` | This file | Updating project context |
+| `include/engine/engine.h` | Public API | Adding high-level features |
+| `include/core/core.h` | Constants, MoveType, GameMode enums | Extending enums or constants |
+| `src/chess/moves.cpp` | Pseudo-legal move generation | Fixing/adding movement logic |
+| `include/abstract/board.h` | Board interface for Moves | Adding methods needed by move generation |
+| `src/chess/board.cpp` | Board state management | Modifying board behavior |
+| `tests/unit/moves.test.cpp` | Move generation tests | Every moves.cpp change |
+| `tests/unit/board.test.cpp` | Board tests | Every board.cpp change |
+| `README.md` | User documentation | API or feature changes |
+| `AI_CONTEXT.md` | This file | After any significant change |
 
 ---
 
-## ⚠️ Common Pitfalls
+## Summary for AI
 
-1. **Don't break 100% coverage**: Every new line must be tested
-2. **Don't modify build system**: Stick with Make (no CMake, etc.)
-3. **Don't change naming conventions**: Follow `__private__()` pattern
-4. **Don't skip tests**: Write tests before implementation
-5. **Don't assume move validation**: Current moves are pseudo-legal only
-6. **Don't forget en passant**: It's implemented but easy to overlook
-7. **Don't hardcode board size**: Use `BOARD_SIZE` constant (8)
+**What Fenrir is**: The rules and validation layer of a three-tier chess ecosystem. Layer 1 (Fenrir) serves Layer 2 (agents in Python/JS/any language doing search and learning) which serves Layer 3 (UIs - mobile, web, desktop). Fenrir owns correctness and performance so every layer above it can trust it completely.
 
----
+**Key performance constraint**: Agents doing RL training or minimax search call `generateMoves()` tens of millions of times. Every allocation inside that call is multiplied by that volume. Make/unmake (zero-allocation move apply and undo) is not an optimization - it is a requirement for Fenrir to be useful as a search oracle.
 
-## 🎯 Quick Start for AI Assistants
+**Key architectural constraint**: `Moves` depends on `AbstractBoard`, not `Board`. Keep this separation.
 
-**Scenario: User asks to add a feature**
-
-1. ✅ Read this document to understand current state
-2. ✅ Check if feature is in "Not Yet Implemented" section
-3. ✅ Identify which files need modification
-4. ✅ Write tests first in appropriate `tests/unit/*.test.cpp`
-5. ✅ Implement in `src/` and `include/`
-6. ✅ Run `make test` to verify
-7. ✅ Run `make coverage` to ensure 100%
-8. ✅ Update documentation (README.md, this file, RELEASE_NOTES.md)
-
-**Scenario: User asks to fix a bug**
-
-1. ✅ Reproduce the bug with a test
-2. ✅ Identify the buggy code in `src/`
-3. ✅ Fix the implementation
-4. ✅ Verify test passes
-5. ✅ Check coverage remains 100%
-
-**Scenario: User asks "What does this project do?"**
-
-1. ✅ Refer to "Project Overview" section
-2. ✅ Explain current capabilities (all piece movement)
-3. ✅ Clarify limitations (no check detection, castling, AI, etc.)
-4. ✅ Reference the roadmap for future plans
-
----
-
-## 📞 Summary for AI
-
-**In one sentence**: Fenrir is a C++ chess library with complete piece movement logic but no game state validation, check detection, or AI - it's a foundation ready for advanced chess features.
-
-**Key takeaway**: The engine can move pieces legally but doesn't enforce chess rules like preventing check, detecting checkmate, or handling castling/promotion. It's a building block, not a complete chess game.
-
-**Next logical steps**: Implement check detection → move validation → castling → checkmate detection → AI search algorithms → UCI protocol.
-
----
-
-*Last Updated: 2025-11-08*  
-*Project Version: 0.2.0-dev (post-foundation, pre-game-rules)*  
-*License: MIT (see LICENSE file)*
+**Most important next step**: `AbstractBoard` extensions (`getCastlingRights`, `getColor`) - they unblock check detection, which unblocks everything else.
