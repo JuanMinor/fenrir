@@ -29,30 +29,24 @@ namespace io
 	class Pgn
 	{
 	private:
-		// Private constructor for singleton
 		Pgn();
 
-		// Helper methods
 		void clearStreamFlags(std::ostream &os) const;
 		void setMetadata(std::ostream &os) const;
 
 	public:
-		// Singleton pattern
 		static Pgn &getInstance();
 
-		// Delete copy constructor and assignment operator
 		Pgn(const Pgn &) = delete;
 		Pgn &operator=(const Pgn &) = delete;
 
 		~Pgn();
 
-		// Public methods
 		void updateMetadata(const std::string &tag);
 		void record(const std::string &move) const;
 		void create(void) const;
 	};
 
-	// Macros for PGN operations
 #define PGN Pgn::getInstance()
 #define PGN_RECORD(MOVE) PGN.record(MOVE);
 #define PGN_CREATE() PGN.create();

@@ -19,7 +19,6 @@
 
 namespace fenrir
 {
-	// Mapping of piece aliases to their values
 	std::unordered_map<char, uint8_t> values = {
 		{'P', 1}, {'p', 1}, {'N', 3}, {'n', 3}, {'B', 3}, {'b', 3}, {'R', 5}, {'r', 5}, {'Q', 9}, {'q', 9}, {'K', 25}, {'k', 25}};
 

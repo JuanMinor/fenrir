@@ -8,10 +8,6 @@ class MoveTest : public ::testing::Test
 {
 };
 
-// ============================================================================
-// Constructor and Basic Getters Tests
-// ============================================================================
-
 TEST_F(MoveTest, NormalMoveConstructor)
 {
 	Move move("e2", "e4");
@@ -62,10 +58,6 @@ TEST_F(MoveTest, CastleQueensideMoveConstructor)
 	EXPECT_EQ(move.getTo(), "c1");
 	EXPECT_EQ(move.getMoveType(), MoveType::CASTLE_QUEENSIDE);
 }
-
-// ============================================================================
-// Utility Method Tests
-// ============================================================================
 
 TEST_F(MoveTest, IsCaptureForCaptureMove)
 {
@@ -120,10 +112,6 @@ TEST_F(MoveTest, IsCastlingForNormalMove)
 	Move move("e2", "e4");
 	EXPECT_FALSE(move.isCastling());
 }
-
-// ============================================================================
-// String Conversion Tests
-// ============================================================================
 
 TEST_F(MoveTest, ToStringNormalMove)
 {
@@ -185,10 +173,6 @@ TEST_F(MoveTest, ToStringPromotionNoPiece)
 	EXPECT_EQ(move.toString(), "(Promotion)d7->d8");
 }
 
-// ============================================================================
-// UCI Notation Tests
-// ============================================================================
-
 TEST_F(MoveTest, ToUCINotationNormalMove)
 {
 	Move move("e2", "e4");
@@ -242,10 +226,6 @@ TEST_F(MoveTest, ToUCINotationPromotionKnight)
 	Move move("c7", "c8", MoveType::PROMOTION, 'N');
 	EXPECT_EQ(move.toUCINotation(), "c7c8n");
 }
-
-// ============================================================================
-// Algebraic Notation Tests
-// ============================================================================
 
 TEST_F(MoveTest, ToAlgebraicNotationNormalMove)
 {
@@ -301,10 +281,6 @@ TEST_F(MoveTest, ToAlgebraicNotationPromotionKnight)
 	EXPECT_EQ(move.toAlgebraicNotation(), "c7c8");
 }
 
-// ============================================================================
-// Edge Cases Tests
-// ============================================================================
-
 TEST_F(MoveTest, EmptySquareNames)
 {
 	Move move("", "");
@@ -328,7 +304,6 @@ TEST_F(MoveTest, SpecialCharactersInSquareNames)
 
 TEST_F(MoveTest, ToStringInvalidMoveType)
 {
-	// Test defensive default case by casting invalid enum value
 	Move move("e2", "e4", static_cast<MoveType>(999));
 	std::string result = move.toString();
 	EXPECT_NE(result.find("Invalid action"), std::string::npos);

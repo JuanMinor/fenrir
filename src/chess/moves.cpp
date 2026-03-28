@@ -126,12 +126,11 @@ namespace fenrir
 			moves.emplace_back(move);
 		}
 
-		// Left diagonal capture
 		if (file > 0)
 		{
 			this->addCaptureMove(piece, board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(file - 1)), moves);
 		}
-		// Right diagonal capture
+
 		if (file < BOARD_SIZE - 1)
 		{
 			this->addCaptureMove(piece, board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(file + 1)), moves);
@@ -147,7 +146,6 @@ namespace fenrir
 			}
 		}
 
-		// En passant
 		const std::string &enPassant = board.getEnPassant();
 		if (!enPassant.empty())
 		{
@@ -217,7 +215,6 @@ namespace fenrir
 		logGeneratedMoves(piece, moves);
 	}
 
-	// Public
 	Moves &Moves::getInstance()
 	{
 		static Moves instance;

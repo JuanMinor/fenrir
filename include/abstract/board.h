@@ -22,7 +22,7 @@
 
 namespace fenrir
 {
-	class Piece; // Forward declaration
+	class Piece;
 
 	class AbstractBoard
 	{
