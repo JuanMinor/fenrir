@@ -46,7 +46,6 @@ namespace utils
 			return false;
 		}
 
-		// Pawn promotions
 		int white_extra_queens = std::max(0, (int)piece_counts.at('Q') - 1);
 		int white_extra_rooks = std::max(0, (int)piece_counts.at('R') - 2);
 		int white_extra_bishops = std::max(0, (int)piece_counts.at('B') - 2);

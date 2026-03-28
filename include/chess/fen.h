@@ -39,7 +39,6 @@ namespace fenrir
 		uint32_t halfMoveClock;
 		uint32_t fullMoves;
 
-		// Helper method to split a FEN string into components
 		void splitString(const std::string &fenString, const std::string &delimiters, std::vector<std::string> &tokens) const;
 		void validateChessRules(const std::string &placement) const;
 		void validatePlacement(const std::string &placement) const;
@@ -50,7 +49,6 @@ namespace fenrir
 		Fen(const std::string &fenString, GameMode gameMode = GameMode::PERMISSIVE);
 		~Fen();
 
-		// Getters for FEN components
 		std::string getPlacement(void) const;
 		std::string getCastling(void) const;
 		std::string getEnPassant(void) const;
@@ -58,7 +56,6 @@ namespace fenrir
 		uint32_t getHalfMoveClock(void) const;
 		uint32_t getFullMoves(void) const;
 
-		// Setters for FEN components
 		void setPlacement(const std::string &placement);
 		void setCastling(const std::string &castling);
 		void setEnPassant(const std::string &enPassant);

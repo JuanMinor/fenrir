@@ -26,7 +26,7 @@ namespace chrono
 	{
 		if (!timer)
 		{
-			static time_t current_time; // Make it static so it persists
+			static time_t current_time;
 			current_time = std::time(nullptr);
 			timer = &current_time;
 		}

@@ -58,13 +58,11 @@ namespace fenrir
 		explicit Board(const std::string &fenString);
 		~Board() = default;
 
-		// Non-copyable, non-movable — Board owns all Piece memory
 		Board(const Board &) = delete;
 		Board &operator=(const Board &) = delete;
 		Board(Board &&) = delete;
 		Board &operator=(Board &&) = delete;
 
-		// Accessors and mutators
 		std::string getFen(void);
 		const std::string &getEnPassant(void) const override;
 		Piece *getPiece(const uint8_t &rank, const uint8_t &file) const override;

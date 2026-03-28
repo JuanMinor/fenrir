@@ -32,7 +32,6 @@ namespace fenrir
 
 		logger::INFO("Board initialized with FEN: " + fen.getPlacement());
 	}
-	// ~Board() = default — unique_ptr<Piece> members clean themselves up automatically
 
 	/* Private */
 	void Board::buildBoard(const std::string &placement)
@@ -115,7 +114,6 @@ namespace fenrir
 		oss << action << " " << color << " " << PIECE_NAMES.at(std::tolower(piece->getAlias(), std::locale()))
 			<< " in position " << position << " " << emoji;
 
-		// Use stringstream as fallback for std::format compatibility
 		std::stringstream detailed_oss;
 		detailed_oss << oss.str() << " (" << piece->getValue() << " value) at <"
 					 << unsigned(piece->getRank()) << ", " << unsigned(piece->getFile()) << ">";

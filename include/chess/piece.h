@@ -35,14 +35,12 @@ namespace fenrir
 		uint8_t file;
 		bool moved;
 
-		// Helper method to check if the piece has moved
 		bool hasPieceMoved(void) const;
 
 	public:
 		Piece(const char &alias, const uint8_t &rank, const uint8_t &file);
 		~Piece();
 
-		// Getters
 		char getAlias(void) const;
 		uint8_t getColor(void) const;
 		uint8_t getFile(void) const;
@@ -50,7 +48,6 @@ namespace fenrir
 		uint8_t getRank(void) const;
 		uint8_t getValue(void) const;
 
-		// Setters
 		void setFile(const uint8_t &file);
 		void setMoved(const bool &moved);
 		void setRank(const uint8_t &rank);

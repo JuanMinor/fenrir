@@ -101,7 +101,6 @@ TEST_F(MovesTest, WhitePawnSingleMove)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White pawn at e3 (2, 4)
 	const fenrir::Piece *pawn = board.addPiece(2, 4, 'P');
 
 	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
@@ -114,7 +113,6 @@ TEST_F(MovesTest, BlackPawnSingleMove)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// Black pawn at d4 (3, 3)
 	const fenrir::Piece *pawn = board.addPiece(3, 3, 'p');
 
 	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
@@ -127,7 +125,6 @@ TEST_F(MovesTest, WhitePawnDoubleMove)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White pawn at e2 (1, 4) - hasn't moved
 	const fenrir::Piece *pawn = board.addPiece(1, 4, 'P');
 
 	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
@@ -141,7 +138,6 @@ TEST_F(MovesTest, BlackPawnDoubleMove)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// Black pawn at e7 (6, 4) - hasn't moved
 	const fenrir::Piece *pawn = board.addPiece(6, 4, 'p');
 
 	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
@@ -155,7 +151,6 @@ TEST_F(MovesTest, PawnCapture)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White pawn at c4 (3, 2), Black pawn at d5 (4, 3)
 	const fenrir::Piece *pawn = board.addPiece(3, 2, 'P');
 	board.addPiece(4, 3, 'p');
 
@@ -169,7 +164,6 @@ TEST_F(MovesTest, EnPassantCapture)
 	MockBoard board;
 	board.setEnPassant("a6");
 	std::vector<fenrir::Move> moves;
-	// White pawn at b5 (4, 1), Black pawn at a5 (4, 0) - just moved
 	const fenrir::Piece *pawn = board.addPiece(4, 1, 'P');
 	board.addPiece(4, 0, 'p');
 
@@ -182,7 +176,6 @@ TEST_F(MovesTest, BlockedPawn)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White pawn at d4 (3, 3), blocked by Black pawn at d5 (4, 3)
 	const fenrir::Piece *pawn = board.addPiece(3, 3, 'P');
 	board.addPiece(4, 3, 'p');
 
@@ -195,7 +188,6 @@ TEST_F(MovesTest, PawnAtEdge)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White pawn at a8 (7, 0) - end of board
 	const fenrir::Piece *pawn = board.addPiece(7, 0, 'P');
 
 	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
@@ -219,7 +211,7 @@ TEST_F(MovesTest, EmptySquare)
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
 
-	const fenrir::Piece *empty = board.getPiece(3, 4); // Should be null
+	const fenrir::Piece *empty = board.getPiece(3, 4);
 
 	fenrir::Moves::getInstance().generateMoves(empty, board, moves);
 
@@ -231,7 +223,6 @@ TEST_F(MovesTest, LogGeneratedMoves)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// Just need a piece to log
 	const fenrir::Piece *pawn = board.addPiece(1, 4, 'P');
 
 	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
@@ -244,13 +235,11 @@ TEST_F(MovesTest, NonPawnPiece)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Knight at b1 (0, 1)
 	const fenrir::Piece *knight = board.addPiece(0, 1, 'N');
-	board.addPiece(1, 3, 'P'); // Block d2 (1, 3) to simulate start position
+	board.addPiece(1, 3, 'P');
 
 	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
 
-	// Knight on b1 should have 2 moves: a3 and c3
 	EXPECT_EQ(moves.size(), 2);
 	EXPECT_TRUE(moveExists(moves, "b1", "a3"));
 	EXPECT_TRUE(moveExists(moves, "b1", "c3"));
@@ -261,10 +250,9 @@ TEST_F(MovesTest, RookPiece)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Rook at a1 (0, 0) blocked by neighbors (simulating start position)
 	const fenrir::Piece *rook = board.addPiece(0, 0, 'R');
-	board.addPiece(1, 0, 'P'); // Blocked by a2
-	board.addPiece(0, 1, 'N'); // Blocked by b1
+	board.addPiece(1, 0, 'P');
+	board.addPiece(0, 1, 'N');
 
 	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
 
@@ -275,7 +263,6 @@ TEST_F(MovesTest, RookVerticalMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Rook at d4 (3, 3)
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 
 	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
@@ -294,7 +281,6 @@ TEST_F(MovesTest, RookHorizontalMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Rook at d4 (3, 3)
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 
 	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
@@ -313,7 +299,6 @@ TEST_F(MovesTest, RookBlockedByFriendlyPiece)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Rook at d4 (3, 3), blocked by White Pawn at d5 (4, 3)
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 	board.addPiece(4, 3, 'P');
 
@@ -333,7 +318,6 @@ TEST_F(MovesTest, RookCaptureEnemyPiece)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Rook at d4 (3, 3), enemy Black Pawn at d5 (4, 3)
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 	board.addPiece(4, 3, 'p');
 
@@ -353,7 +337,6 @@ TEST_F(MovesTest, RookMultipleDirectionBlocking)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Rook at d4 (3, 3), blocked by White Pawn at d5 (4, 3), enemy at c5 (4, 2), enemy at e5 (4, 4)
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 	board.addPiece(4, 3, 'P');
 
@@ -377,7 +360,6 @@ TEST_F(MovesTest, RookCornerPosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Rook at a8 (7, 0)
 	const fenrir::Piece *rook = board.addPiece(7, 0, 'R');
 
 	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
@@ -395,7 +377,6 @@ TEST_F(MovesTest, RookEdgePosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Rook at a4 (3, 0)
 	const fenrir::Piece *rook = board.addPiece(3, 0, 'R');
 
 	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
@@ -410,7 +391,6 @@ TEST_F(MovesTest, BlackRookMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// Black Rook at d4 (3, 3)
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'r');
 
 	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
@@ -427,7 +407,6 @@ TEST_F(MovesTest, BishopDiagonalMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Bishop at d4 (3, 3)
 	const fenrir::Piece *bishop = board.addPiece(3, 3, 'B');
 
 	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
@@ -452,7 +431,6 @@ TEST_F(MovesTest, BishopBlockedByFriendlyPiece)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Bishop at d4 (3, 3), blocked by White Pawns at c5 (4, 2) and e5 (4, 4)
 	const fenrir::Piece *bishop = board.addPiece(3, 3, 'B');
 	board.addPiece(4, 2, 'P');
 	board.addPiece(4, 4, 'P');
@@ -474,7 +452,6 @@ TEST_F(MovesTest, BishopCaptureEnemyPiece)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Bishop at d4 (3, 3), enemy Black Pawns at c5 (4, 2) and e5 (4, 4)
 	const fenrir::Piece *bishop = board.addPiece(3, 3, 'B');
 	board.addPiece(4, 2, 'p');
 	board.addPiece(4, 4, 'p');
@@ -498,7 +475,6 @@ TEST_F(MovesTest, BishopCornerPosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Bishop at a8 (7, 0)
 	const fenrir::Piece *bishop = board.addPiece(7, 0, 'B');
 
 	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
@@ -517,7 +493,6 @@ TEST_F(MovesTest, BishopEdgePosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Bishop at a4 (3, 0)
 	const fenrir::Piece *bishop = board.addPiece(3, 0, 'B');
 
 	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
@@ -536,7 +511,6 @@ TEST_F(MovesTest, BlackBishopMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// Black Bishop at d4 (3, 3)
 	const fenrir::Piece *bishop = board.addPiece(3, 3, 'b');
 
 	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
@@ -553,7 +527,6 @@ TEST_F(MovesTest, QueenCombinedMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Queen at d4 (3, 3)
 	const fenrir::Piece *queen = board.addPiece(3, 3, 'Q');
 
 	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
@@ -573,7 +546,6 @@ TEST_F(MovesTest, QueenBlockedByFriendlyPieces)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Queen at d4 (3, 3), blocked by friendly pieces all around
 	const fenrir::Piece *queen = board.addPiece(3, 3, 'Q');
 	board.addPiece(4, 2, 'P');
 	board.addPiece(4, 3, 'P');
@@ -594,7 +566,6 @@ TEST_F(MovesTest, QueenCaptureEnemyPieces)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Queen at d4 (3, 3), surrounded by enemy pieces
 	const fenrir::Piece *queen = board.addPiece(3, 3, 'Q');
 	board.addPiece(4, 2, 'p');
 	board.addPiece(4, 3, 'p');
@@ -622,7 +593,6 @@ TEST_F(MovesTest, QueenCornerPosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Queen at a8 (7, 0)
 	const fenrir::Piece *queen = board.addPiece(7, 0, 'Q');
 
 	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
@@ -637,7 +607,6 @@ TEST_F(MovesTest, BlackQueenMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// Black Queen at d4 (3, 3)
 	const fenrir::Piece *queen = board.addPiece(3, 3, 'q');
 
 	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
@@ -653,10 +622,9 @@ TEST_F(MovesTest, BishopPiece)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Bishop at c1 (0, 2) blocked by neighbors
 	const fenrir::Piece *bishop = board.addPiece(0, 2, 'B');
-	board.addPiece(1, 1, 'P'); // Blocked by b2
-	board.addPiece(1, 3, 'P'); // Blocked by d2
+	board.addPiece(1, 1, 'P');
+	board.addPiece(1, 3, 'P');
 
 	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
 
@@ -667,13 +635,12 @@ TEST_F(MovesTest, QueenPiece)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Queen at d1 (0, 3) blocked by neighbors
 	const fenrir::Piece *queen = board.addPiece(0, 3, 'Q');
-	board.addPiece(0, 2, 'B'); // c1
-	board.addPiece(1, 2, 'P'); // c2
-	board.addPiece(1, 3, 'P'); // d2
-	board.addPiece(1, 4, 'P'); // e2
-	board.addPiece(0, 4, 'K'); // e1
+	board.addPiece(0, 2, 'B');
+	board.addPiece(1, 2, 'P');
+	board.addPiece(1, 3, 'P');
+	board.addPiece(1, 4, 'P');
+	board.addPiece(0, 4, 'K');
 
 	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
 
@@ -685,7 +652,6 @@ TEST_F(MovesTest, KnightLShapeMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Knight at d4 (3, 3)
 	const fenrir::Piece *knight = board.addPiece(3, 3, 'N');
 
 	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
@@ -705,9 +671,8 @@ TEST_F(MovesTest, KnightBlockedByFriendlyPieces)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Knight at d4 (3, 3), blocked by friendly pieces
 	const fenrir::Piece *knight = board.addPiece(3, 3, 'N');
-	// Let's just add pieces at all 8 target squares.
+
 	board.addPiece(4, 5, 'P');
 	board.addPiece(2, 5, 'P');
 	board.addPiece(5, 4, 'P');
@@ -734,7 +699,6 @@ TEST_F(MovesTest, KnightCaptureEnemyPieces)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Knight at d4 (3, 3), enemy pieces at all 8 targets
 	const fenrir::Piece *knight = board.addPiece(3, 3, 'N');
 	board.addPiece(4, 5, 'p');
 	board.addPiece(2, 5, 'p');
@@ -762,7 +726,6 @@ TEST_F(MovesTest, KnightCornerPosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Knight at a8 (7, 0)
 	const fenrir::Piece *knight = board.addPiece(7, 0, 'N');
 
 	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
@@ -776,7 +739,6 @@ TEST_F(MovesTest, KnightEdgePosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Knight at a4 (3, 0)
 	const fenrir::Piece *knight = board.addPiece(3, 0, 'N');
 
 	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
@@ -792,7 +754,6 @@ TEST_F(MovesTest, KnightNearEdgePosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Knight at b4 (3, 1)
 	const fenrir::Piece *knight = board.addPiece(3, 1, 'N');
 
 	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
@@ -810,7 +771,6 @@ TEST_F(MovesTest, BlackKnightMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// Black Knight at d4 (3, 3)
 	const fenrir::Piece *knight = board.addPiece(3, 3, 'n');
 
 	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
@@ -826,9 +786,8 @@ TEST_F(MovesTest, KnightJumpOverPieces)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White Knight at d4 (3, 3), surrounded by blocking pieces immediately adjacent (which it jumps over)
 	const fenrir::Piece *knight = board.addPiece(3, 3, 'N');
-	// Add pieces directly around it (d5, e4, d3, c4)
+
 	board.addPiece(4, 3, 'p');
 	board.addPiece(3, 4, 'p');
 	board.addPiece(2, 3, 'p');
@@ -851,13 +810,12 @@ TEST_F(MovesTest, KingPiece)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White King at e1 (0, 4) blocked by neighbors
 	const fenrir::Piece *king = board.addPiece(0, 4, 'K');
-	board.addPiece(0, 3, 'Q'); // d1
-	board.addPiece(1, 3, 'P'); // d2
-	board.addPiece(1, 4, 'P'); // e2
-	board.addPiece(1, 5, 'P'); // f2
-	board.addPiece(0, 5, 'B'); // f1
+	board.addPiece(0, 3, 'Q');
+	board.addPiece(1, 3, 'P');
+	board.addPiece(1, 4, 'P');
+	board.addPiece(1, 5, 'P');
+	board.addPiece(0, 5, 'B');
 
 	fenrir::Moves::getInstance().generateMoves(king, board, moves);
 
@@ -868,12 +826,10 @@ TEST_F(MovesTest, KingSingleSquareMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White King at d4 (3, 3)
 	const fenrir::Piece *king = board.addPiece(3, 3, 'K');
 
 	fenrir::Moves::getInstance().generateMoves(king, board, moves);
 
-	// All 8 directions
 	EXPECT_TRUE(moveExists(moves, "d4", "c3"));
 	EXPECT_TRUE(moveExists(moves, "d4", "c4"));
 	EXPECT_TRUE(moveExists(moves, "d4", "c5"));
@@ -890,7 +846,6 @@ TEST_F(MovesTest, KingBlockedByFriendlyPieces)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White King at d4 (3, 3), blocked by friendly pieces
 	const fenrir::Piece *king = board.addPiece(3, 3, 'K');
 	board.addPiece(4, 2, 'P');
 	board.addPiece(4, 3, 'P');
@@ -910,7 +865,6 @@ TEST_F(MovesTest, KingCaptureEnemyPieces)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White King at d4 (3, 3), surrounded by enemy pieces
 	const fenrir::Piece *king = board.addPiece(3, 3, 'K');
 	board.addPiece(4, 2, 'p');
 	board.addPiece(4, 3, 'p');
@@ -939,7 +893,6 @@ TEST_F(MovesTest, KingCornerPosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White King at a1 (0, 0)
 	const fenrir::Piece *king = board.addPiece(0, 0, 'K');
 
 	fenrir::Moves::getInstance().generateMoves(king, board, moves);
@@ -955,7 +908,6 @@ TEST_F(MovesTest, KingEdgePosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White King at a4 (3, 0)
 	const fenrir::Piece *king = board.addPiece(3, 0, 'K');
 
 	fenrir::Moves::getInstance().generateMoves(king, board, moves);
@@ -973,7 +925,6 @@ TEST_F(MovesTest, BlackKingMovement)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// Black King at d4 (3, 3)
 	const fenrir::Piece *king = board.addPiece(3, 3, 'k');
 
 	fenrir::Moves::getInstance().generateMoves(king, board, moves);
@@ -994,13 +945,10 @@ TEST_F(MovesTest, KingMixedBlocking)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White King at d4 (3, 3)
 	const fenrir::Piece *king = board.addPiece(3, 3, 'K');
-	// Blocked by friendly: c4 (3,2), f4 (3,5), e3 (2,4)
 	board.addPiece(3, 2, 'P');
 	board.addPiece(3, 5, 'P');
 	board.addPiece(2, 4, 'P');
-	// Enemy at c5 (4,2) - capture
 	board.addPiece(4, 2, 'p');
 
 	fenrir::Moves::getInstance().generateMoves(king, board, moves);
@@ -1023,13 +971,12 @@ TEST_F(MovesTest, KingInitialPosition)
 {
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
-	// White King at e1 (0, 4) blocked by neighbors
 	const fenrir::Piece *king = board.addPiece(0, 4, 'K');
-	board.addPiece(0, 3, 'Q'); // d1
-	board.addPiece(1, 3, 'P'); // d2
-	board.addPiece(1, 4, 'P'); // e2
-	board.addPiece(1, 5, 'P'); // f2
-	board.addPiece(0, 5, 'B'); // f1
+	board.addPiece(0, 3, 'Q');
+	board.addPiece(1, 3, 'P');
+	board.addPiece(1, 4, 'P');
+	board.addPiece(1, 5, 'P');
+	board.addPiece(0, 5, 'B');
 
 	fenrir::Moves::getInstance().generateMoves(king, board, moves);
 
