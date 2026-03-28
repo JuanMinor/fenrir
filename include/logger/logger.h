@@ -39,11 +39,9 @@ namespace logger
 		Logger();
 		~Logger();
 
-		// Logging method
 		void log(const std::string &message, const char *file, const uint32_t &lineNumber, const LEVEL &level) const;
 	};
 
-	// Macros for logging
 #define LOG Logger()
 
 #define DEBUG(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::DEBUG);

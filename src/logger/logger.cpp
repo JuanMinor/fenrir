@@ -19,7 +19,6 @@
 
 namespace logger
 {
-	// Mapping of log levels to their string representations
 	std::unordered_map<uint8_t, const char *> level_types = {
 		{DEBUG, "[DEBUG] - "},
 		{INFO, "[INFO] - "},
@@ -71,7 +70,7 @@ namespace logger
 		}
 		catch (const std::exception &e)
 		{
-			// Handle any exceptions that occur during logging
+			// TODO: Handle logging failure (e.g., write to stderr or fallback log file)
 		}
 	}
 }

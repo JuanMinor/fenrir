@@ -31,7 +31,6 @@ namespace color
 		Modifier(Color colorValue);
 		~Modifier();
 
-		// Overloaded stream insertion operator
 		friend std::ostream &operator<<(std::ostream &os, const Modifier &modifier);
 	};
 }

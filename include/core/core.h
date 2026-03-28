@@ -32,7 +32,6 @@
 #define FENRIR_API
 #endif
 
-// Namespace for color-related constants
 namespace color
 {
 	typedef enum
@@ -57,7 +56,6 @@ namespace color
 	} Color;
 }
 
-// Namespace for Fenrir engine constants
 namespace fenrir
 {
 	constexpr bool DEBUG = true;
@@ -94,18 +92,16 @@ namespace fenrir
 	} MoveType;
 }
 
-// Namespace for input/output-related constants
 namespace io
 {
 	constexpr const char *PGN_FILE = "pgn/fenrir.pgn";
 	constexpr const char *PGN_FILE_STORE = "pgn/fenrir.store.txt";
 }
 
-// Namespace for logger-related constants
 namespace logger
 {
 	constexpr const char *LOG_FILE = "logs/fenrir.log";
-	constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024; // 5 MB
+	constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024;
 
 	typedef enum
 	{

@@ -99,7 +99,6 @@ namespace fenrir
 		std::vector<std::string> ranks;
 		this->splitString(placement, "/", ranks);
 
-		// Additional tournament-level validations
 		this->validatePawnPlacement(ranks);
 		this->validateKingSafety(ranks);
 	}
@@ -128,7 +127,6 @@ namespace fenrir
 		int white_king_rank = -1, white_king_file = -1;
 		int black_king_rank = -1, black_king_file = -1;
 
-		// Find king positions
 		for (int rank = 0; rank < fenrir::BOARD_SIZE; rank++)
 		{
 			int file = 0;
@@ -191,7 +189,6 @@ namespace fenrir
 		}
 	}
 
-	// Getters for FEN components
 	std::string Fen::getPlacement(void) const
 	{
 		return this->placement;
@@ -222,7 +219,6 @@ namespace fenrir
 		return this->fullMoves;
 	}
 
-	// Setters for FEN components
 	void Fen::setPlacement(const std::string &placement)
 	{
 		std::regex placement_regex(
