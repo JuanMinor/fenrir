@@ -1,660 +1,232 @@
-# 🚀 Fenrir Chess Engine - TODO & Improvement Roadmap
+# Fenrir — Roadmap & TODO
 
-> **Purpose**: Track improvements, refactoring tasks, and feature development for Fenrir.
-> **Last Updated**: 2025-11-08
-> **Current Version**: 0.2.0-dev
+> **Current state**: v0.2.0-dev — pseudo-legal move generation, mailbox board, 300 passing tests, 100% coverage.
+> **Goal**: Production-grade chess rules library + C++ engine with UCI, versioned `.so`, and multi-language bindings.
 
----
-
-## 🎯 Priority Legend
-
-- 🔴 **Critical**: Blocks other work or causes issues
-- 🟡 **High**: Important for code quality/maintainability
-- 🟢 **Medium**: Nice to have, improves architecture
-- 🔵 **Low**: Polish, minor improvements
+Tasks within each milestone are ordered. Do not start a milestone until the previous one is complete — each builds directly on the last.
 
 ---
 
-## 📋 Code Quality & Refactoring
+## Milestone 0 — Library Versioning  *(do this first, it costs nothing and enables everything)*
 
-### ✅ ~~HIGH: Fix C++ Naming Conventions~~ **COMPLETED**
+The library currently has no version. Consumers (bindings, engines) cannot pin to a stable ABI.
 
-**Status**: ✅ Completed in PR #23 (2025-11-09)
-
-**What was done:**
-- Eliminated Python-style `__private__()` naming (undefined behavior in C++)
-- Converted all private methods to camelCase: `__build_board__()` → `buildBoard()`
-- Converted all public methods from snake_case to camelCase
-  - `get_board()` → `getBoard()`
-  - `set_rank()` → `setRank()`
-  - `generate_moves()` → `generateMoves()`
-  - ~200+ method renames across 10 classes
-- Fixed Chrono class duplicate method declarations
-- Updated all 262 tests to use new naming
-- Maintained 100% test coverage (624/624 lines, 87/87 functions)
-
-**Files updated:**
-- All 10 header files (Board, Piece, Fen, Moves, Engine, PGN, Chrono, Utils, Logger, Modifier)
-- All 10 implementation files
-- All 10 test files
-- Added `ARCHITECTURE_REFACTOR.md` documentation
-
-**Result**: Full C++ naming convention compliance, API follows camelCase standard
-
-**Actual effort**: ~6-8 hours (comprehensive refactor)
+- [ ] **0.1** Add a `VERSION` file at the repo root containing `0.3.0` (semver, single source of truth).
+- [ ] **0.2** Read `VERSION` in the `Makefile` (`VERSION := $(shell cat VERSION)`) and pass it as a compiler define (`-DFENRIR_VERSION=\"$(VERSION)\"`).
+- [ ] **0.3** Set the shared library soname: build as `libfenrir.so.0.3.0`, create symlinks `libfenrir.so.0` → `libfenrir.so.0.3.0` and `libfenrir.so` → `libfenrir.so.0`. Use `-Wl,-soname,libfenrir.so.0` in the linker flags.
+- [ ] **0.4** Expose `fenrir::version()` → `const char*` in `engine.h` (returns the compile-time `FENRIR_VERSION` string). Add a unit test for it.
+- [ ] **0.5** Add a `make install` target: installs `libfenrir.so*` to `$(PREFIX)/lib` (default `/usr/local/lib`) and all public headers to `$(PREFIX)/include/fenrir`. Generates a `fenrir.pc` pkg-config file.
+- [ ] **0.6** Add a `CHANGELOG.md` — one entry per release, format: `## [version] - date`, `### Added / Changed / Fixed`.
 
 ---
 
-### 🟢 MEDIUM: Reduce Coupling Between Moves and Board
+## Milestone 1 — Bitboard Foundation  *(replaces mailbox, unblocks everything else)*
 
-**Issue**: `Moves` class takes `const Board*` everywhere, creating tight coupling.
+**Why first**: the mailbox `vector<vector<unique_ptr<Piece>>>` is 10–50x slower than bitboards for move generation. Every feature built on top of it carries that penalty. Do this before legal moves, before the engine, before bindings.
 
-**Current:**
-```cpp
-void generate_moves(const Piece *piece, const Board *board, vector<...> &moves);
-```
+### Phase 1A — New data types and attack tables
 
-**Better approach:**
-```cpp
-// Option 1: Pass only what's needed
-void generate_moves(const Piece *piece,
-                   function<const Piece*(uint8_t, uint8_t)> getPiece,
-                   const string &enPassant,
-                   vector<...> &moves);
+- [ ] **1.1** Add `include/chess/attacks.h` and `src/chess/attacks.cpp`. Define:
+  - `extern const uint64_t KNIGHT_ATTACKS[64]` — precomputed for all 64 squares
+  - `extern const uint64_t KING_ATTACKS[64]`
+  - `extern const uint64_t PAWN_ATTACKS[2][64]` — indexed by `[color][square]`
+  - `extern const uint64_t RAY[64][8]` — 8 directional rays from each square (N/NE/E/SE/S/SW/W/NW)
+  - `void initAttackTables()` — called once at startup in `Engine` constructor
+- [ ] **1.2** Define `PieceIndex` enum in `core.h`: `W_PAWN=0, W_KNIGHT, W_BISHOP, W_ROOK, W_QUEEN, W_KING, B_PAWN, B_KNIGHT, B_BISHOP, B_ROOK, B_QUEEN, B_KING` (12 values). Bit n of `bb[PieceIndex]` = piece of that type/color on square n (a1=0, h8=63).
+- [ ] **1.3** Add `Square` typedef (`uint8_t`) and helpers in `utils.h`: `squareFromRankFile(rank, file)`, `rankFromSquare(sq)`, `fileFromSquare(sq)`, `squareFromAlgebraic(str)`, `algebraicFromSquare(sq)`.
 
-// Option 2: Create a BoardView interface
-class IBoardView {
-    virtual const Piece* getPiece(uint8_t rank, uint8_t file) const = 0;
-    virtual const string& getEnPassant() const = 0;
-};
+### Phase 1B — Rewrite `Board`
 
-void generate_moves(const Piece *piece, const IBoardView &board, vector<...> &moves);
-```
+- [ ] **1.4** Replace `vector<vector<unique_ptr<Piece>>>` in `Board` with `uint64_t bb[12]` plus `uint64_t occupancy[3]` (white, black, all). Remove the `buildBoard()` / heap allocation path entirely.
+- [ ] **1.5** Rewrite `Board::getPiece(rank, file)` — probe bitboards, reconstruct a `Piece` value on demand (return by value or via internal cache). Update `AbstractBoard` interface accordingly.
+- [ ] **1.6** Add `Board::getColor() const` → `uint8_t`. Add `Board::getCastlingRights() const` → `uint8_t` (bitmask: `KQ_BLACK=1, KQ_WHITE=2, KS_BLACK=4, KS_WHITE=8`). Expose both on `AbstractBoard`.
+- [ ] **1.7** Add `Board::getBB(PieceIndex) const` → `uint64_t` and `Board::getOccupancy(uint8_t color) const` → `uint64_t`. Expose on `AbstractBoard`.
+- [ ] **1.8** Add `Board::getEnPassantBB() const` → `uint64_t` (single bit set on the en passant target square, or 0). Expose on `AbstractBoard`. Keep existing `getEnPassant()` string method for FEN output.
+- [ ] **1.9** Rewrite `Board::move()` to flip bits in the affected bitboards instead of moving heap objects.
+- [ ] **1.10** Rewrite `Board::getFen()` to reconstruct the FEN placement string by iterating bitboards.
+- [ ] **1.11** Rewrite `Board::print()` to iterate bitboards.
+- [ ] **1.12** All 300 existing tests must pass. Run `make test` — fix anything broken. Do not delete tests; only fix the implementation.
 
-**Benefits:**
-- Easier to test (can mock board state)
-- Reduces dependencies
-- More flexible for future changes
+### Phase 1C — Rewrite `Moves`
 
-**Tasks:**
-- [ ] Design interface or data structure for board queries
-- [ ] Update `Moves` class to use new interface
-- [ ] Update `Board` to implement interface (if using that approach)
-- [ ] Update all call sites
-- [ ] Add tests for new abstraction
-
-**Estimated effort**: 4-6 hours
+- [ ] **1.13** Rewrite `Moves::generatePawnMoves()` using bitwise shifts and `PAWN_ATTACKS[color][sq]` from the attack tables. Single push: `(bb[W_PAWN] << 8) & ~occupancy[ALL]`. Double push: only from rank 2. Attacks: `PAWN_ATTACKS[W][sq] & occupancy[BLACK]`.
+- [ ] **1.14** Rewrite `Moves::generateKnightMoves()` using `KNIGHT_ATTACKS[sq] & ~occupancy[same_color]`.
+- [ ] **1.15** Rewrite `Moves::generateKingMoves()` using `KING_ATTACKS[sq] & ~occupancy[same_color]`.
+- [ ] **1.16** Rewrite sliding piece generation (rook, bishop, queen) using classical ray blocker: for each ray direction, mask against `occupancy[ALL]`, find first blocker with `__builtin_ctzll`, include that square if enemy.
+- [ ] **1.17** Rewrite `Moves::generateMoves()` dispatcher to use `PieceIndex`-based dispatch instead of `switch(tolower(alias))`.
+- [ ] **1.18** Add `Moves::generateAllMoves(const AbstractBoard& board, uint8_t color, std::vector<Move>& moves) const` — iterates all pieces of the given color and collects all pseudo-legal moves in one call.
+- [ ] **1.19** All 300 tests pass. Run `make test`. Measure: `make release` binary should show at minimum 2M `generateAllMoves()` calls/sec on a single thread (add a benchmark target `make bench`).
 
 ---
 
-### 🟢 MEDIUM: Replace Switch Statement with Polymorphism
+## Milestone 2 — Legal Move Generation  *(completes the rules layer)*
 
-**Issue**: Move generation uses switch statement on piece type. Not extensible.
+Depends on: Milestone 1 complete.
 
-**Current:**
-```cpp
-switch (tolower(piece->get_alias())) {
-    case 'b': this->__bishop__(...); break;
-    case 'k': this->__king__(...); break;
-    // etc.
-}
-```
+### Phase 2A — Check detection
 
-**Better approach:**
-```cpp
-// Option 1: Strategy pattern
-class MoveGenerator {
-public:
-    virtual void generate(const Piece*, const Board*, vector<...>&) = 0;
-};
+- [ ] **2.1** Add `Board::isSquareAttackedBy(uint8_t square, uint8_t color) const` — returns true if any piece of `color` attacks `square`. Implementation: probe each attack table against the corresponding bitboard. O(1) after bitboard rewrite.
+- [ ] **2.2** Add `Board::isInCheck(uint8_t color) const` — finds king square via `__builtin_ctzll(bb[K_INDEX])`, calls `isSquareAttackedBy(kingSquare, opponent)`.
+- [ ] **2.3** Write unit tests for `isInCheck`: known check positions from FEN (at least 10 positions covering all attacker types).
 
-class PawnMoveGenerator : public MoveGenerator { ... };
-class RookMoveGenerator : public MoveGenerator { ... };
-// etc.
+### Phase 2B — Make / Unmake
 
-// Option 2: Piece-based polymorphism
-class Piece {
-public:
-    virtual void generateMoves(const Board*, vector<...>&) const = 0;
-};
+- [ ] **2.4** Define `UndoState` struct in `include/chess/board.h`:
+  ```cpp
+  struct UndoState {
+      uint64_t bb[12];        // full board snapshot (12 × 8 bytes = 96 bytes)
+      uint64_t occupancy[3];
+      uint8_t  castling;
+      uint8_t  color;
+      uint8_t  halfMoveClock;
+      uint8_t  fullMoves;
+      uint8_t  capturedPieceIndex;  // 255 = no capture
+      uint8_t  enPassantSquare;     // 255 = none
+  };
+  ```
+- [ ] **2.5** Implement `Board::applyMove(const Move& move)` → `UndoState`. Handles all `MoveType` values: NORMAL, CAPTURE, EN_PASSANT, CASTLE_KINGSIDE, CASTLE_QUEENSIDE, PROMOTION. Updates `color`, `halfMoveClock`, `fullMoves`, `castling` rights, `enPassant` square. Returns `UndoState` before-snapshot.
+- [ ] **2.6** Implement `Board::undoMove(const UndoState& state)` — restores all 12 bitboards + metadata from the `UndoState`. Must be a perfect inverse of `applyMove`.
+- [ ] **2.7** Write unit tests: apply a move, undo it, assert FEN is unchanged. Cover all `MoveType` values.
 
-class Pawn : public Piece { ... };
-class Rook : public Piece { ... };
-```
+### Phase 2C — Legal filtering
 
-**Benefits:**
-- Open/Closed Principle (open for extension, closed for modification)
-- Easier to add new piece types
-- Each piece type is self-contained
+- [ ] **2.8** Add `Moves::generateLegalMoves(Board& board, uint8_t color, std::vector<Move>& moves) const`: calls `generateAllMoves()`, then for each pseudo-legal move: `applyMove → isInCheck → undoMove`, discards moves leaving king in check.
+- [ ] **2.9** Update `Engine::generateMoves(algebraicAddress)` to call `generateLegalMoves` internally.
+- [ ] **2.10** Add `Engine::generateAllMoves()` → `std::vector<Move>` — returns all legal moves for the side to move. This is the primary search interface.
 
-**Drawbacks:**
-- More complex architecture
-- More files to manage
-- May be overkill for chess (only 6 piece types)
+### Phase 2D — Special moves
 
-**Tasks:**
-- [ ] Decide on approach (Strategy vs. Piece polymorphism)
-- [ ] Create base classes/interfaces
-- [ ] Implement concrete classes for each piece type
-- [ ] Update `Moves` or `Piece` to use polymorphism
-- [ ] Migrate tests
-- [ ] Ensure 100% coverage
-
-**Estimated effort**: 8-12 hours (significant refactor)
-
-**Recommendation**: Consider this for v0.3.0+, not urgent for current state.
+- [ ] **2.11** Add castling move generation in `Moves::generateKingMoves()`: check castling rights bitmask, verify king and rook haven't moved, verify squares between are empty (`~occupancy[ALL]`), verify king does not pass through or land on an attacked square.
+- [ ] **2.12** Add pawn promotion detection: any pawn reaching rank 8 (white) or rank 1 (black) generates 4 `PROMOTION` moves (Q/R/B/N). Update `generatePawnMoves()`.
+- [ ] **2.13** Add `Engine::isCheckmate() const` → `bool`: `generateAllMoves().empty() && isInCheck(color)`.
+- [ ] **2.14** Add `Engine::isStalemate() const` → `bool`: `generateAllMoves().empty() && !isInCheck(color)`.
+- [ ] **2.15** Add `Engine::isDraw() const` → `bool`: covers stalemate, fifty-move rule (halfMoveClock >= 100), threefold repetition (track position hash history in `Engine`).
+- [ ] **2.16** Enforce turn order in `Engine::makeMove()` — reject moves of the wrong color, return error/throw.
+- [ ] **2.17** Update all unit tests to expect legal moves only. The existing 300 tests were written against pseudo-legal output — audit each test suite and fix expected move counts/sets.
+- [ ] **2.18** `make test` must pass. `make coverage` must still report 100%.
 
 ---
 
-### 🟢 MEDIUM: Create Move Class Instead of pair<string, string>
+## Milestone 3 — C++ Search Engine  *(the engine binary)*
 
-**Issue**: Using `pair<const string, const string>` for moves is not semantic.
+Depends on: Milestone 2 complete.
 
-**Current:**
-```cpp
-vector<pair<const string, const string>> moves;
-moves.emplace_back("e2", "e4");
-```
+### Phase 3A — New engine binary target
 
-**Better:**
-```cpp
-class Move {
-private:
-    string from;
-    string to;
-    MoveType type;  // NORMAL, CAPTURE, EN_PASSANT, CASTLE, PROMOTION
-    char promotionPiece;  // For pawn promotion
+- [ ] **3.1** Create `engine/` directory at repo root (sibling of `src/`). This is the search engine, a separate binary that links `libfenrir.so`.
+- [ ] **3.2** Add `make engine` target in `Makefile`: compiles `engine/*.cpp`, links `-lfenrir -L$(LIB_DIR)`, produces `bin/fenrir-engine`.
+- [ ] **3.3** Add `engine/eval.cpp` + `include/engine/eval.h`: basic material evaluation.
+  - Piece values: pawn=100, knight=320, bishop=330, rook=500, queen=900, king=20000 (centipawns).
+  - `int evaluate(const AbstractBoard& board, uint8_t color)` — iterate all 64 bitboard squares, sum material differential from the perspective of `color`.
 
-public:
-    Move(const string &from, const string &to, MoveType type = NORMAL);
+### Phase 3B — Search
 
-    const string& getFrom() const { return from; }
-    const string& getTo() const { return to; }
-    MoveType getType() const { return type; }
-    bool isCapture() const { return type == CAPTURE; }
-    bool isPromotion() const { return type == PROMOTION; }
+- [ ] **3.4** Add `engine/search.cpp` + `include/engine/search.h`. Implement `Search` class with:
+  - `int alphaBeta(Engine& engine, int depth, int alpha, int beta, uint8_t color)`
+  - Calls `engine.generateAllMoves()`, `engine.applyMove()`, recurse, `engine.undoMove()`.
+  - Base case: `depth == 0` → return `evaluate(engine.getBoardView(), color)`.
+- [ ] **3.5** Add iterative deepening: `Search::findBestMove(Engine& engine, int maxDepth)` — runs `alphaBeta` at depth 1, 2, … maxDepth, returns best `Move` found at the deepest completed iteration.
+- [ ] **3.6** Add move ordering in `Search`: score captures first (MVV-LVA: Most Valuable Victim – Least Valuable Attacker), then quiet moves. Sort before the alpha-beta loop.
+- [ ] **3.7** Add quiescence search: at `depth == 0`, instead of returning static eval, search all captures until a quiet position (prevents horizon effect).
+- [ ] **3.8** Add `Engine::applyMove(const Move&)` → `UndoState` and `Engine::undoMove(const UndoState&)` as public methods wrapping `Board::applyMove/undoMove`. These are what the search engine calls.
 
-    string toAlgebraic() const;  // "e2e4" or "e7e8q"
-    string toUCI() const;        // For UCI protocol
-};
+### Phase 3C — UCI protocol
 
-vector<Move> moves;
-moves.emplace_back(Move("e2", "e4"));
-```
-
-**Benefits:**
-- Type safety
-- Can add metadata (capture, promotion, castling)
-- Easier to extend for UCI protocol
-- Self-documenting code
-
-**Tasks:**
-- [ ] Create `include/chess/move.h` and `src/chess/move.cpp`
-- [ ] Define `Move` class with constructors
-- [ ] Add `MoveType` enum
-- [ ] Update all `vector<pair<...>>` to `vector<Move>`
-- [ ] Update `Engine::generate_moves()` return type
-- [ ] Update all tests
-- [ ] Ensure 100% coverage
-
-**Estimated effort**: 4-6 hours
+- [ ] **3.9** Add `engine/uci.cpp` + `include/engine/uci.h`. Implement the UCI I/O loop:
+  - `uci` → respond with `id name Fenrir`, `id author <name>`, `uciok`
+  - `isready` → `readyok`
+  - `ucinewgame` → `engine.reset()`
+  - `position startpos moves e2e4 ...` → parse and replay moves via `engine.makeMove()`
+  - `position fen <FEN>` → `engine.reset(FEN)`
+  - `go depth <n>` → `search.findBestMove(engine, n)` → `bestmove e2e4`
+  - `quit` → exit
+- [ ] **3.10** Add `engine/main.cpp` — entry point: instantiates `Engine`, `Search`, `UCI`, runs the I/O loop.
+- [ ] **3.11** Test the engine binary manually with Arena or any UCI-capable GUI. Play at least 10 games vs itself.
+- [ ] **3.12** Add a `make bench` target: runs a fixed perft (position + depth) and prints nodes/sec. Perft results must match known values (use `kiwipete` FEN as reference).
 
 ---
 
-### 🟡 HIGH: Add const Correctness Throughout
+## Milestone 4 — Language Bindings
 
-**Issue**: Many methods that don't modify state aren't marked `const`.
+Depends on: Milestone 2 complete (Milestone 3 is parallel, not required for bindings).
 
-**Examples to fix:**
-```cpp
-// In Piece class
-uint8_t get_rank(void) const;  // ✅ Already const
-void set_rank(const uint8_t &__rank);  // ✅ Correctly not const
+Each binding wraps only the public `Engine` API: `generateAllMoves`, `makeMove`, `undoMove`, `getFen`, `reset`, `isCheckmate`, `isStalemate`, `isDraw`, `printBoard`.
 
-// In Board class - check if these modify state
-Piece *get_piece(const uint8_t &__rank, const uint8_t &__file) const;  // ✅ Good
+### Python
 
-// In Moves class - these should probably be const
-void __log_generated_moves__(...) const;  // ✅ Already const
-```
+- [ ] **4.1** Add `bindings/python/` directory.
+- [ ] **4.2** Write a `ctypes`-based binding in `fenrir.py`: load `libfenrir.so` via `ctypes.CDLL`, wrap each public `Engine` method. Expose a `FenrirEngine` Python class.
+- [ ] **4.3** Add a `pybind11` alternative in `bindings/python/pybind/`: provides a proper Python module (`import fenrir`), better type safety, no manual marshaling.
+- [ ] **4.4** Add `make python` build target — builds the pybind11 extension `.so`.
+- [ ] **4.5** Write `tests/python/test_engine.py`: at least 20 tests covering move generation, FEN round-trip, makeMove, checkmate detection.
 
-**Tasks:**
-- [ ] Audit all methods in all classes
-- [ ] Mark methods that don't modify state as `const`
-- [ ] Mark parameters that aren't modified as `const`
-- [ ] Use `const` references where appropriate
-- [ ] Fix any compilation errors
-- [ ] Run tests to ensure behavior unchanged
+### Java
 
-**Estimated effort**: 2-3 hours
+- [ ] **4.6** Add `bindings/java/` directory.
+- [ ] **4.7** Add a C JNI shim layer `bindings/java/jni/fenrir_jni.cpp` — thin wrappers that translate between JNI types and Fenrir C++ types. Expose as `libfenrir_jni.so`.
+- [ ] **4.8** Add `bindings/java/src/io/fenrir/FenrirEngine.java` — Java class that loads `libfenrir_jni.so` via `System.loadLibrary` and wraps the native methods.
+- [ ] **4.9** Add `make java` build target.
+- [ ] **4.10** Write JUnit tests `bindings/java/tests/FenrirEngineTest.java`.
 
----
+### Rust
 
-## 🎮 Chess Features (Game Rules)
+- [ ] **4.11** Add `bindings/rust/` directory with a Cargo workspace.
+- [ ] **4.12** Write `bindings/rust/src/lib.rs` using `unsafe` FFI blocks. Define a `FenrirEngine` Rust struct wrapping the C++ object pointer.
+- [ ] **4.13** Add a `build.rs` that links against `libfenrir.so` via `cargo:rustc-link-lib=fenrir`.
+- [ ] **4.14** Write Rust unit tests (`cargo test`).
 
-### 🔴 CRITICAL: Implement Check Detection
+### Go
 
-**Priority**: Must be done before move validation.
+- [ ] **4.15** Add `bindings/go/` directory.
+- [ ] **4.16** Write `bindings/go/fenrir.go` using `cgo`: `// #include "include/engine/engine.h"` and CGo function wrappers.
+- [ ] **4.17** Add `go test` test suite.
 
-**Requirements:**
-- Detect if a king is in check
-- Method: `bool Board::isInCheck(uint8_t color) const`
-- Algorithm:
-  1. Find king of given color
-  2. Generate all opponent moves
-  3. Check if any opponent move targets king's square
+### C header (required by all bindings above)
 
-**Tasks:**
-- [ ] Add `Board::findKing(uint8_t color)` method
-- [ ] Add `Board::isInCheck(uint8_t color)` method
-- [ ] Write comprehensive tests (king in check from all piece types)
-- [ ] Test edge cases (multiple attackers, discovered check)
-- [ ] Ensure 100% coverage
-
-**Files to create/modify:**
-- `include/chess/board.h` (add method declarations)
-- `src/chess/board.cpp` (implement methods)
-- `tests/unit/board.test.cpp` (add tests)
-
-**Estimated effort**: 4-6 hours
+- [ ] **4.18** Add `include/fenrir_c.h` — a pure C API (`extern "C"`) wrapping `Engine`. All methods take an opaque `FenrirHandle` (void pointer). This is the stable ABI that all language bindings actually call:
+  ```c
+  FenrirHandle fenrir_create(const char* fen);
+  void         fenrir_destroy(FenrirHandle h);
+  int          fenrir_generate_all_moves(FenrirHandle h, FenrirMove* out, int maxMoves);
+  int          fenrir_make_move(FenrirHandle h, const char* uci_move);
+  const char*  fenrir_get_fen(FenrirHandle h);
+  void         fenrir_reset(FenrirHandle h, const char* fen);
+  int          fenrir_is_checkmate(FenrirHandle h);
+  int          fenrir_is_stalemate(FenrirHandle h);
+  int          fenrir_is_draw(FenrirHandle h);
+  ```
+- [ ] **4.19** Add `src/fenrir_c.cpp` implementing the above. Add unit tests.
 
 ---
 
-### 🔴 CRITICAL: Implement Move Validation
+## Milestone 5 — WebAssembly
 
-**Priority**: Required for legal chess games.
+Depends on: Milestone 4 (C header) complete.
 
-**Requirements:**
-- Validate that a move doesn't leave own king in check
-- Filter out illegal moves from `generate_moves()`
-
-**Approach:**
-```cpp
-bool Board::isMoveLegal(const Piece *piece, uint8_t toRank, uint8_t toFile) const {
-    // 1. Make a copy of the board
-    // 2. Apply the move on the copy
-    // 3. Check if moving side's king is in check
-    // 4. Return true if NOT in check
-}
-
-// Update generate_moves to filter:
-void Moves::generate_moves(...) {
-    vector<Move> pseudoLegalMoves;
-    // ... generate all pseudo-legal moves ...
-
-    // Filter out illegal moves
-    for (const auto &move : pseudoLegalMoves) {
-        if (board->isMoveLegal(piece, move.toRank, move.toFile)) {
-            legalMoves.push_back(move);
-        }
-    }
-}
-```
-
-**Tasks:**
-- [ ] Implement `Board::copy()` or copy constructor
-- [ ] Implement `Board::isMoveLegal()`
-- [ ] Update `Moves::generate_moves()` to filter illegal moves
-- [ ] Update `Engine::make_move()` to reject illegal moves
-- [ ] Write tests for pinned pieces, discovered checks
-- [ ] Ensure 100% coverage
-
-**Dependencies**: Requires check detection first.
-
-**Estimated effort**: 6-8 hours
+- [ ] **5.1** Install `emscripten` toolchain. Add `.devcontainer` package or document in `README.md`.
+- [ ] **5.2** Add `make wasm` target: compiles with `emcc`, exports `fenrir_c.h` functions, outputs `bin/wasm/fenrir.wasm` + `fenrir.js`.
+- [ ] **5.3** Add `bindings/js/fenrir.js` — ES module wrapper around the WASM module. Exposes `async createEngine(fen)` and all `Engine` methods as `async` JS functions.
+- [ ] **5.4** Write jest tests `bindings/js/tests/fenrir.test.js`.
 
 ---
 
-### 🟡 HIGH: Implement Castling
+## Cross-Cutting (do alongside milestones as they become relevant)
 
-**Requirements:**
-- Kingside and queenside castling for both colors
-- Validate castling conditions:
-  - King and rook haven't moved
-  - No pieces between king and rook
-  - King not in check
-  - King doesn't move through check
-  - King doesn't end in check
-
-**Tasks:**
-- [ ] Add `Board::canCastle(uint8_t color, bool kingside)` method
-- [ ] Update `Moves::__king__()` to generate castling moves
-- [ ] Update `Board::move()` to handle castling (move both king and rook)
-- [ ] Track king and rook movement in FEN castling rights
-- [ ] Write comprehensive tests
-- [ ] Ensure 100% coverage
-
-**Files to modify:**
-- `include/chess/board.h`
-- `src/chess/board.cpp`
-- `include/chess/moves.h`
-- `src/chess/moves.cpp`
-- `tests/unit/moves.test.cpp`
-
-**Dependencies**: Requires check detection and move validation.
-
-**Estimated effort**: 6-8 hours
+- [ ] **X.1** CI/CD: add `.github/workflows/ci.yml` — on every push: `make test`, `make coverage` (must be 100%), `make release`, upload `libfenrir.so` as a build artifact.
+- [ ] **X.2** CI: add a perft regression job — runs `make bench` and fails if nodes/sec drops > 10% from baseline.
+- [ ] **X.3** Add `CONTRIBUTING.md` — build instructions, test requirements, coverage rule, coding conventions.
+- [ ] **X.4** Replace `vector<Move>` return values with output-parameter versions throughout `Moves` (already done in places) — eliminates one heap allocation per `generateAllMoves()` call. Audit the entire API for unnecessary heap allocations.
+- [ ] **X.5** Add Zobrist hashing in `Board`: compute a `uint64_t hash` incrementally in `applyMove`/`undoMove`. Used by repetition detection (Milestone 2) and transposition tables (future).
+- [ ] **X.6** Transposition table (future v0.4+): `std::unordered_map<uint64_t, TTEntry>` keyed on Zobrist hash. Stores depth/score/best-move per position. Cuts search tree significantly.
 
 ---
 
-### 🟡 HIGH: Implement Pawn Promotion
-
-**Requirements:**
-- When pawn reaches rank 0 or 7, promote to Q/R/B/N
-- Default to queen if not specified
-- Update FEN generation to handle promoted pieces
-
-**Tasks:**
-- [ ] Add promotion parameter to `Move` class (if created)
-- [ ] Update `Board::move()` to detect pawn promotion
-- [ ] Add `Engine::make_move()` overload with promotion piece
-- [ ] Update piece creation to handle promoted pieces
-- [ ] Write tests for all promotion types
-- [ ] Ensure 100% coverage
-
-**Files to modify:**
-- `include/chess/move.h` (if Move class exists)
-- `include/engine/engine.h`
-- `src/engine/engine.cpp`
-- `src/chess/board.cpp`
-- `tests/unit/engine.test.cpp`
-
-**Estimated effort**: 4-6 hours
-
----
-
-### 🟢 MEDIUM: Implement Checkmate Detection
-
-**Requirements:**
-- Detect when a king is in checkmate
-- Method: `bool Board::isCheckmate(uint8_t color) const`
-- Algorithm:
-  1. Check if king is in check
-  2. Generate all legal moves for that color
-  3. If no legal moves exist, it's checkmate
-
-**Tasks:**
-- [ ] Add `Board::isCheckmate(uint8_t color)` method
-- [ ] Add `Board::getAllLegalMoves(uint8_t color)` helper
-- [ ] Write tests for various checkmate patterns
-- [ ] Test edge cases (smothered mate, back rank mate, etc.)
-- [ ] Ensure 100% coverage
-
-**Dependencies**: Requires move validation.
-
-**Estimated effort**: 3-4 hours
-
----
-
-### 🟢 MEDIUM: Implement Stalemate Detection
-
-**Requirements:**
-- Detect when a player has no legal moves but is not in check
-- Method: `bool Board::isStalemate(uint8_t color) const`
-
-**Tasks:**
-- [ ] Add `Board::isStalemate(uint8_t color)` method
-- [ ] Write tests for stalemate positions
-- [ ] Ensure 100% coverage
-
-**Dependencies**: Requires move validation.
-
-**Estimated effort**: 2-3 hours
-
----
-
-## 🏗️ Architecture Improvements
-
-### 🟢 MEDIUM: Add Interfaces for Testability
-
-**Issue**: Hard to mock dependencies for unit testing.
-
-**Proposed interfaces:**
-```cpp
-// include/chess/iboard.h
-class IBoardView {
-public:
-    virtual ~IBoardView() = default;
-    virtual const Piece* getPiece(uint8_t rank, uint8_t file) const = 0;
-    virtual const string& getEnPassant() const = 0;
-    virtual bool isInCheck(uint8_t color) const = 0;
-};
-
-// include/chess/ipiece.h
-class IPiece {
-public:
-    virtual ~IPiece() = default;
-    virtual char getAlias() const = 0;
-    virtual uint8_t getRank() const = 0;
-    virtual uint8_t getFile() const = 0;
-    virtual uint8_t getColor() const = 0;
-    virtual bool hasMoved() const = 0;
-};
-```
-
-**Benefits:**
-- Can create mock implementations for testing
-- Reduces coupling
-- Follows Dependency Inversion Principle
-
-**Tasks:**
-- [ ] Create interface header files
-- [ ] Make `Board` implement `IBoardView`
-- [ ] Make `Piece` implement `IPiece`
-- [ ] Update code to use interfaces where appropriate
-- [ ] Create mock implementations for tests
-- [ ] Ensure 100% coverage
-
-**Estimated effort**: 6-8 hours
-
----
-
-### 🔵 LOW: Consider PIMPL Idiom for ABI Stability
-
-**Issue**: Changes to private members require recompilation of dependent code.
-
-**PIMPL (Pointer to Implementation):**
-```cpp
-// board.h
-class Board {
-private:
-    class Impl;
-    unique_ptr<Impl> pImpl;
-
-public:
-    Board(const string &fen);
-    ~Board();
-    // ... public interface ...
-};
-
-// board.cpp
-class Board::Impl {
-    vector<vector<Piece*>> board;
-    string castling;
-    // ... all private members ...
-};
-```
-
-**Benefits:**
-- ABI stability (can change private members without recompiling clients)
-- Faster compilation (less in headers)
-- Better encapsulation
-
-**Drawbacks:**
-- Extra indirection (minor performance cost)
-- More boilerplate
-- Harder to debug
-
-**Recommendation**: Consider for v1.0.0 when API stabilizes.
-
-**Estimated effort**: 8-12 hours (significant refactor)
-
----
-
-## 🤖 AI & Advanced Features
-
-### 🔵 LOW: Implement Basic Position Evaluation
-
-**Requirements:**
-- Evaluate a position and return a score
-- Method: `int Engine::evaluate() const`
-- Simple evaluation:
-  - Material count (pawn=1, knight=3, bishop=3, rook=5, queen=9)
-  - Piece position bonuses (center control, etc.)
-
-**Tasks:**
-- [ ] Create `include/engine/evaluator.h`
-- [ ] Implement material counting
-- [ ] Add piece-square tables
-- [ ] Write tests
-- [ ] Ensure 100% coverage
-
-**Dependencies**: None (can be done anytime).
-
-**Estimated effort**: 4-6 hours
-
----
-
-### 🔵 LOW: Implement Minimax Search
-
-**Requirements:**
-- Search game tree to find best move
-- Method: `Move Engine::findBestMove(int depth)`
-- Basic minimax algorithm
-
-**Tasks:**
-- [ ] Create `include/engine/search.h`
-- [ ] Implement minimax recursion
-- [ ] Add alpha-beta pruning
-- [ ] Write tests
-- [ ] Ensure 100% coverage
-
-**Dependencies**: Requires move validation, checkmate detection, evaluation.
-
-**Estimated effort**: 8-12 hours
-
----
-
-### 🔵 LOW: Implement UCI Protocol
-
-**Requirements:**
-- Universal Chess Interface for GUI integration
-- Commands: `uci`, `isready`, `position`, `go`, `stop`, `quit`
-
-**Tasks:**
-- [ ] Create `include/uci/uci.h`
-- [ ] Implement UCI command parser
-- [ ] Implement UCI response formatter
-- [ ] Write integration tests
-- [ ] Test with actual chess GUI
-
-**Dependencies**: Requires AI search.
-
-**Estimated effort**: 12-16 hours
-
----
-
-## 📚 Documentation & Tooling
-
-### 🟢 MEDIUM: Add Doxygen Comments
-
-**Issue**: No API documentation generation.
-
-**Tasks:**
-- [ ] Add Doxygen comments to all public methods
-- [ ] Create `Doxyfile` configuration
-- [ ] Add `make docs` target
-- [ ] Generate HTML documentation
-- [ ] Add to CI/CD pipeline
-
-**Estimated effort**: 4-6 hours
-
----
-
-### 🟢 MEDIUM: Add CI/CD Pipeline
-
-**Tasks:**
-- [ ] Create `.github/workflows/ci.yml`
-- [ ] Run tests on every push
-- [ ] Check coverage (fail if < 100%)
-- [ ] Build release artifacts
-- [ ] Run static analysis (cppcheck, clang-tidy)
-
-**Estimated effort**: 3-4 hours
-
----
-
-### 🔵 LOW: Add Benchmarking Suite
-
-**Tasks:**
-- [ ] Create `tests/benchmark/` directory
-- [ ] Add perft (performance test) for move generation
-- [ ] Benchmark FEN parsing
-- [ ] Track performance over time
-
-**Estimated effort**: 4-6 hours
-
----
-
-## 📅 Suggested Roadmap
-
-### Phase 1: Code Quality (v0.2.1) - **2-3 weeks**
-- [ ] Fix naming conventions (`__private__` → `private`)
-- [ ] Add const correctness
-- [ ] Create `Move` class
-- [ ] Add Doxygen comments
-
-### Phase 2: Game Rules (v0.3.0) - **3-4 weeks**
-- [ ] Implement check detection
-- [ ] Implement move validation
-- [ ] Implement castling
-- [ ] Implement pawn promotion
-- [ ] Implement checkmate/stalemate detection
-
-### Phase 3: Architecture (v0.4.0) - **2-3 weeks**
-- [ ] Add interfaces (IBoardView, IPiece)
-- [ ] Reduce coupling (Moves ↔ Board)
-- [ ] Consider polymorphism for pieces (optional)
-
-### Phase 4: AI (v0.5.0) - **4-6 weeks**
-- [ ] Position evaluation
-- [ ] Minimax with alpha-beta pruning
-- [ ] Opening book (optional)
-
-### Phase 5: Integration (v0.6.0) - **2-3 weeks**
-- [ ] UCI protocol
-- [ ] GUI integration testing
-- [ ] Performance optimization
-
-### Phase 6: Release (v1.0.0) - **1-2 weeks**
-- [ ] Final documentation
-- [ ] CI/CD pipeline
-- [ ] Release artifacts
-- [ ] Announcement
-
----
-
-## 🎯 Quick Wins (Start Here!)
-
-If you want to make immediate improvements, start with these:
-
-1. **Fix naming conventions** (2-3 hours) - Easy, high impact
-2. **Add const correctness** (2-3 hours) - Easy, improves code quality
-3. **Create Move class** (4-6 hours) - Medium difficulty, sets up for future work
-4. **Implement check detection** (4-6 hours) - Critical for game rules
-
----
-
-## 📝 Notes
-
-- **Always maintain 100% test coverage** - This is your superpower!
-- **Write tests first** - Continue the TDD approach
-- **Update documentation** - Keep README.md, AI_CONTEXT.md, RELEASE_NOTES.md in sync
-- **Commit frequently** - Small, focused commits are easier to review
-- **Don't break the build** - `make test` should always pass
-
----
-
-**Total estimated effort for v1.0.0: ~80-120 hours (10-15 weeks part-time)**
-
-Good luck! 🚀
+## Version Plan Summary
+
+| Version | Milestone | Key deliverable |
+|---------|-----------|-----------------|
+| **0.2.0** | — | Current: pseudo-legal moves, 300 tests ✅ |
+| **0.3.0** | 0 + 1 + 2 | Versioned `.so`, bitboards, 100% legal moves |
+| **0.4.0** | 3 | C++ engine binary + UCI (plays chess via GUI) |
+| **0.5.0** | 4 | C header + Python + Java + Rust + Go bindings |
+| **0.6.0** | 5 | WebAssembly / browser support |
