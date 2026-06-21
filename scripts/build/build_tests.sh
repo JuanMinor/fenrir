@@ -48,7 +48,7 @@ TEST_EXECUTABLE="$TEST_BUILD_DIR/tests"
 # Compiler settings
 CC="g++"
 PROJECT_ROOT="/workspaces/fenrir"
-COMMON_FLAGS="-I $PROJECT_ROOT -fPIC -DFENRIR_BUILD_DLL -Wextra -Wall -Werror"
+COMMON_FLAGS="-I $PROJECT_ROOT -fPIC -DFENRIR_BUILD_DLL -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion -Wnull-dereference -Wdouble-promotion -Wformat=2"
 CXXFLAGS="$COMMON_FLAGS -g"
 COVERAGE_FLAGS="-fprofile-arcs -ftest-coverage"
 CXXFLAGS_TEST="$CXXFLAGS $COVERAGE_FLAGS"
