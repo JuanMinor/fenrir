@@ -23,14 +23,12 @@ SRC_FILES=(
     "src/chess/move.cpp"
     "src/chess/moves.cpp"
     "src/pgn/pgn.cpp"
-    "src/chess/piece.cpp"
     "src/utils/utils.cpp"
 )
 
 TEST_SRC_FILES=(
     "tests/unit/fen.test.cpp"
     "tests/unit/board.test.cpp"
-    "tests/unit/piece.test.cpp"
     "tests/unit/engine.test.cpp"
     "tests/unit/utils.test.cpp"
     "tests/unit/move.test.cpp"
@@ -47,7 +45,7 @@ TEST_EXECUTABLE="$TEST_BUILD_DIR/tests"
 
 # Compiler settings
 CC="g++"
-PROJECT_ROOT="/workspaces/fenrir"
+PROJECT_ROOT="."
 COMMON_FLAGS="-I $PROJECT_ROOT -fPIC -DFENRIR_BUILD_DLL -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion -Wnull-dereference -Wdouble-promotion -Wformat=2"
 CXXFLAGS="$COMMON_FLAGS -g"
 COVERAGE_FLAGS="-fprofile-arcs -ftest-coverage"

@@ -22,7 +22,6 @@
 #include <vector>
 #include "include/logger/logger.h"
 #include "include/chess/move.h"
-#include "include/chess/piece.h"
 #include "include/utils/utils.h"
 #include "include/abstract/board.h"
 
@@ -35,19 +34,19 @@ namespace fenrir
 		Moves(const Moves &) = delete;
 		Moves &operator=(const Moves &) = delete;
 
-		void generateBishopMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
-		void addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<Move> &moves) const;
-		void generateKingMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
-		void generateKnightMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
-		void logGeneratedMoves(const Piece *piece, const std::vector<Move> &moves) const;
-		void generatePawnMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
-		void generateQueenMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
-		void generateRookMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
-		void slideInDirections(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth = false) const;
+		void generateBishopMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void addCaptureMove(uint8_t fromRank, uint8_t fromFile, char piece_char, uint8_t toRank, uint8_t toFile, char target_char, std::vector<Move> &moves) const;
+		void generateKingMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void generateKnightMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void logGeneratedMoves(char piece_char, uint8_t rank, uint8_t file, const std::vector<Move> &moves) const;
+		void generatePawnMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void generateQueenMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void generateRookMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void slideInDirections(uint8_t fromRank, uint8_t fromFile, char piece_char, const AbstractBoard &board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth = false) const;
 
 	public:
 		static Moves &getInstance();
 
-		void generateMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const;
+		void generateMoves(uint8_t rank, uint8_t file, const AbstractBoard &board, std::vector<Move> &moves) const;
 	};
 }

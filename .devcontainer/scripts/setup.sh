@@ -46,8 +46,13 @@ install_gtest() {
 	cp lib/*.a /usr/lib
 }
 
+install_libs() {
+	apt-get install -y ripgrep
+}
+
 # Call the gtest installation function
 system
 install_fonts
 install_gdb
 install_gtest
+install_libs

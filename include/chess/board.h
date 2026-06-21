@@ -27,22 +27,24 @@
 #include "include/logger/logger.h"
 #include "include/modifier/modifier.h"
 #include "include/pgn/pgn.h"
-#include "include/chess/piece.h"
 #include "include/utils/utils.h"
 #include "include/abstract/board.h"
 
 namespace fenrir
 {
 	/**
-	 * Board is the sole owner of all Piece objects on the board.
-	 * Pointers returned by getPiece() are non-owning and are only valid
-	 * for the lifetime of this Board instance.
-	 * Board is non-copyable and non-movable by design.
+	 * Board manages the 12 chess piece bitboards and board state metadata.
+	 * It contains zero heap-allocated objects and operates purely using
+	 * bitwise operations for high search performance.
 	 */
 	class Board : public AbstractBoard
 	{
 	private:
-		std::vector<std::vector<std::unique_ptr<Piece>>> board;
+		uint64_t bitboards[12]; // 0-5: White (P, N, B, R, Q, K), 6-11: Black (p, n, b, r, q, k)
+		uint64_t white_occupancy;
+		uint64_t black_occupancy;
+		uint64_t combined_occupancy;
+
 		std::string castling;
 		std::string enPassant;
 		uint8_t color;
@@ -50,9 +52,44 @@ namespace fenrir
 		uint8_t fullMoves;
 		Fen fen;
 
+		inline int getBitboardIndex(char alias) const
+		{
+			switch (alias)
+			{
+				case 'P': return 0;
+				case 'N': return 1;
+				case 'B': return 2;
+				case 'R': return 3;
+				case 'Q': return 4;
+				case 'K': return 5;
+				case 'p': return 6;
+				case 'n': return 7;
+				case 'b': return 8;
+				case 'r': return 9;
+				case 'q': return 10;
+				case 'k': return 11;
+				default: return -1;
+			}
+		}
+
+		inline void set_bit(uint64_t &bb, uint8_t square)
+		{
+			bb |= (1ULL << square);
+		}
+
+		inline void clear_bit(uint64_t &bb, uint8_t square)
+		{
+			bb &= ~(1ULL << square);
+		}
+
+		inline bool test_bit(uint64_t bb, uint8_t square) const
+		{
+			return (bb & (1ULL << square)) != 0;
+		}
+
 		void buildBoard(const std::string &placement);
 		std::string generatePlacementFromBoard(void) const;
-		void logPieceAction(const std::string &action, const Piece *piece, const std::string &position, const std::string &emoji) const;
+		void logPieceAction(const std::string &action, char piece_char, uint8_t rank, uint8_t file, const std::string &emoji) const;
 
 	public:
 		explicit Board(const std::string &fenString);
@@ -65,8 +102,14 @@ namespace fenrir
 
 		std::string getFen(void);
 		const std::string &getEnPassant(void) const override;
-		Piece *getPiece(uint8_t rank, uint8_t file) const override;
-		void move(Piece *piece, uint8_t rank, uint8_t file);
+		char getPiece(uint8_t rank, uint8_t file) const override;
+		uint64_t getBitboard(int index) const { return bitboards[index]; }
+		uint64_t getCombinedOccupancy() const { return combined_occupancy; }
+		uint64_t getWhiteOccupancy() const { return white_occupancy; }
+		uint64_t getBlackOccupancy() const { return black_occupancy; }
+		uint8_t getColor() const { return color; }
+
+		void move(uint8_t fromRank, uint8_t fromFile, uint8_t toRank, uint8_t toFile);
 		void print(void) const;
 
 		void reset(const std::string &fenString);

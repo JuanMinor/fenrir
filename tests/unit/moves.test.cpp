@@ -21,8 +21,41 @@
 #include "include/chess/moves.h"
 #include "include/chess/move.h"
 #include "include/chess/board.h"
-#include "include/chess/piece.h"
 #include "include/core/core.h"
+
+namespace fenrir {
+	class Piece {
+	private:
+		char alias;
+		uint8_t rank;
+		uint8_t file;
+	public:
+		Piece(char a, uint8_t r, uint8_t f) : alias(a), rank(r), file(f) {}
+		char getAlias() const { return alias; }
+		uint8_t getRank() const { return rank; }
+		uint8_t getFile() const { return file; }
+		uint8_t getColor() const { return std::isupper(static_cast<unsigned char>(alias)) ? WHITE : BLACK; }
+	};
+
+	using RealMoves = Moves;
+
+	class MovesWrapper {
+	public:
+		static MovesWrapper& getInstance() {
+			static MovesWrapper instance;
+			return instance;
+		}
+		void generateMoves(const Piece* piece, const AbstractBoard& board, std::vector<Move>& moves) const {
+			if (!piece) {
+				logger::ERROR("Piece is null. Moves cannot be generated 😢");
+				return;
+			}
+			RealMoves::getInstance().generateMoves(piece->getRank(), piece->getFile(), board, moves);
+		}
+	};
+}
+
+#define Moves MovesWrapper
 
 class MockBoard : public fenrir::AbstractBoard
 {
@@ -32,7 +65,17 @@ public:
 
 	MockBoard() : enPassant("") {}
 
-	fenrir::Piece *getPiece(uint8_t rank, uint8_t file) const override
+	char getPiece(uint8_t rank, uint8_t file) const override
+	{
+		auto it = pieces.find({rank, file});
+		if (it != pieces.end())
+		{
+			return it->second->getAlias();
+		}
+		return '\0';
+	}
+
+	fenrir::Piece *getPiecePtr(uint8_t rank, uint8_t file) const
 	{
 		auto it = pieces.find({rank, file});
 		if (it != pieces.end())
@@ -159,6 +202,18 @@ TEST_F(MovesTest, PawnCapture)
 	EXPECT_TRUE(moveExists(moves, "c4", "d5"));
 }
 
+TEST_F(MovesTest, PawnCaptureLeft)
+{
+	MockBoard board;
+	std::vector<fenrir::Move> moves;
+	const fenrir::Piece *pawn = board.addPiece(3, 2, 'P');
+	board.addPiece(4, 1, 'p');
+
+	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+
+	EXPECT_TRUE(moveExists(moves, "c4", "b5"));
+}
+
 TEST_F(MovesTest, EnPassantCapture)
 {
 	MockBoard board;
@@ -211,9 +266,12 @@ TEST_F(MovesTest, EmptySquare)
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
 
-	const fenrir::Piece *empty = board.getPiece(3, 4);
+	const fenrir::Piece *empty = board.getPiecePtr(3, 4);
 
 	fenrir::Moves::getInstance().generateMoves(empty, board, moves);
+
+	// Directly invoke real Moves to cover null/empty checks
+	fenrir::RealMoves::getInstance().generateMoves(3, 4, board, moves);
 
 	EXPECT_TRUE(moves.empty());
 }
@@ -996,11 +1054,11 @@ TEST_F(MovesTest, StressTestGenerateMoves)
 
 	for (int i = 0; i < 100000; i++)
 	{
-		const fenrir::Piece *pawn = board.getPiece(1, 0);
-		if (pawn && pawn->getAlias() == 'P')
+		char pawn = board.getPiece(1, 0);
+		if (pawn == 'P')
 		{
 			std::vector<fenrir::Move> moves;
-			fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+			fenrir::RealMoves::getInstance().generateMoves(1, 0, board, moves);
 		}
 	}
 }

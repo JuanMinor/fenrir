@@ -1,24 +1,23 @@
 /*
  *   Copyright (c) 2026 Juan Minor
-
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
-
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https:
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <gtest/gtest.h>
 #include "include/engine/engine.h"
 #include "include/chess/move.h"
-#include "include/chess/piece.h"
 #include "include/utils/utils.h"
 
 class EngineTest : public ::testing::Test
@@ -30,10 +29,10 @@ protected:
 	{
 		uint8_t rank, file;
 		utils::parseAlgebraicNotation(square, rank, file);
-		const fenrir::Piece *piece = engine.getBoardView().getPiece(rank, file);
-		if (piece)
+		char piece = engine.getBoardView().getPiece(rank, file);
+		if (piece != '\0')
 		{
-			return piece->getAlias();
+			return piece;
 		}
 		return '.';
 	}
@@ -96,7 +95,6 @@ TEST_F(EngineTest, GetFenAfterMove)
 
 TEST_F(EngineTest, GenerateMovesValidPiece)
 {
-
 	auto moves = engine.generateMoves("b2");
 	EXPECT_FALSE(moves.empty());
 
@@ -114,20 +112,17 @@ TEST_F(EngineTest, GenerateMovesValidPiece)
 
 TEST_F(EngineTest, GenerateMovesInvalidAddress)
 {
-
 	EXPECT_THROW(engine.generateMoves("z9"), std::runtime_error);
 }
 
 TEST_F(EngineTest, GenerateMovesEmptySquare)
 {
-
 	auto moves = engine.generateMoves("e4");
 	EXPECT_TRUE(moves.empty());
 }
 
 TEST_F(EngineTest, MakeMoveFromEmptySquare)
 {
-
 	testing::internal::CaptureStderr();
 	engine.makeMove(fenrir::Move("e4", "e5"));
 	std::string error_output = testing::internal::GetCapturedStderr();
@@ -138,7 +133,6 @@ TEST_F(EngineTest, MakeMoveFromEmptySquare)
 
 TEST_F(EngineTest, PrintBoard)
 {
-
 	testing::internal::CaptureStdout();
 	engine.printBoard();
 	std::string output = testing::internal::GetCapturedStdout();
@@ -149,7 +143,6 @@ TEST_F(EngineTest, PrintBoard)
 TEST_F(EngineTest, StressTestManyMovesAndResets)
 {
 	if (!test::getCI() || std::string(test::getCI()) != "true")
-
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}

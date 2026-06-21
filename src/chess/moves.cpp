@@ -1,21 +1,23 @@
 /*
  *   Copyright (c) 2026 Juan Minor
-
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
-
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include "include/chess/moves.h"
+#include <locale>
+#include <cctype>
 
 namespace fenrir
 {
@@ -26,73 +28,70 @@ namespace fenrir
 
 	Moves::~Moves() {}
 
-	void Moves::generateBishopMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
+	void Moves::generateBishopMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		constexpr int8_t directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
-		this->slideInDirections(piece, board, moves, directions, 4);
+		this->slideInDirections(rank, file, piece_char, board, moves, directions, 4);
 	}
 
-	void Moves::addCaptureMove(const Piece *piece, const Piece *targetPiece, std::vector<Move> &moves) const
+	void Moves::addCaptureMove(uint8_t fromRank, uint8_t fromFile, char piece_char, uint8_t toRank, uint8_t toFile, char target_char, std::vector<Move> &moves) const
 	{
-		if (piece == nullptr || targetPiece == nullptr)
+		bool is_white = std::isupper(static_cast<unsigned char>(piece_char));
+		bool target_white = std::isupper(static_cast<unsigned char>(target_char));
+		if (is_white != target_white)
 		{
-			logger::WARN(!piece ? "Piece is null 😢 and capture is not possible" : "Target piece is null 😢 and capture is not possible");
-			return;
-		}
-		if (piece->getColor() != targetPiece->getColor())
-		{
-			uint8_t from_sq = static_cast<uint8_t>(piece->getRank() * 8 + piece->getFile());
-			uint8_t to_sq = static_cast<uint8_t>(targetPiece->getRank() * 8 + targetPiece->getFile());
+			uint8_t from_sq = static_cast<uint8_t>(fromRank * 8 + fromFile);
+			uint8_t to_sq = static_cast<uint8_t>(toRank * 8 + toFile);
 			Move move = Move(from_sq, to_sq, MoveType::CAPTURE);
 			moves.emplace_back(move);
-			logger::DEBUG("Capture move generated from " + utils::getAlgebraicNotation(piece->getRank(), piece->getFile()) + " to " + utils::getAlgebraicNotation(targetPiece->getRank(), targetPiece->getFile()));
+			logger::DEBUG("Capture move generated from " + utils::getAlgebraicNotation(fromRank, fromFile) + " to " + utils::getAlgebraicNotation(toRank, toFile));
 		}
 	}
 
-	void Moves::generateKingMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
+	void Moves::generateKingMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		constexpr int8_t directionVectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
-		this->slideInDirections(piece, board, moves, directionVectors, 8, true);
+		this->slideInDirections(rank, file, piece_char, board, moves, directionVectors, 8, true);
 	}
 
-	void Moves::generateKnightMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
+	void Moves::generateKnightMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
-		const uint8_t currentRank = piece->getRank();
-		const uint8_t currentFile = piece->getFile();
-		const uint8_t from_sq = static_cast<uint8_t>(currentRank * 8 + currentFile);
+		const uint8_t from_sq = static_cast<uint8_t>(rank * 8 + file);
 
 		constexpr int8_t knightMoves[8][2] = {
 			{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {1, -2}, {-1, 2}, {-1, -2}};
 
 		for (const auto &knightMove : knightMoves)
 		{
-			const int8_t newRank = static_cast<int8_t>(static_cast<int>(currentRank) + knightMove[0]);
-			const int8_t newFile = static_cast<int8_t>(static_cast<int>(currentFile) + knightMove[1]);
+			const int8_t newRank = static_cast<int8_t>(static_cast<int>(rank) + knightMove[0]);
+			const int8_t newFile = static_cast<int8_t>(static_cast<int>(file) + knightMove[1]);
 
 			if (newRank >= 0 && newRank <= 7 && newFile >= 0 && newFile <= 7)
 			{
-				const Piece *targetPiece = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile));
-				if (!targetPiece)
+				char targetPiece = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile));
+				if (targetPiece == '\0')
 				{
 					uint8_t to_sq = static_cast<uint8_t>(newRank * 8 + newFile);
 					moves.emplace_back(Move(from_sq, to_sq, MoveType::NORMAL));
 					continue;
 				}
-				this->addCaptureMove(piece, targetPiece, moves);
+				this->addCaptureMove(rank, file, piece_char, static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile), targetPiece, moves);
 			}
 		}
 
-		logGeneratedMoves(piece, moves);
+		logGeneratedMoves(piece_char, rank, file, moves);
 	}
 
-	void Moves::logGeneratedMoves(const Piece *piece, const std::vector<Move> &moves) const
+	void Moves::logGeneratedMoves(char piece_char, uint8_t rank, uint8_t file, const std::vector<Move> &moves) const
 	{
 		std::stringstream ss;
+		bool is_white = std::isupper(static_cast<unsigned char>(piece_char));
+		char lower_alias = static_cast<char>(std::tolower(static_cast<unsigned char>(piece_char)));
 		ss << "Generated moves for "
-		   << (piece->getColor() == WHITE ? "white" : "black")
+		   << (is_white ? "white" : "black")
 		   << " "
-		   << PIECE_NAMES.at(static_cast<char>(std::tolower(piece->getAlias(), std::locale())))
-		   << " at " << utils::getAlgebraicNotation(piece->getRank(), piece->getFile())
+		   << PIECE_NAMES.at(lower_alias)
+		   << " at " << utils::getAlgebraicNotation(rank, file)
 		   << ": ";
 
 		if (moves.empty())
@@ -113,16 +112,14 @@ namespace fenrir
 		logger::DEBUG(ss.str());
 	}
 
-	void Moves::generatePawnMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
+	void Moves::generatePawnMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
-		uint8_t rank = piece->getRank();
-		uint8_t file = piece->getFile();
-		uint8_t color = piece->getColor();
-		int direction = (color == WHITE) ? 1 : -1;
+		bool is_white = std::isupper(static_cast<unsigned char>(piece_char));
+		int direction = is_white ? 1 : -1;
 		uint8_t from_sq = static_cast<uint8_t>(rank * 8 + file);
 
 		int newRank = static_cast<int>(rank) + direction;
-		if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(static_cast<uint8_t>(newRank), file))
+		if (newRank >= 0 && newRank < BOARD_SIZE && board.getPiece(static_cast<uint8_t>(newRank), file) == '\0')
 		{
 			uint8_t to_sq = static_cast<uint8_t>(newRank * 8 + file);
 			Move move = Move(from_sq, to_sq, MoveType::NORMAL);
@@ -131,22 +128,33 @@ namespace fenrir
 
 		if (file > 0)
 		{
-			this->addCaptureMove(piece, board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(file - 1)), moves);
+			char target = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(file - 1));
+			if (target != '\0')
+			{
+				this->addCaptureMove(rank, file, piece_char, static_cast<uint8_t>(newRank), static_cast<uint8_t>(file - 1), target, moves);
+			}
 		}
 
 		if (file < BOARD_SIZE - 1)
 		{
-			this->addCaptureMove(piece, board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(file + 1)), moves);
+			char target = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(file + 1));
+			if (target != '\0')
+			{
+				this->addCaptureMove(rank, file, piece_char, static_cast<uint8_t>(newRank), static_cast<uint8_t>(file + 1), target, moves);
+			}
 		}
 
-		if (!piece->getMoved())
+		if ((is_white && rank == 1) || (!is_white && rank == 6))
 		{
-			newRank = static_cast<int>(rank) + (2 * direction);
-			if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(static_cast<uint8_t>(newRank), file))
+			if (board.getPiece(static_cast<uint8_t>(rank + direction), file) == '\0')
 			{
-				uint8_t to_sq = static_cast<uint8_t>(newRank * 8 + file);
-				Move move = Move(from_sq, to_sq, MoveType::NORMAL);
-				moves.emplace_back(move);
+				newRank = static_cast<int>(rank) + (2 * direction);
+				if (newRank >= 0 && newRank < BOARD_SIZE && board.getPiece(static_cast<uint8_t>(newRank), file) == '\0')
+				{
+					uint8_t to_sq = static_cast<uint8_t>(newRank * 8 + file);
+					Move move = Move(from_sq, to_sq, MoveType::NORMAL);
+					moves.emplace_back(move);
+				}
 			}
 		}
 
@@ -157,44 +165,46 @@ namespace fenrir
 			utils::parseAlgebraicNotation(enPassant.c_str(), enPassantRank, enPassantFile);
 			if (enPassantRank == static_cast<uint8_t>(static_cast<int>(rank) + direction) && std::abs(static_cast<int>(enPassantFile) - static_cast<int>(file)) == 1)
 			{
-				const Piece *targetPiece = board.getPiece(rank, enPassantFile);
-				if (targetPiece && std::tolower(targetPiece->getAlias()) == 'p')
+				char targetPiece = board.getPiece(rank, enPassantFile);
+				if (targetPiece != '\0' && std::tolower(static_cast<unsigned char>(targetPiece)) == 'p')
 				{
-					uint8_t to_sq = static_cast<uint8_t>(enPassantRank * 8 + enPassantFile);
-					Move move = Move(from_sq, to_sq, MoveType::EN_PASSANT);
-					moves.emplace_back(move);
+					bool target_white = std::isupper(static_cast<unsigned char>(targetPiece));
+					if (is_white != target_white)
+					{
+						uint8_t to_sq = static_cast<uint8_t>(enPassantRank * 8 + enPassantFile);
+						Move move = Move(from_sq, to_sq, MoveType::EN_PASSANT);
+						moves.emplace_back(move);
+					}
 				}
 			}
 		}
 
-		logGeneratedMoves(piece, moves);
+		logGeneratedMoves(piece_char, rank, file, moves);
 	}
 
-	void Moves::generateQueenMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
+	void Moves::generateQueenMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		constexpr int8_t directionVectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
-		this->slideInDirections(piece, board, moves, directionVectors, 8);
+		this->slideInDirections(rank, file, piece_char, board, moves, directionVectors, 8);
 	}
 
-	void Moves::generateRookMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
+	void Moves::generateRookMoves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
 		constexpr int8_t directionVectors[4][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
-		this->slideInDirections(piece, board, moves, directionVectors, 4);
+		this->slideInDirections(rank, file, piece_char, board, moves, directionVectors, 4);
 	}
 
-	void Moves::slideInDirections(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth) const
+	void Moves::slideInDirections(uint8_t fromRank, uint8_t fromFile, char piece_char, const AbstractBoard &board, std::vector<Move> &moves, const int8_t directionVectors[][2], size_t numDirections, bool singleDepth) const
 	{
-		const uint8_t currentRank = piece->getRank();
-		const uint8_t currentFile = piece->getFile();
-		const uint8_t from_sq = static_cast<uint8_t>(currentRank * 8 + currentFile);
+		const uint8_t from_sq = static_cast<uint8_t>(fromRank * 8 + fromFile);
 
 		for (size_t i = 0; i < numDirections; ++i)
 		{
 			const int8_t rankDelta = directionVectors[i][0];
 			const int8_t fileDelta = directionVectors[i][1];
 
-			int8_t newRank = static_cast<int8_t>(static_cast<int>(currentRank) + rankDelta);
-			int8_t newFile = static_cast<int8_t>(static_cast<int>(currentFile) + fileDelta);
+			int8_t newRank = static_cast<int8_t>(static_cast<int>(fromRank) + rankDelta);
+			int8_t newFile = static_cast<int8_t>(static_cast<int>(fromFile) + fileDelta);
 			uint8_t depth = 0;
 
 			while (newRank >= 0 && newRank <= 7 && newFile >= 0 && newFile <= 7)
@@ -204,8 +214,8 @@ namespace fenrir
 					break;
 				}
 				depth++;
-				const Piece *targetPiece = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile));
-				if (!targetPiece)
+				char targetPiece = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile));
+				if (targetPiece == '\0')
 				{
 					uint8_t to_sq = static_cast<uint8_t>(newRank * 8 + newFile);
 					moves.emplace_back(Move(from_sq, to_sq, MoveType::NORMAL));
@@ -213,12 +223,12 @@ namespace fenrir
 					newFile = static_cast<int8_t>(static_cast<int>(newFile) + fileDelta);
 					continue;
 				}
-				this->addCaptureMove(piece, targetPiece, moves);
+				this->addCaptureMove(fromRank, fromFile, piece_char, static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile), targetPiece, moves);
 				break;
 			}
 		}
 
-		logGeneratedMoves(piece, moves);
+		logGeneratedMoves(piece_char, fromRank, fromFile, moves);
 	}
 
 	Moves &Moves::getInstance()
@@ -228,33 +238,34 @@ namespace fenrir
 		return instance;
 	}
 
-	void Moves::generateMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
+	void Moves::generateMoves(uint8_t rank, uint8_t file, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
-		if (piece == nullptr)
+		char piece_char = board.getPiece(rank, file);
+		if (piece_char == '\0')
 		{
-			logger::ERROR("Piece is null. Moves cannot be generated 😢");
+			logger::ERROR("Piece is null/empty. Moves cannot be generated 😢");
 			return;
 		}
-		logger::DEBUG("Generating moves for piece at " + utils::getAlgebraicNotation(piece->getRank(), piece->getFile()));
-		switch (std::tolower(piece->getAlias()))
+		logger::DEBUG("Generating moves for piece at " + utils::getAlgebraicNotation(rank, file));
+		switch (std::tolower(static_cast<unsigned char>(piece_char)))
 		{
 		case 'b':
-			this->generateBishopMoves(piece, board, moves);
+			this->generateBishopMoves(rank, file, piece_char, board, moves);
 			break;
 		case 'k':
-			this->generateKingMoves(piece, board, moves);
+			this->generateKingMoves(rank, file, piece_char, board, moves);
 			break;
 		case 'n':
-			this->generateKnightMoves(piece, board, moves);
+			this->generateKnightMoves(rank, file, piece_char, board, moves);
 			break;
 		case 'p':
-			this->generatePawnMoves(piece, board, moves);
+			this->generatePawnMoves(rank, file, piece_char, board, moves);
 			break;
 		case 'q':
-			this->generateQueenMoves(piece, board, moves);
+			this->generateQueenMoves(rank, file, piece_char, board, moves);
 			break;
 		case 'r':
-			this->generateRookMoves(piece, board, moves);
+			this->generateRookMoves(rank, file, piece_char, board, moves);
 			break;
 		}
 	}

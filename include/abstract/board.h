@@ -22,14 +22,12 @@
 
 namespace fenrir
 {
-	class Piece;
-
 	class AbstractBoard
 	{
 	public:
 		virtual ~AbstractBoard() = default;
 
-		virtual Piece *getPiece(uint8_t rank, uint8_t file) const = 0;
+		virtual char getPiece(uint8_t rank, uint8_t file) const = 0;
 		virtual const std::string &getEnPassant(void) const = 0;
 	};
 

@@ -1,16 +1,16 @@
 /*
  *   Copyright (c) 2026 Juan Minor
-
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
-
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -38,8 +38,8 @@ namespace fenrir
 		std::vector<Move> moves;
 		uint8_t rank, file;
 		utils::parseAlgebraicNotation(algebraicAddress, rank, file);
-		const Piece *piece = board.getPiece(rank, file);
-		if (!piece)
+		char piece_char = board.getPiece(rank, file);
+		if (piece_char == '\0')
 		{
 			LOG_THROW_ERROR(
 				(std::string("Board address ") + algebraicAddress + " does not contain a piece").c_str(),
@@ -47,7 +47,7 @@ namespace fenrir
 			return moves;
 		}
 
-		Moves::getInstance().generateMoves(piece, board, moves);
+		Moves::getInstance().generateMoves(rank, file, board, moves);
 
 		logger::DEBUG("Generated moves for piece at address: " + algebraicAddress);
 
@@ -66,13 +66,13 @@ namespace fenrir
 		uint8_t fromRank, fromFile, toRank, toFile;
 		utils::parseAlgebraicNotation(move.getFrom(), fromRank, fromFile);
 		utils::parseAlgebraicNotation(move.getTo(), toRank, toFile);
-		Piece *piece = board.getPiece(fromRank, fromFile);
-		if (!piece)
+		char piece = board.getPiece(fromRank, fromFile);
+		if (piece == '\0')
 		{
 			logger::ERROR("No piece found at " + move.getFrom());
 			return;
 		}
-		board.move(piece, toRank, toFile);
+		board.move(fromRank, fromFile, toRank, toFile);
 
 		logger::DEBUG("Made move from " + move.getFrom() + " to " + move.getTo());
 	}

@@ -19,7 +19,7 @@
 # Compiler and basic flags
 CC = g++
 CC_VERSION = c++20
-PROJECT_ROOT = /workspaces/fenrir
+PROJECT_ROOT = .
 
 # Common compiler flags for all builds
 COMMON_FLAGS = -std=$(CC_VERSION) -I $(PROJECT_ROOT) -fPIC -DFENRIR_BUILD_DLL -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion -Wnull-dereference -Wdouble-promotion -Wformat=2
@@ -73,7 +73,6 @@ SRC_FILES = src/chess/board.cpp \
 		   src/chess/move.cpp \
 		   src/chess/moves.cpp \
 		   src/pgn/pgn.cpp \
-		   src/chess/piece.cpp \
 		   src/utils/utils.cpp
 
 # Convert source files to object file paths
@@ -85,7 +84,6 @@ SHARED_LIB = $(LIB_DIR)/libfenrir.so
 # Test source files
 TEST_SRC_FILES = tests/unit/fen.test.cpp \
 				tests/unit/board.test.cpp \
-				tests/unit/piece.test.cpp \
 				tests/unit/engine.test.cpp \
 				tests/unit/utils.test.cpp \
 				tests/unit/moves.test.cpp \
