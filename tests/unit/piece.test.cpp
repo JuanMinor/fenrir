@@ -63,7 +63,7 @@ TEST_F(PieceTest, SetRankOutOfRange)
 	fenrir::Piece pawn = createWhitePawn();
 
 	EXPECT_THROW(pawn.setRank(8), std::runtime_error);
-	EXPECT_THROW(pawn.setRank(-1), std::runtime_error);
+	EXPECT_THROW(pawn.setRank(static_cast<uint8_t>(-1)), std::runtime_error);
 }
 
 TEST_F(PieceTest, SetFile)
@@ -79,7 +79,7 @@ TEST_F(PieceTest, SetFileOutOfRange)
 	fenrir::Piece pawn = createWhitePawn();
 
 	EXPECT_THROW(pawn.setFile(8), std::runtime_error);
-	EXPECT_THROW(pawn.setFile(-1), std::runtime_error);
+	EXPECT_THROW(pawn.setFile(static_cast<uint8_t>(-1)), std::runtime_error);
 }
 
 TEST_F(PieceTest, SetMoved)
@@ -123,15 +123,16 @@ TEST_F(PieceTest, DestructorTest)
 
 TEST_F(PieceTest, StressTest)
 {
-	if (!test::CI || std::string(test::CI) != "true")
+	if (!test::getCI() || std::string(test::getCI()) != "true")
+
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}
-	const int numPieces = 100000;
+	const size_t numPieces = 100000;
 	std::vector<fenrir::Piece> pieces;
 
 	/* Create a large number of white pawns */
-	for (int i = 0; i < numPieces; ++i)
+	for (size_t i = 0; i < numPieces; ++i)
 	{
 		pieces.emplace_back('P', 1, 1);
 	}
@@ -148,7 +149,7 @@ TEST_F(PieceTest, StressTest)
 	}
 
 	/* Modify all pieces and verify the changes */
-	for (int i = 0; i < numPieces; ++i)
+	for (size_t i = 0; i < numPieces; ++i)
 	{
 		pieces[i].setRank(2);
 		pieces[i].setFile(2);

@@ -137,7 +137,7 @@ TEST_F(LoggerTest, ConstructorAndDestructor)
 TEST_F(LoggerTest, LogDebugMessage)
 {
 	logger::Logger log;
-	log.log("Test debug message", __FILE__, __LINE__, logger::DEBUG);
+	log.log("Test debug message", __FILE__, __LINE__, logger::LEVEL::DEBUG);
 
 	std::string content = readLogFile();
 
@@ -155,7 +155,7 @@ TEST_F(LoggerTest, LogDebugMessage)
 TEST_F(LoggerTest, LogInfoMessage)
 {
 	logger::Logger log;
-	log.log("Test info message", __FILE__, __LINE__, logger::INFO);
+	log.log("Test info message", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::string content = readLogFile();
 	EXPECT_TRUE(content.find("[INFO] - Test info message") != std::string::npos);
@@ -165,7 +165,7 @@ TEST_F(LoggerTest, LogInfoMessage)
 TEST_F(LoggerTest, LogWarnMessage)
 {
 	logger::Logger log;
-	log.log("Test warn message", __FILE__, __LINE__, logger::WARN);
+	log.log("Test warn message", __FILE__, __LINE__, logger::LEVEL::WARN);
 
 	std::string content = readLogFile();
 	EXPECT_TRUE(content.find("[WARN] - Test warn message") != std::string::npos);
@@ -175,7 +175,7 @@ TEST_F(LoggerTest, LogWarnMessage)
 TEST_F(LoggerTest, LogErrorMessage)
 {
 	logger::Logger log;
-	log.log("Test error message", __FILE__, __LINE__, logger::ERROR);
+	log.log("Test error message", __FILE__, __LINE__, logger::LEVEL::ERROR);
 
 	std::string content = readLogFile();
 	EXPECT_TRUE(content.find("[ERROR] - Test error message") != std::string::npos);
@@ -185,12 +185,13 @@ TEST_F(LoggerTest, LogErrorMessage)
 TEST_F(LoggerTest, LogCriticalMessage)
 {
 	logger::Logger log;
-	log.log("Test critical message", __FILE__, __LINE__, logger::CRITICAL);
+	log.log("Test critical message", __FILE__, __LINE__, logger::LEVEL::CRITICAL);
 
 	std::string content = readLogFile();
 	EXPECT_TRUE(content.find("[CRITICAL] - Test critical message") != std::string::npos);
 	EXPECT_TRUE(content.find(__FILE__) != std::string::npos);
 }
+
 
 /* Macro tests */
 TEST_F(LoggerTest, DebugMacro)
@@ -251,7 +252,7 @@ TEST_F(LoggerTest, CriticalMacro)
 TEST_F(LoggerTest, DebugMessageBehavior)
 {
 	logger::Logger log;
-	log.log("Debug message behavior test", __FILE__, __LINE__, logger::DEBUG);
+	log.log("Debug message behavior test", __FILE__, __LINE__, logger::LEVEL::DEBUG);
 
 	std::string content = readLogFile();
 
@@ -274,7 +275,7 @@ TEST_F(LoggerTest, LogRotationWhenFileSizeExceedsLimit)
 	EXPECT_TRUE(std::filesystem::exists(logger::LOG_FILE));
 
 	logger::Logger log;
-	log.log("New message after rotation", __FILE__, __LINE__, logger::INFO);
+	log.log("New message after rotation", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::string backup_file = std::string(logger::LOG_FILE) + ".1";
 	EXPECT_TRUE(std::filesystem::exists(backup_file));
@@ -300,7 +301,7 @@ TEST_F(LoggerTest, LogRotationWithExistingBackupFile)
 	auto original_backup_size = std::filesystem::file_size(backup_file);
 
 	logger::Logger log;
-	log.log("New message after rotation with existing backup", __FILE__, __LINE__, logger::INFO);
+	log.log("New message after rotation with existing backup", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	EXPECT_TRUE(std::filesystem::exists(backup_file));
 
@@ -327,7 +328,7 @@ TEST_F(LoggerTest, ThreadSafetyMultipleThreads)
 			for (int j = 0; j < messages_per_thread; ++j)
 			{
 				std::string message = "Thread " + std::to_string(i) + " Message " + std::to_string(j);
-				log.log(message, __FILE__, __LINE__, logger::INFO);
+				log.log(message, __FILE__, __LINE__, logger::LEVEL::INFO);
 			} });
 	}
 
@@ -352,7 +353,7 @@ TEST_F(LoggerTest, ThreadSafetyMultipleThreads)
 TEST_F(LoggerTest, EmptyMessage)
 {
 	logger::Logger log;
-	log.log("", __FILE__, __LINE__, logger::INFO);
+	log.log("", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::string content = readLogFile();
 	EXPECT_TRUE(content.find("[INFO] -") != std::string::npos);
@@ -362,7 +363,7 @@ TEST_F(LoggerTest, LongMessage)
 {
 	logger::Logger log;
 	std::string long_message(10000, 'A');
-	log.log(long_message, __FILE__, __LINE__, logger::INFO);
+	log.log(long_message, __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::string content = readLogFile();
 	EXPECT_TRUE(content.find(long_message) != std::string::npos);
@@ -372,7 +373,7 @@ TEST_F(LoggerTest, SpecialCharactersInMessage)
 {
 	logger::Logger log;
 	std::string special_message = "Special chars: !@#$%^&*()_+{}|:<>?[]\\;'\",./ \n\t";
-	log.log(special_message, __FILE__, __LINE__, logger::INFO);
+	log.log(special_message, __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::string content = readLogFile();
 	EXPECT_TRUE(content.find("Special chars:") != std::string::npos);
@@ -393,9 +394,9 @@ TEST_F(LoggerTest, LogToReadOnlyDirectory)
 {
 
 	logger::Logger log;
-	log.log("Test message", __FILE__, __LINE__, logger::INFO);
+	log.log("Test message", __FILE__, __LINE__, logger::LEVEL::INFO);
 
-	EXPECT_NO_THROW(log.log("Another test", __FILE__, __LINE__, logger::INFO));
+	EXPECT_NO_THROW(log.log("Another test", __FILE__, __LINE__, logger::LEVEL::INFO));
 }
 
 /* Memory management */
@@ -404,7 +405,7 @@ TEST_F(LoggerTest, MemoryManagement)
 	for (int i = 0; i < 1000; ++i)
 	{
 		logger::Logger log;
-		log.log("Memory test " + std::to_string(i), __FILE__, __LINE__, logger::INFO);
+		log.log("Memory test " + std::to_string(i), __FILE__, __LINE__, logger::LEVEL::INFO);
 	}
 }
 
@@ -412,7 +413,7 @@ TEST_F(LoggerTest, MemoryManagement)
 TEST_F(LoggerTest, TimestampFormat)
 {
 	logger::Logger log;
-	log.log("Timestamp test", __FILE__, __LINE__, logger::INFO);
+	log.log("Timestamp test", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::string content = readLogFile();
 
@@ -426,7 +427,7 @@ TEST_F(LoggerTest, LineNumberInLog)
 {
 	logger::Logger log;
 	uint32_t current_line = __LINE__ + 1;
-	log.log("Line number test", __FILE__, current_line, logger::INFO);
+	log.log("Line number test", __FILE__, current_line, logger::LEVEL::INFO);
 
 	std::string content = readLogFile();
 	std::string expected_line = "@ Line " + std::to_string(current_line);
@@ -436,7 +437,7 @@ TEST_F(LoggerTest, LineNumberInLog)
 /* Stress test */
 TEST_F(LoggerTest, StressTest)
 {
-	if (!test::CI || std::string(test::CI) != "true")
+	if (!test::getCI() || std::string(test::getCI()) != "true")
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}
@@ -447,7 +448,7 @@ TEST_F(LoggerTest, StressTest)
 	for (int i = 0; i < num_messages; ++i)
 	{
 		std::string message = "Stress test message " + std::to_string(i);
-		log.log(message, __FILE__, __LINE__, logger::INFO);
+		log.log(message, __FILE__, __LINE__, logger::LEVEL::INFO);
 	}
 
 	std::string content = readLogFile();
@@ -485,7 +486,7 @@ TEST_F(LoggerTest, FileOpeningFailure)
 
 	logger::Logger log;
 
-	log.log("This should fail to write", __FILE__, __LINE__, logger::INFO);
+	log.log("This should fail to write", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::filesystem::remove(log_dir);
 

@@ -18,25 +18,37 @@
 #pragma once
 
 #include <string>
+#include <memory>
 #include <include/core/core.h>
 
 namespace fenrir
 {
 	class Move
 	{
-		std::string from;
-		std::string to;
+		uint8_t from_square;
+		uint8_t to_square;
 		MoveType moveType;
 		char promotionPiece;
+		std::unique_ptr<std::pair<std::string, std::string>> invalid_squares;
 
 	public:
 		Move(const std::string &from, const std::string &to,
-			 MoveType moveType = MoveType::NORMAL, char promotionPiece = '\0');
+			 MoveType type = MoveType::NORMAL, char promotion = '\0');
+		Move(uint8_t fromSquare, uint8_t toSquare,
+			 MoveType type = MoveType::NORMAL, char promotion = '\0');
+
+		Move(const Move& other);
+		Move& operator=(const Move& other);
+		Move(Move&& other) noexcept = default;
+		Move& operator=(Move&& other) noexcept = default;
+
 		~Move();
 
 		/* Getters */
-		const std::string &getFrom() const;
-		const std::string &getTo() const;
+		std::string getFrom() const;
+		std::string getTo() const;
+		uint8_t getFromSquare() const;
+		uint8_t getToSquare() const;
 		MoveType getMoveType() const;
 		char getPromotionPiece() const;
 
@@ -48,4 +60,5 @@ namespace fenrir
 		std::string toString() const;
 		std::string toUCINotation() const;
 	};
+
 }

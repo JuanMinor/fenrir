@@ -29,7 +29,8 @@ namespace fenrir
 	public:
 		virtual ~AbstractBoard() = default;
 
-		virtual Piece *getPiece(const uint8_t &rank, const uint8_t &file) const = 0;
+		virtual Piece *getPiece(uint8_t rank, uint8_t file) const = 0;
 		virtual const std::string &getEnPassant(void) const = 0;
 	};
+
 }

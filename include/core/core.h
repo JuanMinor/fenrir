@@ -18,6 +18,8 @@
 #pragma once
 
 #include <unordered_map>
+#include <cstdint>
+
 
 /* Export dll symbols */
 #if defined(_WIN32) || defined(_WIN64)
@@ -34,7 +36,7 @@
 
 namespace color
 {
-	typedef enum
+	enum class Color : uint8_t
 	{
 		RESET = 0,
 		FG_BLACK = 30,
@@ -53,7 +55,7 @@ namespace color
 		BG_CYAN = 46,
 		FG_WHITE = 37,
 		BG_WHITE = 47
-	} Color;
+	};
 }
 
 namespace fenrir
@@ -64,10 +66,11 @@ namespace fenrir
 	constexpr int BOARD_MAX_LEFT = 0;
 	constexpr int BOARD_MAX_RIGHT = 7;
 
-	constexpr int WHITE = 0;
-	constexpr int BLACK = 1;
+	constexpr uint8_t WHITE = 0;
+	constexpr uint8_t BLACK = 1;
 
-	const std::unordered_map<char, const char *> PIECE_NAMES = {
+
+	inline const std::unordered_map<char, const char *> PIECE_NAMES = {
 		{'p', "pawn"},
 		{'n', "knight"},
 		{'b', "bishop"},
@@ -75,13 +78,13 @@ namespace fenrir
 		{'q', "queen"},
 		{'k', "king"}};
 
-	typedef enum
+	enum class GameMode : uint8_t
 	{
 		PERMISSIVE,
 		TOURNAMENT
-	} GameMode;
+	};
 
-	typedef enum
+	enum class MoveType : uint8_t
 	{
 		NORMAL,
 		CAPTURE,
@@ -89,7 +92,7 @@ namespace fenrir
 		CASTLE_KINGSIDE,
 		CASTLE_QUEENSIDE,
 		PROMOTION
-	} MoveType;
+	};
 }
 
 namespace io
@@ -103,17 +106,22 @@ namespace logger
 	constexpr const char *LOG_FILE = "logs/fenrir.log";
 	constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024;
 
-	typedef enum
+	enum class LEVEL : uint8_t
 	{
 		DEBUG,
 		INFO,
 		WARN,
 		ERROR,
 		CRITICAL
-	} LEVEL;
+	};
 }
 
 namespace test
 {
-	static const char *CI = getenv("CI");
+	inline const char *getCI()
+	{
+		static const char *CI = getenv("CI");
+		return CI;
+	}
 }
+

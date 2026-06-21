@@ -40,13 +40,14 @@ namespace fenrir
 		uint32_t fullMoves;
 
 		void splitString(const std::string &fenString, const std::string &delimiters, std::vector<std::string> &tokens) const;
-		void validateChessRules(const std::string &placement) const;
-		void validatePlacement(const std::string &placement) const;
+		void validateChessRules(const std::string &placementString) const;
+		void validatePlacement(const std::string &placementString) const;
 		void validatePawnPlacement(const std::vector<std::string> &ranks) const;
 		void validateKingSafety(const std::vector<std::string> &ranks) const;
 
 	public:
-		Fen(const std::string &fenString, GameMode gameMode = GameMode::PERMISSIVE);
+		Fen(const std::string &fenString, GameMode mode = GameMode::PERMISSIVE);
+
 		~Fen();
 
 		std::string getPlacement(void) const;
@@ -56,13 +57,14 @@ namespace fenrir
 		uint32_t getHalfMoveClock(void) const;
 		uint32_t getFullMoves(void) const;
 
-		void setPlacement(const std::string &placement);
-		void setCastling(const std::string &castling);
-		void setEnPassant(const std::string &enPassant);
-		void setColor(const uint8_t &color);
-		void setHalfMoveClock(const uint32_t &halfMoveClock);
-		void setFullMoves(const uint32_t &fullMoves);
+		void setPlacement(const std::string &placementString);
+		void setCastling(const std::string &castlingRights);
+		void setEnPassant(const std::string &enPassantSquare);
+		void setColor(uint8_t colorValue);
+		void setHalfMoveClock(uint32_t halfMoveClockValue);
+		void setFullMoves(uint32_t fullMovesValue);
 
 		std::string generateFen(void) const;
+
 	};
 }

@@ -33,20 +33,21 @@ namespace logger
 	class Logger
 	{
 	private:
-		mutable std::mutex log_mutex;
+		inline static std::mutex log_mutex;
 
 	public:
 		Logger();
 		~Logger();
 
-		void log(const std::string &message, const char *file, const uint32_t &lineNumber, const LEVEL &level) const;
+		void log(const std::string &message, const char *file, uint32_t lineNumber, LEVEL level) const;
 	};
 
 #define LOG Logger()
 
-#define DEBUG(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::DEBUG);
-#define INFO(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::INFO);
-#define WARN(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::WARN);
-#define ERROR(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::ERROR);
-#define CRITICAL(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::CRITICAL);
+#define DEBUG(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::DEBUG);
+#define INFO(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::INFO);
+#define WARN(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::WARN);
+#define ERROR(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::ERROR);
+#define CRITICAL(MESSAGE) LOG.log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::CRITICAL);
+
 }

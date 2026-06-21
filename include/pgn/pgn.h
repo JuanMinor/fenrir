@@ -21,6 +21,7 @@
 #include <iomanip>
 #include <string>
 #include <sstream>
+#include <mutex>
 #include "include/chrono/chrono.h"
 #include "include/logger/logger.h"
 
@@ -29,6 +30,7 @@ namespace io
 	class Pgn
 	{
 	private:
+		mutable std::mutex pgn_mutex;
 		Pgn();
 
 		void clearStreamFlags(std::ostream &os) const;

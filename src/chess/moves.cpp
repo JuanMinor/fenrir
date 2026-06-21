@@ -28,7 +28,7 @@ namespace fenrir
 
 	void Moves::generateBishopMoves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
 	{
-		int8_t directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+		constexpr int8_t directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
 		this->slideInDirections(piece, board, moves, directions, 4);
 	}
 
@@ -41,11 +41,11 @@ namespace fenrir
 		}
 		if (piece->getColor() != targetPiece->getColor())
 		{
-			std::string from = utils::getAlgebraicNotation(piece->getRank(), piece->getFile());
-			std::string to = utils::getAlgebraicNotation(targetPiece->getRank(), targetPiece->getFile());
-			Move move = Move(from, to, MoveType::CAPTURE);
+			uint8_t from_sq = static_cast<uint8_t>(piece->getRank() * 8 + piece->getFile());
+			uint8_t to_sq = static_cast<uint8_t>(targetPiece->getRank() * 8 + targetPiece->getFile());
+			Move move = Move(from_sq, to_sq, MoveType::CAPTURE);
 			moves.emplace_back(move);
-			logger::DEBUG("Capture move generated from " + from + " to " + to);
+			logger::DEBUG("Capture move generated from " + utils::getAlgebraicNotation(piece->getRank(), piece->getFile()) + " to " + utils::getAlgebraicNotation(targetPiece->getRank(), targetPiece->getFile()));
 		}
 	}
 
@@ -59,22 +59,23 @@ namespace fenrir
 	{
 		const uint8_t currentRank = piece->getRank();
 		const uint8_t currentFile = piece->getFile();
-		const std::string from = utils::getAlgebraicNotation(currentRank, currentFile);
+		const uint8_t from_sq = static_cast<uint8_t>(currentRank * 8 + currentFile);
 
 		constexpr int8_t knightMoves[8][2] = {
 			{2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {1, -2}, {-1, 2}, {-1, -2}};
 
 		for (const auto &knightMove : knightMoves)
 		{
-			const int8_t newRank = currentRank + knightMove[0];
-			const int8_t newFile = currentFile + knightMove[1];
+			const int8_t newRank = static_cast<int8_t>(static_cast<int>(currentRank) + knightMove[0]);
+			const int8_t newFile = static_cast<int8_t>(static_cast<int>(currentFile) + knightMove[1]);
 
 			if (newRank >= 0 && newRank <= 7 && newFile >= 0 && newFile <= 7)
 			{
 				const Piece *targetPiece = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile));
 				if (!targetPiece)
 				{
-					moves.emplace_back(Move(from, utils::getAlgebraicNotation(newRank, newFile), MoveType::NORMAL));
+					uint8_t to_sq = static_cast<uint8_t>(newRank * 8 + newFile);
+					moves.emplace_back(Move(from_sq, to_sq, MoveType::NORMAL));
 					continue;
 				}
 				this->addCaptureMove(piece, targetPiece, moves);
@@ -90,7 +91,7 @@ namespace fenrir
 		ss << "Generated moves for "
 		   << (piece->getColor() == WHITE ? "white" : "black")
 		   << " "
-		   << PIECE_NAMES.at(std::tolower(piece->getAlias(), std::locale()))
+		   << PIECE_NAMES.at(static_cast<char>(std::tolower(piece->getAlias(), std::locale())))
 		   << " at " << utils::getAlgebraicNotation(piece->getRank(), piece->getFile())
 		   << ": ";
 
@@ -118,11 +119,13 @@ namespace fenrir
 		uint8_t file = piece->getFile();
 		uint8_t color = piece->getColor();
 		int direction = (color == WHITE) ? 1 : -1;
+		uint8_t from_sq = static_cast<uint8_t>(rank * 8 + file);
 
-		int newRank = rank + direction;
+		int newRank = static_cast<int>(rank) + direction;
 		if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(static_cast<uint8_t>(newRank), file))
 		{
-			Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(newRank, file), MoveType::NORMAL);
+			uint8_t to_sq = static_cast<uint8_t>(newRank * 8 + file);
+			Move move = Move(from_sq, to_sq, MoveType::NORMAL);
 			moves.emplace_back(move);
 		}
 
@@ -138,10 +141,11 @@ namespace fenrir
 
 		if (!piece->getMoved())
 		{
-			newRank = rank + (2 * direction);
+			newRank = static_cast<int>(rank) + (2 * direction);
 			if (newRank >= 0 && newRank < BOARD_SIZE && !board.getPiece(static_cast<uint8_t>(newRank), file))
 			{
-				Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(newRank, file), MoveType::NORMAL);
+				uint8_t to_sq = static_cast<uint8_t>(newRank * 8 + file);
+				Move move = Move(from_sq, to_sq, MoveType::NORMAL);
 				moves.emplace_back(move);
 			}
 		}
@@ -151,12 +155,13 @@ namespace fenrir
 		{
 			uint8_t enPassantRank, enPassantFile;
 			utils::parseAlgebraicNotation(enPassant.c_str(), enPassantRank, enPassantFile);
-			if (enPassantRank == newRank && std::abs(int(enPassantFile) - int(file)) == 1)
+			if (enPassantRank == static_cast<uint8_t>(static_cast<int>(rank) + direction) && std::abs(static_cast<int>(enPassantFile) - static_cast<int>(file)) == 1)
 			{
 				const Piece *targetPiece = board.getPiece(rank, enPassantFile);
 				if (targetPiece && std::tolower(targetPiece->getAlias()) == 'p')
 				{
-					Move move = Move(utils::getAlgebraicNotation(rank, file), utils::getAlgebraicNotation(enPassantRank, enPassantFile), MoveType::EN_PASSANT);
+					uint8_t to_sq = static_cast<uint8_t>(enPassantRank * 8 + enPassantFile);
+					Move move = Move(from_sq, to_sq, MoveType::EN_PASSANT);
 					moves.emplace_back(move);
 				}
 			}
@@ -181,15 +186,15 @@ namespace fenrir
 	{
 		const uint8_t currentRank = piece->getRank();
 		const uint8_t currentFile = piece->getFile();
-		const std::string from = utils::getAlgebraicNotation(currentRank, currentFile);
+		const uint8_t from_sq = static_cast<uint8_t>(currentRank * 8 + currentFile);
 
 		for (size_t i = 0; i < numDirections; ++i)
 		{
 			const int8_t rankDelta = directionVectors[i][0];
 			const int8_t fileDelta = directionVectors[i][1];
 
-			int8_t newRank = currentRank + rankDelta;
-			int8_t newFile = currentFile + fileDelta;
+			int8_t newRank = static_cast<int8_t>(static_cast<int>(currentRank) + rankDelta);
+			int8_t newFile = static_cast<int8_t>(static_cast<int>(currentFile) + fileDelta);
 			uint8_t depth = 0;
 
 			while (newRank >= 0 && newRank <= 7 && newFile >= 0 && newFile <= 7)
@@ -202,9 +207,10 @@ namespace fenrir
 				const Piece *targetPiece = board.getPiece(static_cast<uint8_t>(newRank), static_cast<uint8_t>(newFile));
 				if (!targetPiece)
 				{
-					moves.emplace_back(Move(from, utils::getAlgebraicNotation(newRank, newFile), MoveType::NORMAL));
-					newRank += rankDelta;
-					newFile += fileDelta;
+					uint8_t to_sq = static_cast<uint8_t>(newRank * 8 + newFile);
+					moves.emplace_back(Move(from_sq, to_sq, MoveType::NORMAL));
+					newRank = static_cast<int8_t>(static_cast<int>(newRank) + rankDelta);
+					newFile = static_cast<int8_t>(static_cast<int>(newFile) + fileDelta);
 					continue;
 				}
 				this->addCaptureMove(piece, targetPiece, moves);
@@ -252,4 +258,5 @@ namespace fenrir
 			break;
 		}
 	}
+
 }

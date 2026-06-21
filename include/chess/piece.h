@@ -38,7 +38,7 @@ namespace fenrir
 		bool hasPieceMoved(void) const;
 
 	public:
-		Piece(const char &alias, const uint8_t &rank, const uint8_t &file);
+		Piece(char pieceAlias, uint8_t pieceRank, uint8_t pieceFile);
 		~Piece();
 
 		char getAlias(void) const;
@@ -48,8 +48,10 @@ namespace fenrir
 		uint8_t getRank(void) const;
 		uint8_t getValue(void) const;
 
-		void setFile(const uint8_t &file);
-		void setMoved(const bool &moved);
-		void setRank(const uint8_t &rank);
+		void setFile(uint8_t pieceFile);
+		void setMoved(bool hasMoved);
+		void setRank(uint8_t pieceRank);
+
+
 	};
 }

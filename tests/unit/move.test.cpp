@@ -304,7 +304,38 @@ TEST_F(MoveTest, SpecialCharactersInSquareNames)
 
 TEST_F(MoveTest, ToStringInvalidMoveType)
 {
-	Move move("e2", "e4", static_cast<MoveType>(999));
+	Move move("e2", "e4", static_cast<MoveType>(99));
 	std::string result = move.toString();
 	EXPECT_NE(result.find("Invalid action"), std::string::npos);
 }
+
+TEST_F(MoveTest, CopySemanticsWithInvalidSquares)
+{
+	Move move1("", "");
+	Move move2(move1);
+	EXPECT_EQ(move2.getFrom(), "");
+	EXPECT_EQ(move2.getTo(), "");
+
+	Move move3("e2", "e4");
+	move3 = move1;
+	EXPECT_EQ(move3.getFrom(), "");
+	EXPECT_EQ(move3.getTo(), "");
+
+	Move move4("a7", "a8");
+	Move move5("h2", "h4");
+	move5 = move4;
+	EXPECT_EQ(move5.getFrom(), "a7");
+	EXPECT_EQ(move5.getTo(), "a8");
+
+	move5 = move5;
+	EXPECT_EQ(move5.getFrom(), "a7");
+	EXPECT_EQ(move5.getTo(), "a8");
+}
+
+TEST_F(MoveTest, GetFromAndToSquares)
+{
+	Move move("e2", "e4");
+	EXPECT_EQ(move.getFromSquare(), 12);
+	EXPECT_EQ(move.getToSquare(), 28);
+}
+

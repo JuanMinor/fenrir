@@ -31,6 +31,7 @@ namespace chrono
 
 		tm *getLocalTime(time_t *timer) const noexcept(true);
 		time_t getRawTime(void) const noexcept(true);
-		std::_Put_time<char> getTimeWithFormat(const char *format) const;
+		std::string getTimeWithFormat(const char *format) const;
 	};
 }
+

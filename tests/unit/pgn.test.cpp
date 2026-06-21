@@ -437,7 +437,8 @@ TEST_F(PgnTest, RecordMoveWithNewlines)
 /* Stress test */
 TEST_F(PgnTest, StressTest)
 {
-	if (!test::CI || std::string(test::CI) != "true")
+	if (!test::getCI() || std::string(test::getCI()) != "true")
+
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}

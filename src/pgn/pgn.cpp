@@ -57,6 +57,7 @@ namespace io
 
 	void Pgn::record(const std::string &move) const
 	{
+		std::lock_guard<std::mutex> lock(pgn_mutex);
 		std::ofstream file(PGN_FILE_STORE, std::ios_base::app);
 		if (!file)
 		{
@@ -68,6 +69,7 @@ namespace io
 
 	void Pgn::create(void) const
 	{
+		std::lock_guard<std::mutex> lock(pgn_mutex);
 		std::ifstream storeFile(PGN_FILE_STORE);
 		std::ofstream pgnFile(PGN_FILE);
 

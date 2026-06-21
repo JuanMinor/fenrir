@@ -65,9 +65,10 @@ namespace fenrir
 
 		std::string getFen(void);
 		const std::string &getEnPassant(void) const override;
-		Piece *getPiece(const uint8_t &rank, const uint8_t &file) const override;
-		void move(Piece *piece, const uint8_t &rank, const uint8_t &file);
+		Piece *getPiece(uint8_t rank, uint8_t file) const override;
+		void move(Piece *piece, uint8_t rank, uint8_t file);
 		void print(void) const;
+
 		void reset(const std::string &fenString);
 	};
 }

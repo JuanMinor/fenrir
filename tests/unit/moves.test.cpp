@@ -32,7 +32,7 @@ public:
 
 	MockBoard() : enPassant("") {}
 
-	fenrir::Piece *getPiece(const uint8_t &rank, const uint8_t &file) const override
+	fenrir::Piece *getPiece(uint8_t rank, uint8_t file) const override
 	{
 		auto it = pieces.find({rank, file});
 		if (it != pieces.end())
@@ -986,7 +986,8 @@ TEST_F(MovesTest, KingInitialPosition)
 /* Stress test */
 TEST_F(MovesTest, StressTestGenerateMoves)
 {
-	if (!test::CI || std::string(test::CI) != "true")
+	if (!test::getCI() || std::string(test::getCI()) != "true")
+
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}

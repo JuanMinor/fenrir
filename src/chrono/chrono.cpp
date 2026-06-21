@@ -16,6 +16,7 @@
  */
 
 #include "include/chrono/chrono.h"
+#include <sstream>
 
 namespace chrono
 {
@@ -24,13 +25,15 @@ namespace chrono
 
 	tm *Chrono::getLocalTime(time_t *timer) const noexcept
 	{
+		static thread_local tm local_time_buf;
+		time_t temp_timer;
 		if (!timer)
 		{
-			static time_t current_time;
-			current_time = std::time(nullptr);
-			timer = &current_time;
+			temp_timer = std::time(nullptr);
+			timer = &temp_timer;
 		}
-		return std::localtime(timer);
+		localtime_r(timer, &local_time_buf);
+		return &local_time_buf;
 	}
 
 	time_t Chrono::getRawTime(void) const noexcept
@@ -38,9 +41,12 @@ namespace chrono
 		return std::time(nullptr);
 	}
 
-	std::_Put_time<char> Chrono::getTimeWithFormat(const char *format) const
+	std::string Chrono::getTimeWithFormat(const char *format) const
 	{
 		tm *local_time = this->getLocalTime(nullptr);
-		return std::put_time(local_time, format);
+		std::stringstream ss;
+		ss << std::put_time(local_time, format);
+		return ss.str();
 	}
 }
+

@@ -25,6 +25,7 @@ namespace color
 
 	std::ostream &operator<<(std::ostream &os, const Modifier &modifier)
 	{
-		return os << "\033[" << modifier.color << "m";
+		return os << "\033[" << static_cast<int>(modifier.color) << "m";
+
 	}
 }

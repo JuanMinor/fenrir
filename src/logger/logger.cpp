@@ -19,12 +19,12 @@
 
 namespace logger
 {
-	std::unordered_map<uint8_t, const char *> level_types = {
-		{DEBUG, "[DEBUG] - "},
-		{INFO, "[INFO] - "},
-		{WARN, "[WARN] - "},
-		{ERROR, "[ERROR] - "},
-		{CRITICAL, "[CRITICAL] - "}};
+	std::unordered_map<LEVEL, const char *> level_types = {
+		{LEVEL::DEBUG, "[DEBUG] - "},
+		{LEVEL::INFO, "[INFO] - "},
+		{LEVEL::WARN, "[WARN] - "},
+		{LEVEL::ERROR, "[ERROR] - "},
+		{LEVEL::CRITICAL, "[CRITICAL] - "}};
 
 	void rotate_logs()
 	{
@@ -44,16 +44,16 @@ namespace logger
 	Logger::Logger() {}
 	Logger::~Logger() {}
 
-	void Logger::log(const std::string &message, const char *file, const uint32_t &lineNumber, const LEVEL &level) const
+	void Logger::log(const std::string &message, const char *file, uint32_t lineNumber, LEVEL level) const
 	{
-		if (level == DEBUG && !fenrir::DEBUG)
+		if (level == LEVEL::DEBUG && !fenrir::DEBUG)
 		{
 			return;
 		}
 
 		auto timestamp = chrono::Chrono().getTimeWithFormat("%a %b %d, %Y @ %H:%M:%S");
 
-		std::lock_guard<std::mutex> guard(this->log_mutex);
+		std::lock_guard<std::mutex> guard(Logger::log_mutex);
 
 		rotate_logs();
 
@@ -73,4 +73,5 @@ namespace logger
 			// TODO: Handle logging failure (e.g., write to stderr or fallback log file)
 		}
 	}
+
 }

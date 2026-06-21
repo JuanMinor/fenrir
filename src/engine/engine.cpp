@@ -32,7 +32,8 @@ namespace fenrir
 		return board;
 	}
 
-	const std::vector<Move> Engine::generateMoves(const std::string &algebraicAddress) const
+	std::vector<Move> Engine::generateMoves(const std::string &algebraicAddress) const
+
 	{
 		std::vector<Move> moves;
 		uint8_t rank, file;

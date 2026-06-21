@@ -22,15 +22,17 @@ namespace fenrir
 	std::unordered_map<char, uint8_t> values = {
 		{'P', 1}, {'p', 1}, {'N', 3}, {'n', 3}, {'B', 3}, {'b', 3}, {'R', 5}, {'r', 5}, {'Q', 9}, {'q', 9}, {'K', 25}, {'k', 25}};
 
-	Piece::Piece(const char &alias, const uint8_t &rank, const uint8_t &file)
-		: alias(alias),
-		  value(values.at(alias)),
-		  color(std::isupper(alias, std::locale()) ? WHITE : BLACK),
-		  rank(rank),
-		  file(file),
+	Piece::Piece(char pieceAlias, uint8_t pieceRank, uint8_t pieceFile)
+		: alias(pieceAlias),
+		  value(values.at(pieceAlias)),
+		  color(std::isupper(pieceAlias, std::locale()) ? WHITE : BLACK),
+		  rank(pieceRank),
+		  file(pieceFile),
 		  moved(this->hasPieceMoved())
 	{
 	}
+
+
 
 	Piece::~Piece() {}
 
@@ -69,27 +71,29 @@ namespace fenrir
 		return this->value;
 	}
 
-	void Piece::setFile(const uint8_t &file)
+	void Piece::setFile(uint8_t pieceFile)
 	{
-		if (file > 7)
+		if (pieceFile > 7)
 		{
 			LOG_THROW_ERROR("File must be between 1 and 8", true);
 		}
-		this->file = file;
+		this->file = pieceFile;
 	}
 
-	void Piece::setMoved(const bool &moved)
+	void Piece::setMoved(bool hasMoved)
 	{
-		this->moved = moved;
+		this->moved = hasMoved;
 	}
 
-	void Piece::setRank(const uint8_t &rank)
+	void Piece::setRank(uint8_t pieceRank)
 	{
-		if (rank > 7)
+		if (pieceRank > 7)
 		{
 			LOG_THROW_ERROR("Rank must be between 1 and 8", true);
 		}
-		this->rank = rank;
+		this->rank = pieceRank;
 		this->moved = this->hasPieceMoved();
 	}
+
+
 }

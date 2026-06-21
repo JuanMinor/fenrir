@@ -25,13 +25,14 @@ namespace fenrir
 		this->castling = fen.getCastling();
 		this->enPassant = fen.getEnPassant() == "-" ? "" : fen.getEnPassant();
 		this->color = fen.getColor();
-		this->halfMoveClock = fen.getHalfMoveClock();
-		this->fullMoves = fen.getFullMoves();
+		this->halfMoveClock = static_cast<uint8_t>(fen.getHalfMoveClock());
+		this->fullMoves = static_cast<uint8_t>(fen.getFullMoves());
 
 		this->buildBoard(fen.getPlacement());
 
 		logger::INFO("Board initialized with FEN: " + fen.getPlacement());
 	}
+
 
 	/* Private */
 	void Board::buildBoard(const std::string &placement)
@@ -57,13 +58,14 @@ namespace fenrir
 			}
 			if (std::isdigit(c))
 			{
-				uint8_t empties = c - '0';
+				uint8_t empties = static_cast<uint8_t>(c - '0');
 				for (uint8_t j = 0; j < empties; ++j)
 				{
 					this->board[rank][file++] = nullptr;
 				}
 				continue;
 			}
+
 			this->board[rank][file] = std::make_unique<Piece>(c, rank, file);
 			this->logPieceAction("Created", this->board[rank][file].get(), utils::getAlgebraicNotation(rank, file), "✅");
 			++file;
@@ -80,7 +82,7 @@ namespace fenrir
 			uint8_t empty_squares = 0;
 			for (uint8_t file = 0; file < BOARD_SIZE; ++file)
 			{
-				const Piece *piece = this->board[rank][file].get();
+				const Piece *piece = this->board[static_cast<size_t>(rank)][file].get();
 				if (!piece)
 				{
 					++empty_squares;
@@ -99,19 +101,21 @@ namespace fenrir
 			{
 				placement += static_cast<char>('0' + empty_squares);
 			}
-			if (rank)
+			if (rank != 0)
 			{
 				placement += '/';
 			}
+
 		}
 		return placement;
 	}
 
 	void Board::logPieceAction(const std::string &action, const Piece *piece, const std::string &position, const std::string &emoji) const
 	{
-		const std::string color = piece->getColor() == WHITE ? "white" : "black";
+		const std::string colorStr = piece->getColor() == WHITE ? "white" : "black";
 		std::stringstream oss;
-		oss << action << " " << color << " " << PIECE_NAMES.at(std::tolower(piece->getAlias(), std::locale()))
+		oss << action << " " << colorStr << " " << PIECE_NAMES.at(static_cast<char>(std::tolower(piece->getAlias(), std::locale())))
+
 			<< " in position " << position << " " << emoji;
 
 		std::stringstream detailed_oss;
@@ -138,7 +142,7 @@ namespace fenrir
 		return this->enPassant;
 	}
 
-	Piece *Board::getPiece(const uint8_t &rank, const uint8_t &file) const
+	Piece *Board::getPiece(uint8_t rank, uint8_t file) const
 	{
 		if (rank >= BOARD_SIZE || file >= BOARD_SIZE)
 		{
@@ -150,7 +154,7 @@ namespace fenrir
 		return this->board.at(rank).at(file).get();
 	}
 
-	void Board::move(Piece *piece, const uint8_t &rank, const uint8_t &file)
+	void Board::move(Piece *piece, uint8_t rank, uint8_t file)
 	{
 		if (rank >= BOARD_SIZE || file >= BOARD_SIZE)
 		{
@@ -179,10 +183,10 @@ namespace fenrir
 
 		/* En passant logic */
 		this->enPassant = "";
-		if (std::tolower(piece->getAlias()) == 'p' && std::abs(rank - piece->getRank()) == 2)
+		if (std::tolower(piece->getAlias()) == 'p' && std::abs(static_cast<int>(rank) - static_cast<int>(piece->getRank())) == 2)
 		{
 			this->enPassant = std::string(utils::getAlgebraicNotation(
-				(rank + piece->getRank()) / 2,
+				static_cast<uint8_t>((static_cast<int>(rank) + static_cast<int>(piece->getRank())) / 2),
 				piece->getFile()));
 		}
 
@@ -202,11 +206,12 @@ namespace fenrir
 		this->castling = fen.getCastling();
 		this->enPassant = fen.getEnPassant() == "-" ? "" : fen.getEnPassant();
 		this->color = fen.getColor();
-		this->halfMoveClock = fen.getHalfMoveClock();
-		this->fullMoves = fen.getFullMoves();
+		this->halfMoveClock = static_cast<uint8_t>(fen.getHalfMoveClock());
+		this->fullMoves = static_cast<uint8_t>(fen.getFullMoves());
 		this->buildBoard(fen.getPlacement());
 		logger::INFO("Board reset to FEN: " + fenString);
 	}
+
 
 	void Board::print(void) const
 	{
@@ -222,24 +227,27 @@ namespace fenrir
 		std::cout << color::Modifier(color::Color::RESET) << std::endl;
 		for (int i = BOARD_SIZE - 1; i >= 0; i--)
 		{
-			std::cout << color::Modifier(color::Color::FG_YELLOW) << unsigned(i + 1) << " "
+			size_t rankIdx = static_cast<size_t>(i);
+			std::cout << color::Modifier(color::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1) << " "
 					  << color::Modifier(color::Color::RESET);
 			for (uint8_t j = 0; j < BOARD_SIZE; ++j)
 			{
-				if (this->board.at(i).at(j))
+				size_t fileIdx = static_cast<size_t>(j);
+				if (this->board.at(rankIdx).at(fileIdx))
 				{
-					std::cout << color::Modifier(this->board.at(i).at(j)->getColor() == BLACK
+					std::cout << color::Modifier(this->board.at(rankIdx).at(fileIdx)->getColor() == BLACK
 													 ? color::Color::FG_CYAN
 													 : color::Color::RESET)
-							  << this->board.at(i).at(j)->getAlias()
+							  << this->board.at(rankIdx).at(fileIdx)->getAlias()
 							  << color::Modifier(color::Color::RESET) << " ";
 					continue;
 				}
 				std::cout << ". ";
 			}
-			std::cout << color::Modifier(color::Color::FG_YELLOW) << unsigned(i + 1)
+			std::cout << color::Modifier(color::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1)
 					  << color::Modifier(color::Color::RESET) << std::endl;
 		}
+
 		std::cout << "  ";
 		for (uint8_t j = 0; j < BOARD_SIZE; ++j)
 		{

@@ -19,7 +19,8 @@
 
 namespace fenrir
 {
-	Fen::Fen(const std::string &fenString, GameMode gameMode) : gameMode(gameMode)
+	Fen::Fen(const std::string &fenString, GameMode mode) : gameMode(mode)
+
 	{
 		if (fenString.empty())
 		{
@@ -75,12 +76,12 @@ namespace fenrir
 		return;
 	}
 
-	void Fen::validateChessRules(const std::string &placement) const
+	void Fen::validateChessRules(const std::string &placementString) const
 	{
 		std::unordered_map<char, uint8_t> piece_counts = {
 			{'K', 0}, {'k', 0}, {'Q', 0}, {'q', 0}, {'R', 0}, {'r', 0}, {'B', 0}, {'b', 0}, {'N', 0}, {'n', 0}, {'P', 0}, {'p', 0}};
 
-		for (char c : placement)
+		for (char c : placementString)
 		{
 			if (isalpha(c))
 			{
@@ -97,11 +98,12 @@ namespace fenrir
 		}
 
 		std::vector<std::string> ranks;
-		this->splitString(placement, "/", ranks);
+		this->splitString(placementString, "/", ranks);
 
 		this->validatePawnPlacement(ranks);
 		this->validateKingSafety(ranks);
 	}
+
 
 	void Fen::validatePawnPlacement(const std::vector<std::string> &ranks) const
 	{
@@ -130,7 +132,8 @@ namespace fenrir
 		for (int rank = 0; rank < fenrir::BOARD_SIZE; rank++)
 		{
 			int file = 0;
-			for (char c : ranks[rank])
+			for (char c : ranks[static_cast<size_t>(rank)])
+
 			{
 				if (isdigit(c))
 				{
@@ -155,19 +158,20 @@ namespace fenrir
 			}
 		}
 
-		uint8_t rank_diff = abs(white_king_rank - black_king_rank);
-		uint8_t file_diff = abs(white_king_file - black_king_file);
+		uint8_t rank_diff = static_cast<uint8_t>(std::abs(white_king_rank - black_king_rank));
+		uint8_t file_diff = static_cast<uint8_t>(std::abs(white_king_file - black_king_file));
 
 		if (rank_diff <= 1 && file_diff <= 1 && !(rank_diff == 0 && file_diff == 0))
 		{
 			LOG_THROW_ERROR("Invalid FEN: kings cannot be adjacent to each other", true);
 		}
+
 	}
 
-	void Fen::validatePlacement(const std::string &placement) const
+	void Fen::validatePlacement(const std::string &placementString) const
 	{
 		int squares = 0;
-		for (char c : placement)
+		for (char c : placementString)
 		{
 			if (isdigit(c))
 			{
@@ -185,9 +189,10 @@ namespace fenrir
 
 		if (this->gameMode == GameMode::TOURNAMENT)
 		{
-			this->validateChessRules(placement);
+			this->validateChessRules(placementString);
 		}
 	}
+
 
 	std::string Fen::getPlacement(void) const
 	{
@@ -219,70 +224,72 @@ namespace fenrir
 		return this->fullMoves;
 	}
 
-	void Fen::setPlacement(const std::string &placement)
+	void Fen::setPlacement(const std::string &placementString)
 	{
 		std::regex placement_regex(
 			"^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+)$");
 
-		if (!std::regex_match(placement, placement_regex))
+		if (!std::regex_match(placementString, placement_regex))
 		{
-			LOG_THROW_ERROR("Invalid placement section: " + placement, true);
+			LOG_THROW_ERROR("Invalid placement section: " + placementString, true);
 		}
 
-		this->validatePlacement(placement);
-		this->placement = placement;
+		this->validatePlacement(placementString);
+		this->placement = placementString;
 		return;
 	}
 
-	void Fen::setCastling(const std::string &castling)
+	void Fen::setCastling(const std::string &castlingRights)
 	{
-		if (castling != "-" && !std::regex_match(castling, std::regex("^[KQkq]+$")))
+		if (castlingRights != "-" && !std::regex_match(castlingRights, std::regex("^[KQkq]+$")))
 		{
-			LOG_THROW_ERROR("Invalid castling rights: " + castling, true);
+			LOG_THROW_ERROR("Invalid castling rights: " + castlingRights, true);
 		}
-		this->castling = castling;
+		this->castling = castlingRights;
 		return;
 	}
 
-	void Fen::setEnPassant(const std::string &enPassant)
+	void Fen::setEnPassant(const std::string &enPassantSquare)
 	{
-		if (enPassant != "-" && !std::regex_match(enPassant, std::regex("^[a-h][36]$")))
+		if (enPassantSquare != "-" && !std::regex_match(enPassantSquare, std::regex("^[a-h][36]$")))
 		{
-			LOG_THROW_ERROR("Invalid en passant square: " + enPassant, true);
+			LOG_THROW_ERROR("Invalid en passant square: " + enPassantSquare, true);
 		}
-		this->enPassant = enPassant;
+		this->enPassant = enPassantSquare;
 		return;
 	}
 
-	void Fen::setColor(const uint8_t &color)
+	void Fen::setColor(uint8_t colorValue)
 	{
-		if (color != WHITE && color != BLACK)
+		if (colorValue != WHITE && colorValue != BLACK)
 		{
-			LOG_THROW_ERROR("Invalid color value: " + std::to_string(color), true);
+			LOG_THROW_ERROR("Invalid color value: " + std::to_string(colorValue), true);
 		}
-		this->color = color;
+		this->color = colorValue;
 		return;
 	}
 
-	void Fen::setHalfMoveClock(const uint32_t &halfMoveClock)
+	void Fen::setHalfMoveClock(uint32_t halfMoveClockValue)
 	{
-		if (this->gameMode == GameMode::TOURNAMENT && halfMoveClock > 100)
+		if (this->gameMode == GameMode::TOURNAMENT && halfMoveClockValue > 100)
 		{
 			LOG_THROW_ERROR("Invalid half move clock: cannot exceed 100 in tournament mode (50-move rule)", true);
 		}
-		this->halfMoveClock = halfMoveClock;
+		this->halfMoveClock = halfMoveClockValue;
 		return;
 	}
 
-	void Fen::setFullMoves(const uint32_t &fullMoves)
+	void Fen::setFullMoves(uint32_t fullMovesValue)
 	{
-		if (fullMoves == 0)
+		if (fullMovesValue == 0)
 		{
-			LOG_THROW_ERROR("Full moves must be at least 1: " + std::to_string(fullMoves), true);
+			LOG_THROW_ERROR("Full moves must be at least 1: " + std::to_string(fullMovesValue), true);
 		}
-		this->fullMoves = fullMoves;
+		this->fullMoves = fullMovesValue;
 		return;
 	}
+
+
 
 	std::string Fen::generateFen(void) const
 	{

@@ -37,9 +37,10 @@ namespace fenrir
 		Engine(const std::string &fenString = defaultFen);
 		~Engine();
 
-		const std::vector<Move> generateMoves(const std::string &algebraicAddress) const;
+		std::vector<Move> generateMoves(const std::string &algebraicAddress) const;
 		std::string getFen(void);
 		void makeMove(const Move &move);
+
 		void printBoard(void) const;
 		void reset();
 

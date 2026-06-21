@@ -247,12 +247,12 @@ TEST_F(ChronoTest, MultipleCallsConsistency)
 /* Thread safety tests */
 TEST_F(ChronoTest, ThreadSafetyMultipleThreads)
 {
-	const int num_threads = 10;
+	const size_t num_threads = 10;
 	const int calls_per_thread = 100;
 	std::vector<std::thread> threads;
 	std::vector<std::vector<time_t>> results(num_threads);
 
-	for (int i = 0; i < num_threads; ++i)
+	for (size_t i = 0; i < num_threads; ++i)
 	{
 		threads.emplace_back([this, i, calls_per_thread, &results]()
 							 {
@@ -274,7 +274,7 @@ TEST_F(ChronoTest, ThreadSafetyMultipleThreads)
 		thread.join();
 	}
 
-	for (int i = 0; i < num_threads; ++i)
+	for (size_t i = 0; i < num_threads; ++i)
 	{
 		EXPECT_EQ(results[i].size(), static_cast<size_t>(calls_per_thread));
 
@@ -382,7 +382,8 @@ TEST_F(ChronoTest, FormatStringValidation)
 /* Stress test */
 TEST_F(ChronoTest, StressTest)
 {
-	if (!test::CI || std::string(test::CI) != "true")
+	if (!test::getCI() || std::string(test::getCI()) != "true")
+
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}
