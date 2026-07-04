@@ -34,4 +34,3 @@ namespace chrono
 		std::string get_time_with_format(const char *format) const;
 	};
 }
-

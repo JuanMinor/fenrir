@@ -100,7 +100,6 @@ namespace fenrir
 		this->validate_king_safety(ranks);
 	}
 
-
 	void Fen::validate_pawn_placement(const std::vector<std::string> &ranks) const
 	{
 		for (char c : ranks[0])
@@ -161,7 +160,6 @@ namespace fenrir
 		{
 			LOG_THROW_ERROR("Invalid FEN: kings cannot be adjacent to each other", true);
 		}
-
 	}
 
 	void Fen::validate_placement(const std::string &placement_string) const
@@ -185,7 +183,6 @@ namespace fenrir
 
 		this->validate_chess_rules(placement_string);
 	}
-
 
 	std::string Fen::get_placement(void) const
 	{
@@ -281,8 +278,6 @@ namespace fenrir
 		this->full_moves = full_moves_value;
 		return;
 	}
-
-
 
 	std::string Fen::generate_fen(void) const
 	{

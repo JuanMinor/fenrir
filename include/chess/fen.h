@@ -64,6 +64,5 @@ namespace fenrir
 		void set_full_moves(uint32_t full_moves_value);
 
 		std::string generate_fen(void) const;
-
 	};
 }

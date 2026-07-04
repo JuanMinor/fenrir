@@ -64,7 +64,6 @@ namespace utils
 		int black_extra_bishops = std::max(0, static_cast<int>(piece_counts.at('b')) - 2);
 		int black_extra_knights = std::max(0, static_cast<int>(piece_counts.at('n')) - 2);
 
-
 		int black_promoted_pieces = black_extra_queens + black_extra_rooks + black_extra_bishops + black_extra_knights;
 		int black_missing_pawns = 8 - static_cast<int>(piece_counts.at('p'));
 
@@ -72,7 +71,6 @@ namespace utils
 		{
 			return false;
 		}
-
 
 		return true;
 	}
@@ -104,15 +102,12 @@ namespace utils
 		}
 	}
 
-
-
 	void parse_algebraic_notation(const std::string &algebraic_notation, uint8_t &rank, uint8_t &file)
 	{
 		if (algebraic_notation.empty() || algebraic_notation.length() != 2U || !std::isalpha(algebraic_notation[0]) || !std::isdigit(algebraic_notation[1]))
 		{
 			LOG_THROW_ERROR("Invalid algebraic notation", true);
 		}
-
 
 		int f = std::tolower(algebraic_notation[0]) - 'a';
 		int r = algebraic_notation[1] - '1';

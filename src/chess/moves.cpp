@@ -85,8 +85,8 @@ namespace fenrir
 			/* Check squares between king and rook are empty (d, c, b files) */
 			uint8_t d_file = 3U, c_file = 2U, b_file = 1U;
 			if (board.get_piece(rank, d_file) == '\0' &&
-			    board.get_piece(rank, c_file) == '\0' &&
-			    board.get_piece(rank, b_file) == '\0')
+				board.get_piece(rank, c_file) == '\0' &&
+				board.get_piece(rank, b_file) == '\0')
 			{
 				/* Rook must be present at a-file */
 				char rook_char = is_white ? 'R' : 'r';
@@ -227,7 +227,7 @@ namespace fenrir
 			uint8_t en_passant_rank = 0, en_passant_file = 0;
 			utils::parse_algebraic_notation(en_passant.c_str(), en_passant_rank, en_passant_file);
 			if (en_passant_rank == static_cast<uint8_t>(static_cast<int>(rank) + direction) &&
-			    std::abs(static_cast<int>(en_passant_file) - static_cast<int>(file)) == 1)
+				std::abs(static_cast<int>(en_passant_file) - static_cast<int>(file)) == 1)
 			{
 				char target_piece = board.get_piece(rank, en_passant_file);
 				if (target_piece != '\0' && std::tolower(static_cast<unsigned char>(target_piece)) == 'p')

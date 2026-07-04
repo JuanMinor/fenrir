@@ -40,15 +40,15 @@ namespace fenrir
 	 */
 	struct UndoState
 	{
-		uint64_t bitboards[12];       // full snapshot of all 12 bitboards
+		uint64_t bitboards[12]; // full snapshot of all 12 bitboards
 		uint64_t white_occupancy;
 		uint64_t black_occupancy;
 		uint64_t combined_occupancy;
-		uint8_t  castling_rights;
-		uint8_t  en_passant_square;    // 64 = none
-		uint8_t  color;
-		uint8_t  half_move_clock;
-		uint8_t  full_moves;
+		uint8_t castling_rights;
+		uint8_t en_passant_square; // 64 = none
+		uint8_t color;
+		uint8_t half_move_clock;
+		uint8_t full_moves;
 	};
 
 	/**
@@ -70,8 +70,8 @@ namespace fenrir
 		uint64_t black_occupancy;
 		uint64_t combined_occupancy;
 
-		uint8_t  castling_rights;
-		uint8_t  en_passant_square;    // 64 = none
+		uint8_t castling_rights;
+		uint8_t en_passant_square; // 64 = none
 
 		mutable std::string castling_str;
 		mutable std::string en_passant_str;
@@ -87,19 +87,32 @@ namespace fenrir
 		{
 			switch (alias)
 			{
-				case 'P': return 0;
-				case 'N': return 1;
-				case 'B': return 2;
-				case 'R': return 3;
-				case 'Q': return 4;
-				case 'K': return 5;
-				case 'p': return 6;
-				case 'n': return 7;
-				case 'b': return 8;
-				case 'r': return 9;
-				case 'q': return 10;
-				case 'k': return 11;
-				default: return -1;
+			case 'P':
+				return 0;
+			case 'N':
+				return 1;
+			case 'B':
+				return 2;
+			case 'R':
+				return 3;
+			case 'Q':
+				return 4;
+			case 'K':
+				return 5;
+			case 'p':
+				return 6;
+			case 'n':
+				return 7;
+			case 'b':
+				return 8;
+			case 'r':
+				return 9;
+			case 'q':
+				return 10;
+			case 'k':
+				return 11;
+			default:
+				return -1;
 			}
 		}
 

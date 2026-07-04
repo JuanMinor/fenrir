@@ -25,12 +25,15 @@
 #include "include/core/core.h"
 #include "include/utils/utils.h"
 
-namespace fenrir {
-	class Piece {
+namespace fenrir
+{
+	class Piece
+	{
 	private:
 		char alias;
 		uint8_t rank;
 		uint8_t file;
+
 	public:
 		Piece(char a, uint8_t r, uint8_t f) : alias(a), rank(r), file(f) {}
 		char getAlias() const { return alias; }
@@ -41,14 +44,18 @@ namespace fenrir {
 
 	using RealMoves = Moves;
 
-	class MovesWrapper {
+	class MovesWrapper
+	{
 	public:
-		static MovesWrapper& get_instance() {
+		static MovesWrapper &get_instance()
+		{
 			static MovesWrapper instance;
 			return instance;
 		}
-		void generate_moves(const Piece* piece, const AbstractBoard& board, std::vector<Move>& moves) const {
-			if (!piece) {
+		void generate_moves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
+		{
+			if (!piece)
+			{
 				logger::ERROR("Piece is null. Moves cannot be generated 😢");
 				return;
 			}
@@ -133,7 +140,8 @@ public:
 
 	uint64_t get_en_passant_bb(void) const override
 	{
-		if (en_passant.empty()) return 0ULL;
+		if (en_passant.empty())
+			return 0ULL;
 		uint8_t epRank = 0, epFile = 0;
 		utils::parse_algebraic_notation(en_passant.c_str(), epRank, epFile);
 		return (1ULL << (epRank * 8 + epFile));
@@ -165,7 +173,6 @@ public:
 		castling = c;
 	}
 };
-
 
 class MovesTest : public ::testing::Test
 {
@@ -1201,7 +1208,7 @@ TEST_F(MovesTest, CastlingNoCastlingRights)
 	MockBoard board;
 	board.addPiece(0, 4, 'K'); /* e1 */
 	board.addPiece(0, 7, 'R'); /* h1 */
-	board.set_castling("-");    /* no castling rights */
+	board.set_castling("-");   /* no castling rights */
 
 	std::vector<fenrir::Move> moves;
 	fenrir::RealMoves::generate_moves(0, 4, board, moves);
@@ -1327,10 +1334,14 @@ TEST_F(MovesTest, Promotion_WhitePawnAtRank6)
 		if (m.get_move_type() == fenrir::MoveType::PROMOTION)
 		{
 			char p = m.get_promotion_piece();
-			if (p == 'Q') hasQ = true;
-			if (p == 'R') hasR = true;
-			if (p == 'B') hasB = true;
-			if (p == 'N') hasN = true;
+			if (p == 'Q')
+				hasQ = true;
+			if (p == 'R')
+				hasR = true;
+			if (p == 'B')
+				hasB = true;
+			if (p == 'N')
+				hasN = true;
 		}
 	}
 	EXPECT_TRUE(hasQ);
@@ -1361,9 +1372,9 @@ TEST_F(MovesTest, Promotion_BlackPawnAtRank1)
 TEST_F(MovesTest, Promotion_CapturePromotion)
 {
 	MockBoard board;
-	board.addPiece(6, 4, 'P');  /* White pawn at e7 */
-	board.addPiece(7, 3, 'r');  /* Black rook at d8 */
-	board.addPiece(7, 5, 'n');  /* Black knight at f8 */
+	board.addPiece(6, 4, 'P'); /* White pawn at e7 */
+	board.addPiece(7, 3, 'r'); /* Black rook at d8 */
+	board.addPiece(7, 5, 'n'); /* Black knight at f8 */
 
 	std::vector<fenrir::Move> moves;
 	fenrir::RealMoves::generate_moves(6, 4, board, moves);

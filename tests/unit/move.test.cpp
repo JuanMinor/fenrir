@@ -347,4 +347,3 @@ TEST_F(MoveTest, ConstructorSquareIndexAndPromotion)
 	EXPECT_EQ(move.get_promotion_piece(), 'Q');
 	EXPECT_EQ(move.get_move_type(), MoveType::PROMOTION);
 }
-

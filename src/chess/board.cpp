@@ -33,10 +33,14 @@ namespace fenrir
 
 		std::string fen_castling = fen.get_castling();
 		this->castling_rights = 0;
-		if (fen_castling.find('K') != std::string::npos) this->castling_rights |= CASTLE_K;
-		if (fen_castling.find('Q') != std::string::npos) this->castling_rights |= CASTLE_Q;
-		if (fen_castling.find('k') != std::string::npos) this->castling_rights |= CASTLE_k;
-		if (fen_castling.find('q') != std::string::npos) this->castling_rights |= CASTLE_q;
+		if (fen_castling.find('K') != std::string::npos)
+			this->castling_rights |= CASTLE_K;
+		if (fen_castling.find('Q') != std::string::npos)
+			this->castling_rights |= CASTLE_Q;
+		if (fen_castling.find('k') != std::string::npos)
+			this->castling_rights |= CASTLE_k;
+		if (fen_castling.find('q') != std::string::npos)
+			this->castling_rights |= CASTLE_q;
 
 		std::string fen_ep = fen.get_en_passant();
 		if (fen_ep == "-" || fen_ep.empty())
@@ -149,8 +153,6 @@ namespace fenrir
 		return placement;
 	}
 
-
-
 	std::string Board::get_fen(void)
 	{
 		fen.set_placement(this->generate_placement_from_board());
@@ -187,10 +189,14 @@ namespace fenrir
 		if (this->castling_dirty)
 		{
 			this->castling_str = "";
-			if (this->castling_rights & CASTLE_K) this->castling_str += 'K';
-			if (this->castling_rights & CASTLE_Q) this->castling_str += 'Q';
-			if (this->castling_rights & CASTLE_k) this->castling_str += 'k';
-			if (this->castling_rights & CASTLE_q) this->castling_str += 'q';
+			if (this->castling_rights & CASTLE_K)
+				this->castling_str += 'K';
+			if (this->castling_rights & CASTLE_Q)
+				this->castling_str += 'Q';
+			if (this->castling_rights & CASTLE_k)
+				this->castling_str += 'k';
+			if (this->castling_rights & CASTLE_q)
+				this->castling_str += 'q';
 			if (this->castling_str.empty())
 			{
 				this->castling_str = "-";
@@ -217,7 +223,7 @@ namespace fenrir
 			{
 				if (test_bit(this->bitboards[i], square_idx))
 				{
-					static const char aliases[6] = { 'P', 'N', 'B', 'R', 'Q', 'K' };
+					static const char aliases[6] = {'P', 'N', 'B', 'R', 'Q', 'K'};
 					return aliases[i];
 				}
 			}
@@ -228,7 +234,7 @@ namespace fenrir
 			{
 				if (test_bit(this->bitboards[i], square_idx))
 				{
-					static const char aliases[6] = { 'p', 'n', 'b', 'r', 'q', 'k' };
+					static const char aliases[6] = {'p', 'n', 'b', 'r', 'q', 'k'};
 					return aliases[i - 6];
 				}
 			}
@@ -248,13 +254,17 @@ namespace fenrir
 	void Board::reset(const std::string &fen_string)
 	{
 		this->fen = Fen(fen_string);
-		
+
 		std::string fen_castling = fen.get_castling();
 		this->castling_rights = 0;
-		if (fen_castling.find('K') != std::string::npos) this->castling_rights |= CASTLE_K;
-		if (fen_castling.find('Q') != std::string::npos) this->castling_rights |= CASTLE_Q;
-		if (fen_castling.find('k') != std::string::npos) this->castling_rights |= CASTLE_k;
-		if (fen_castling.find('q') != std::string::npos) this->castling_rights |= CASTLE_q;
+		if (fen_castling.find('K') != std::string::npos)
+			this->castling_rights |= CASTLE_K;
+		if (fen_castling.find('Q') != std::string::npos)
+			this->castling_rights |= CASTLE_Q;
+		if (fen_castling.find('k') != std::string::npos)
+			this->castling_rights |= CASTLE_k;
+		if (fen_castling.find('q') != std::string::npos)
+			this->castling_rights |= CASTLE_q;
 
 		std::string fen_ep = fen.get_en_passant();
 		if (fen_ep == "-" || fen_ep.empty())
@@ -333,21 +343,21 @@ namespace fenrir
 		{
 			state.bitboards[i] = this->bitboards[i];
 		}
-		state.white_occupancy   = this->white_occupancy;
-		state.black_occupancy   = this->black_occupancy;
+		state.white_occupancy = this->white_occupancy;
+		state.black_occupancy = this->black_occupancy;
 		state.combined_occupancy = this->combined_occupancy;
-		state.castling_rights   = this->castling_rights;
-		state.en_passant_square  = this->en_passant_square;
-		state.color             = this->color;
-		state.half_move_clock     = this->half_move_clock;
-		state.full_moves         = this->full_moves;
+		state.castling_rights = this->castling_rights;
+		state.en_passant_square = this->en_passant_square;
+		state.color = this->color;
+		state.half_move_clock = this->half_move_clock;
+		state.full_moves = this->full_moves;
 
 		uint8_t from_sq = move.get_from_square();
-		uint8_t to_sq   = move.get_to_square();
+		uint8_t to_sq = move.get_to_square();
 		uint8_t from_rank = static_cast<uint8_t>(from_sq / 8);
 		uint8_t from_file = static_cast<uint8_t>(from_sq % 8);
-		uint8_t to_rank   = static_cast<uint8_t>(to_sq / 8);
-		uint8_t to_file   = static_cast<uint8_t>(to_sq % 8);
+		uint8_t to_rank = static_cast<uint8_t>(to_sq / 8);
+		uint8_t to_file = static_cast<uint8_t>(to_sq % 8);
 
 		char active_piece = this->get_piece(from_rank, from_file);
 		if (active_piece == '\0')
@@ -410,7 +420,7 @@ namespace fenrir
 		{
 			/* Move rook: h-file to f-file */
 			uint8_t rook_from_sq = static_cast<uint8_t>(from_rank * 8 + 7); // h-file
-			uint8_t rook_to_sq   = static_cast<uint8_t>(from_rank * 8 + 5); // f-file
+			uint8_t rook_to_sq = static_cast<uint8_t>(from_rank * 8 + 5);	// f-file
 			char rook_char = active_is_white ? 'R' : 'r';
 			int rook_bb_idx = get_bitboard_index(rook_char);
 			if (rook_bb_idx >= 0)
@@ -433,7 +443,7 @@ namespace fenrir
 		{
 			/* Move rook: a-file to d-file */
 			uint8_t rook_from_sq = static_cast<uint8_t>(from_rank * 8 + 0); // a-file
-			uint8_t rook_to_sq   = static_cast<uint8_t>(from_rank * 8 + 3); // d-file
+			uint8_t rook_to_sq = static_cast<uint8_t>(from_rank * 8 + 3);	// d-file
 			char rook_char = active_is_white ? 'R' : 'r';
 			int rook_bb_idx = get_bitboard_index(rook_char);
 			if (rook_bb_idx >= 0)
@@ -530,7 +540,7 @@ namespace fenrir
 
 		/* Set en passant square for double pawn pushes */
 		if (std::tolower(static_cast<unsigned char>(active_piece)) == 'p' &&
-		    std::abs(static_cast<int>(to_rank) - static_cast<int>(from_rank)) == 2)
+			std::abs(static_cast<int>(to_rank) - static_cast<int>(from_rank)) == 2)
 		{
 			this->en_passant_square = static_cast<uint8_t>(((static_cast<int>(to_rank) + static_cast<int>(from_rank)) / 2) * 8 + from_file);
 			this->en_passant_dirty = true;
@@ -557,7 +567,8 @@ namespace fenrir
 			/* White kingside rook at h1 (sq 7) */
 			if (from_sq == 7 || to_sq == 7)
 			{
-				if (this->castling_rights & CASTLE_K) {
+				if (this->castling_rights & CASTLE_K)
+				{
 					this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~CASTLE_K);
 					this->castling_dirty = true;
 				}
@@ -565,7 +576,8 @@ namespace fenrir
 			/* White queenside rook at a1 (sq 0) */
 			if (from_sq == 0 || to_sq == 0)
 			{
-				if (this->castling_rights & CASTLE_Q) {
+				if (this->castling_rights & CASTLE_Q)
+				{
 					this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~CASTLE_Q);
 					this->castling_dirty = true;
 				}
@@ -573,7 +585,8 @@ namespace fenrir
 			/* Black kingside rook at h8 (sq 63) */
 			if (from_sq == 63 || to_sq == 63)
 			{
-				if (this->castling_rights & CASTLE_k) {
+				if (this->castling_rights & CASTLE_k)
+				{
 					this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~CASTLE_k);
 					this->castling_dirty = true;
 				}
@@ -581,7 +594,8 @@ namespace fenrir
 			/* Black queenside rook at a8 (sq 56) */
 			if (from_sq == 56 || to_sq == 56)
 			{
-				if (this->castling_rights & CASTLE_q) {
+				if (this->castling_rights & CASTLE_q)
+				{
 					this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~CASTLE_q);
 					this->castling_dirty = true;
 				}
@@ -595,7 +609,7 @@ namespace fenrir
 
 		/* Update move clocks */
 		if (std::tolower(static_cast<unsigned char>(active_piece)) == 'p' ||
-		    mt == MoveType::CAPTURE || mt == MoveType::EN_PASSANT || mt == MoveType::PROMOTION)
+			mt == MoveType::CAPTURE || mt == MoveType::EN_PASSANT || mt == MoveType::PROMOTION)
 		{
 			this->half_move_clock = 0;
 		}
@@ -618,16 +632,16 @@ namespace fenrir
 		{
 			this->bitboards[i] = state.bitboards[i];
 		}
-		this->white_occupancy    = state.white_occupancy;
-		this->black_occupancy    = state.black_occupancy;
+		this->white_occupancy = state.white_occupancy;
+		this->black_occupancy = state.black_occupancy;
 		this->combined_occupancy = state.combined_occupancy;
-		this->castling_rights    = state.castling_rights;
-		this->en_passant_square  = state.en_passant_square;
-		this->castling_dirty     = true;
-		this->en_passant_dirty    = true;
-		this->color              = state.color;
-		this->half_move_clock      = state.half_move_clock;
-		this->full_moves          = state.full_moves;
+		this->castling_rights = state.castling_rights;
+		this->en_passant_square = state.en_passant_square;
+		this->castling_dirty = true;
+		this->en_passant_dirty = true;
+		this->color = state.color;
+		this->half_move_clock = state.half_move_clock;
+		this->full_moves = state.full_moves;
 	}
 
 	/* =========================================================
@@ -638,12 +652,12 @@ namespace fenrir
 	{
 		/* Piece bitboard indices for the attacker */
 		/* White: P=0,N=1,B=2,R=3,Q=4,K=5 | Black: p=6,n=7,b=8,r=9,q=10,k=11 */
-		int pawn_idx   = (attacker_color == WHITE) ? 0 : 6;
+		int pawn_idx = (attacker_color == WHITE) ? 0 : 6;
 		int knight_idx = (attacker_color == WHITE) ? 1 : 7;
 		int bishop_idx = (attacker_color == WHITE) ? 2 : 8;
-		int rook_idx   = (attacker_color == WHITE) ? 3 : 9;
-		int queen_idx  = (attacker_color == WHITE) ? 4 : 10;
-		int king_idx   = (attacker_color == WHITE) ? 5 : 11;
+		int rook_idx = (attacker_color == WHITE) ? 3 : 9;
+		int queen_idx = (attacker_color == WHITE) ? 4 : 10;
+		int king_idx = (attacker_color == WHITE) ? 5 : 11;
 
 		/* Pawn attacks: the square is attacked by a pawn of attacker_color
 		   if there's a pawn on one of the squares that would attack 'square'.
