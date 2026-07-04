@@ -21,18 +21,72 @@
 #include "include/chess/moves.h"
 #include "include/chess/move.h"
 #include "include/chess/board.h"
-#include "include/chess/piece.h"
+#include "include/chess/attacks.h"
 #include "include/core/core.h"
+#include "include/utils/utils.h"
+
+namespace fenrir
+{
+	class Piece
+	{
+	private:
+		char alias;
+		uint8_t rank;
+		uint8_t file;
+
+	public:
+		Piece(char a, uint8_t r, uint8_t f) : alias(a), rank(r), file(f) {}
+		char getAlias() const { return alias; }
+		uint8_t getRank() const { return rank; }
+		uint8_t getFile() const { return file; }
+		uint8_t get_color() const { return std::isupper(static_cast<unsigned char>(alias)) ? WHITE : BLACK; }
+	};
+
+	using RealMoves = Moves;
+
+	class MovesWrapper
+	{
+	public:
+		static MovesWrapper &get_instance()
+		{
+			static MovesWrapper instance;
+			return instance;
+		}
+		void generate_moves(const Piece *piece, const AbstractBoard &board, std::vector<Move> &moves) const
+		{
+			if (!piece)
+			{
+				logger::ERROR("Piece is null. Moves cannot be generated 😢");
+				return;
+			}
+			RealMoves::generate_moves(piece->getRank(), piece->getFile(), board, moves);
+		}
+	};
+}
+
+#define Moves MovesWrapper
 
 class MockBoard : public fenrir::AbstractBoard
 {
 public:
 	std::map<std::pair<uint8_t, uint8_t>, std::unique_ptr<fenrir::Piece>> pieces;
-	std::string enPassant;
+	std::string en_passant;
+	std::string castling;
+	uint8_t color_to_move;
 
-	MockBoard() : enPassant("") {}
+	MockBoard() : en_passant(""), castling("KQkq"), color_to_move(fenrir::WHITE) {}
 
-	fenrir::Piece *getPiece(const uint8_t &rank, const uint8_t &file) const override
+	char get_piece(uint8_t rank, uint8_t file) const override
+	{
+		auto it = pieces.find({rank, file});
+		if (it != pieces.end())
+		{
+			return it->second->getAlias();
+		}
+		return '\0';
+	}
+
+	fenrir::Piece *getPiecePtr(uint8_t rank, uint8_t file) const
 	{
 		auto it = pieces.find({rank, file});
 		if (it != pieces.end())
@@ -42,9 +96,65 @@ public:
 		return nullptr;
 	}
 
-	const std::string &getEnPassant(void) const override
+	const std::string &get_en_passant(void) const override
 	{
-		return enPassant;
+		return en_passant;
+	}
+
+	uint8_t get_color(void) const override
+	{
+		return color_to_move;
+	}
+
+	const std::string &get_castling_rights(void) const override
+	{
+		return castling;
+	}
+
+	uint64_t get_occupancy(uint8_t clr) const override
+	{
+		uint64_t occ = 0ULL;
+		for (const auto &kv : pieces)
+		{
+			char alias = kv.second->getAlias();
+			bool is_white = std::isupper(static_cast<unsigned char>(alias));
+			if ((clr == fenrir::WHITE) == is_white)
+			{
+				uint8_t sq = static_cast<uint8_t>(kv.first.first * 8 + kv.first.second);
+				occ |= (1ULL << sq);
+			}
+		}
+		return occ;
+	}
+
+	uint64_t get_combined_occupancy(void) const override
+	{
+		uint64_t occ = 0ULL;
+		for (const auto &kv : pieces)
+		{
+			uint8_t sq = static_cast<uint8_t>(kv.first.first * 8 + kv.first.second);
+			occ |= (1ULL << sq);
+		}
+		return occ;
+	}
+
+	uint64_t get_en_passant_bb(void) const override
+	{
+		if (en_passant.empty())
+			return 0ULL;
+		uint8_t epRank = 0, epFile = 0;
+		utils::parse_algebraic_notation(en_passant.c_str(), epRank, epFile);
+		return (1ULL << (epRank * 8 + epFile));
+	}
+
+	uint64_t get_bitboard(int /*index*/) const override
+	{
+		return 0ULL; // MockBoard doesn't track per-piece bitboards
+	}
+
+	uint8_t get_half_move_clock(void) const override
+	{
+		return 0;
 	}
 
 	fenrir::Piece *addPiece(uint8_t rank, uint8_t file, char alias)
@@ -53,9 +163,14 @@ public:
 		return pieces[{rank, file}].get();
 	}
 
-	void setEnPassant(const std::string &ep)
+	void set_en_passant(const std::string &ep)
 	{
-		enPassant = ep;
+		en_passant = ep;
+	}
+
+	void set_castling(const std::string &c)
+	{
+		castling = c;
 	}
 };
 
@@ -76,7 +191,7 @@ protected:
 	{
 		for (const auto &move : moves)
 		{
-			if (move.getFrom() == from && move.getTo() == to)
+			if (move.get_from() == from && move.get_to() == to)
 			{
 				return true;
 			}
@@ -90,8 +205,8 @@ std::string MovesTest::standard_position = "";
 /* Singleton tests */
 TEST_F(MovesTest, GetInstance)
 {
-	fenrir::Moves &moves1 = fenrir::Moves::getInstance();
-	fenrir::Moves &moves2 = fenrir::Moves::getInstance();
+	fenrir::Moves &moves1 = fenrir::Moves::get_instance();
+	fenrir::Moves &moves2 = fenrir::Moves::get_instance();
 
 	EXPECT_EQ(&moves1, &moves2);
 }
@@ -103,7 +218,7 @@ TEST_F(MovesTest, WhitePawnSingleMove)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.addPiece(2, 4, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
 
 	EXPECT_FALSE(moves.empty());
 	EXPECT_TRUE(moveExists(moves, "e3", "e4"));
@@ -115,7 +230,7 @@ TEST_F(MovesTest, BlackPawnSingleMove)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.addPiece(3, 3, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
 
 	EXPECT_FALSE(moves.empty());
 	EXPECT_TRUE(moveExists(moves, "d4", "d3"));
@@ -127,7 +242,7 @@ TEST_F(MovesTest, WhitePawnDoubleMove)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.addPiece(1, 4, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
 
 	EXPECT_EQ(moves.size(), 2);
 	EXPECT_TRUE(moveExists(moves, "e2", "e3"));
@@ -140,7 +255,7 @@ TEST_F(MovesTest, BlackPawnDoubleMove)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.addPiece(6, 4, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
 
 	EXPECT_EQ(moves.size(), 2);
 	EXPECT_TRUE(moveExists(moves, "e7", "e6"));
@@ -154,20 +269,32 @@ TEST_F(MovesTest, PawnCapture)
 	const fenrir::Piece *pawn = board.addPiece(3, 2, 'P');
 	board.addPiece(4, 3, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "c4", "d5"));
+}
+
+TEST_F(MovesTest, PawnCaptureLeft)
+{
+	MockBoard board;
+	std::vector<fenrir::Move> moves;
+	const fenrir::Piece *pawn = board.addPiece(3, 2, 'P');
+	board.addPiece(4, 1, 'p');
+
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
+
+	EXPECT_TRUE(moveExists(moves, "c4", "b5"));
 }
 
 TEST_F(MovesTest, EnPassantCapture)
 {
 	MockBoard board;
-	board.setEnPassant("a6");
+	board.set_en_passant("a6");
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.addPiece(4, 1, 'P');
 	board.addPiece(4, 0, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "b5", "a6"));
 }
@@ -179,7 +306,7 @@ TEST_F(MovesTest, BlockedPawn)
 	const fenrir::Piece *pawn = board.addPiece(3, 3, 'P');
 	board.addPiece(4, 3, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
 
 	EXPECT_FALSE(moveExists(moves, "d4", "d5"));
 }
@@ -190,7 +317,7 @@ TEST_F(MovesTest, PawnAtEdge)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.addPiece(7, 0, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
 
 	EXPECT_TRUE(moves.empty());
 }
@@ -201,7 +328,7 @@ TEST_F(MovesTest, NullPiece)
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
 
-	fenrir::Moves::getInstance().generateMoves(nullptr, board, moves);
+	fenrir::Moves::get_instance().generate_moves(nullptr, board, moves);
 
 	EXPECT_TRUE(moves.empty());
 }
@@ -211,9 +338,12 @@ TEST_F(MovesTest, EmptySquare)
 	MockBoard board;
 	std::vector<fenrir::Move> moves;
 
-	const fenrir::Piece *empty = board.getPiece(3, 4);
+	const fenrir::Piece *empty = board.getPiecePtr(3, 4);
 
-	fenrir::Moves::getInstance().generateMoves(empty, board, moves);
+	fenrir::Moves::get_instance().generate_moves(empty, board, moves);
+
+	// Directly invoke real Moves to cover null/empty checks
+	fenrir::RealMoves::generate_moves(3, 4, board, moves);
 
 	EXPECT_TRUE(moves.empty());
 }
@@ -225,7 +355,7 @@ TEST_F(MovesTest, LogGeneratedMoves)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *pawn = board.addPiece(1, 4, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+	fenrir::Moves::get_instance().generate_moves(pawn, board, moves);
 
 	SUCCEED();
 }
@@ -238,7 +368,7 @@ TEST_F(MovesTest, NonPawnPiece)
 	const fenrir::Piece *knight = board.addPiece(0, 1, 'N');
 	board.addPiece(1, 3, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
+	fenrir::Moves::get_instance().generate_moves(knight, board, moves);
 
 	EXPECT_EQ(moves.size(), 2);
 	EXPECT_TRUE(moveExists(moves, "b1", "a3"));
@@ -254,7 +384,7 @@ TEST_F(MovesTest, RookPiece)
 	board.addPiece(1, 0, 'P');
 	board.addPiece(0, 1, 'N');
 
-	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
+	fenrir::Moves::get_instance().generate_moves(rook, board, moves);
 
 	EXPECT_TRUE(moves.empty());
 }
@@ -265,7 +395,7 @@ TEST_F(MovesTest, RookVerticalMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 
-	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
+	fenrir::Moves::get_instance().generate_moves(rook, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "d1"));
 	EXPECT_TRUE(moveExists(moves, "d4", "d2"));
@@ -283,7 +413,7 @@ TEST_F(MovesTest, RookHorizontalMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 
-	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
+	fenrir::Moves::get_instance().generate_moves(rook, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "a4"));
 	EXPECT_TRUE(moveExists(moves, "d4", "b4"));
@@ -302,7 +432,7 @@ TEST_F(MovesTest, RookBlockedByFriendlyPiece)
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 	board.addPiece(4, 3, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
+	fenrir::Moves::get_instance().generate_moves(rook, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "d1"));
 	EXPECT_TRUE(moveExists(moves, "d4", "d2"));
@@ -321,7 +451,7 @@ TEST_F(MovesTest, RookCaptureEnemyPiece)
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 	board.addPiece(4, 3, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
+	fenrir::Moves::get_instance().generate_moves(rook, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "d1"));
 	EXPECT_TRUE(moveExists(moves, "d4", "d2"));
@@ -340,7 +470,7 @@ TEST_F(MovesTest, RookMultipleDirectionBlocking)
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'R');
 	board.addPiece(4, 3, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
+	fenrir::Moves::get_instance().generate_moves(rook, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "d1"));
 	EXPECT_TRUE(moveExists(moves, "d4", "d2"));
@@ -362,7 +492,7 @@ TEST_F(MovesTest, RookCornerPosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *rook = board.addPiece(7, 0, 'R');
 
-	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
+	fenrir::Moves::get_instance().generate_moves(rook, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "a8", "a7"));
 	EXPECT_TRUE(moveExists(moves, "a8", "a6"));
@@ -379,7 +509,7 @@ TEST_F(MovesTest, RookEdgePosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *rook = board.addPiece(3, 0, 'R');
 
-	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
+	fenrir::Moves::get_instance().generate_moves(rook, board, moves);
 
 	EXPECT_EQ(moves.size(), 14);
 	EXPECT_TRUE(moveExists(moves, "a4", "a8"));
@@ -393,7 +523,7 @@ TEST_F(MovesTest, BlackRookMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *rook = board.addPiece(3, 3, 'r');
 
-	fenrir::Moves::getInstance().generateMoves(rook, board, moves);
+	fenrir::Moves::get_instance().generate_moves(rook, board, moves);
 
 	EXPECT_EQ(moves.size(), 14);
 	EXPECT_TRUE(moveExists(moves, "d4", "d1"));
@@ -409,7 +539,7 @@ TEST_F(MovesTest, BishopDiagonalMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *bishop = board.addPiece(3, 3, 'B');
 
-	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
+	fenrir::Moves::get_instance().generate_moves(bishop, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "a1"));
 	EXPECT_TRUE(moveExists(moves, "d4", "b2"));
@@ -435,7 +565,7 @@ TEST_F(MovesTest, BishopBlockedByFriendlyPiece)
 	board.addPiece(4, 2, 'P');
 	board.addPiece(4, 4, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
+	fenrir::Moves::get_instance().generate_moves(bishop, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "a1"));
 	EXPECT_TRUE(moveExists(moves, "d4", "b2"));
@@ -456,7 +586,7 @@ TEST_F(MovesTest, BishopCaptureEnemyPiece)
 	board.addPiece(4, 2, 'p');
 	board.addPiece(4, 4, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
+	fenrir::Moves::get_instance().generate_moves(bishop, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "a1"));
 	EXPECT_TRUE(moveExists(moves, "d4", "b2"));
@@ -477,7 +607,7 @@ TEST_F(MovesTest, BishopCornerPosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *bishop = board.addPiece(7, 0, 'B');
 
-	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
+	fenrir::Moves::get_instance().generate_moves(bishop, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "a8", "b7"));
 	EXPECT_TRUE(moveExists(moves, "a8", "c6"));
@@ -495,7 +625,7 @@ TEST_F(MovesTest, BishopEdgePosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *bishop = board.addPiece(3, 0, 'B');
 
-	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
+	fenrir::Moves::get_instance().generate_moves(bishop, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "a4", "b5"));
 	EXPECT_TRUE(moveExists(moves, "a4", "c6"));
@@ -513,7 +643,7 @@ TEST_F(MovesTest, BlackBishopMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *bishop = board.addPiece(3, 3, 'b');
 
-	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
+	fenrir::Moves::get_instance().generate_moves(bishop, board, moves);
 
 	EXPECT_EQ(moves.size(), 13);
 	EXPECT_TRUE(moveExists(moves, "d4", "a1"));
@@ -529,7 +659,7 @@ TEST_F(MovesTest, QueenCombinedMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *queen = board.addPiece(3, 3, 'Q');
 
-	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
+	fenrir::Moves::get_instance().generate_moves(queen, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "d1"));
 	EXPECT_TRUE(moveExists(moves, "d4", "d8"));
@@ -556,7 +686,7 @@ TEST_F(MovesTest, QueenBlockedByFriendlyPieces)
 	board.addPiece(2, 3, 'P');
 	board.addPiece(2, 4, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
+	fenrir::Moves::get_instance().generate_moves(queen, board, moves);
 
 	EXPECT_TRUE(moves.empty());
 	EXPECT_EQ(moves.size(), 0);
@@ -576,7 +706,7 @@ TEST_F(MovesTest, QueenCaptureEnemyPieces)
 	board.addPiece(2, 3, 'p');
 	board.addPiece(2, 4, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
+	fenrir::Moves::get_instance().generate_moves(queen, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "c3"));
 	EXPECT_TRUE(moveExists(moves, "d4", "c4"));
@@ -595,7 +725,7 @@ TEST_F(MovesTest, QueenCornerPosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *queen = board.addPiece(7, 0, 'Q');
 
-	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
+	fenrir::Moves::get_instance().generate_moves(queen, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "a8", "a1"));
 	EXPECT_TRUE(moveExists(moves, "a8", "h8"));
@@ -609,7 +739,7 @@ TEST_F(MovesTest, BlackQueenMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *queen = board.addPiece(3, 3, 'q');
 
-	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
+	fenrir::Moves::get_instance().generate_moves(queen, board, moves);
 
 	EXPECT_EQ(moves.size(), 27);
 	EXPECT_TRUE(moveExists(moves, "d4", "d1"));
@@ -626,7 +756,7 @@ TEST_F(MovesTest, BishopPiece)
 	board.addPiece(1, 1, 'P');
 	board.addPiece(1, 3, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(bishop, board, moves);
+	fenrir::Moves::get_instance().generate_moves(bishop, board, moves);
 
 	EXPECT_TRUE(moves.empty());
 }
@@ -642,7 +772,7 @@ TEST_F(MovesTest, QueenPiece)
 	board.addPiece(1, 4, 'P');
 	board.addPiece(0, 4, 'K');
 
-	fenrir::Moves::getInstance().generateMoves(queen, board, moves);
+	fenrir::Moves::get_instance().generate_moves(queen, board, moves);
 
 	EXPECT_TRUE(moves.empty());
 }
@@ -654,7 +784,7 @@ TEST_F(MovesTest, KnightLShapeMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *knight = board.addPiece(3, 3, 'N');
 
-	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
+	fenrir::Moves::get_instance().generate_moves(knight, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "f5"));
 	EXPECT_TRUE(moveExists(moves, "d4", "f3"));
@@ -682,7 +812,7 @@ TEST_F(MovesTest, KnightBlockedByFriendlyPieces)
 	board.addPiece(4, 1, 'P');
 	board.addPiece(2, 1, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
+	fenrir::Moves::get_instance().generate_moves(knight, board, moves);
 
 	EXPECT_FALSE(moveExists(moves, "d4", "f5"));
 	EXPECT_FALSE(moveExists(moves, "d4", "f3"));
@@ -709,7 +839,7 @@ TEST_F(MovesTest, KnightCaptureEnemyPieces)
 	board.addPiece(4, 1, 'p');
 	board.addPiece(2, 1, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
+	fenrir::Moves::get_instance().generate_moves(knight, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "f5"));
 	EXPECT_TRUE(moveExists(moves, "d4", "f3"));
@@ -728,7 +858,7 @@ TEST_F(MovesTest, KnightCornerPosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *knight = board.addPiece(7, 0, 'N');
 
-	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
+	fenrir::Moves::get_instance().generate_moves(knight, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "a8", "b6"));
 	EXPECT_TRUE(moveExists(moves, "a8", "c7"));
@@ -741,7 +871,7 @@ TEST_F(MovesTest, KnightEdgePosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *knight = board.addPiece(3, 0, 'N');
 
-	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
+	fenrir::Moves::get_instance().generate_moves(knight, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "a4", "b6"));
 	EXPECT_TRUE(moveExists(moves, "a4", "b2"));
@@ -756,7 +886,7 @@ TEST_F(MovesTest, KnightNearEdgePosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *knight = board.addPiece(3, 1, 'N');
 
-	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
+	fenrir::Moves::get_instance().generate_moves(knight, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "b4", "a6"));
 	EXPECT_TRUE(moveExists(moves, "b4", "a2"));
@@ -773,7 +903,7 @@ TEST_F(MovesTest, BlackKnightMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *knight = board.addPiece(3, 3, 'n');
 
-	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
+	fenrir::Moves::get_instance().generate_moves(knight, board, moves);
 
 	EXPECT_EQ(moves.size(), 8);
 	EXPECT_TRUE(moveExists(moves, "d4", "f5"));
@@ -793,7 +923,7 @@ TEST_F(MovesTest, KnightJumpOverPieces)
 	board.addPiece(2, 3, 'p');
 	board.addPiece(3, 2, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(knight, board, moves);
+	fenrir::Moves::get_instance().generate_moves(knight, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "f5"));
 	EXPECT_TRUE(moveExists(moves, "d4", "f3"));
@@ -817,7 +947,7 @@ TEST_F(MovesTest, KingPiece)
 	board.addPiece(1, 5, 'P');
 	board.addPiece(0, 5, 'B');
 
-	fenrir::Moves::getInstance().generateMoves(king, board, moves);
+	fenrir::Moves::get_instance().generate_moves(king, board, moves);
 
 	EXPECT_EQ(moves.size(), 0);
 }
@@ -828,7 +958,7 @@ TEST_F(MovesTest, KingSingleSquareMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *king = board.addPiece(3, 3, 'K');
 
-	fenrir::Moves::getInstance().generateMoves(king, board, moves);
+	fenrir::Moves::get_instance().generate_moves(king, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "c3"));
 	EXPECT_TRUE(moveExists(moves, "d4", "c4"));
@@ -856,7 +986,7 @@ TEST_F(MovesTest, KingBlockedByFriendlyPieces)
 	board.addPiece(2, 3, 'P');
 	board.addPiece(2, 4, 'P');
 
-	fenrir::Moves::getInstance().generateMoves(king, board, moves);
+	fenrir::Moves::get_instance().generate_moves(king, board, moves);
 
 	EXPECT_EQ(moves.size(), 0);
 }
@@ -875,7 +1005,7 @@ TEST_F(MovesTest, KingCaptureEnemyPieces)
 	board.addPiece(2, 3, 'p');
 	board.addPiece(2, 4, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(king, board, moves);
+	fenrir::Moves::get_instance().generate_moves(king, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "c3"));
 	EXPECT_TRUE(moveExists(moves, "d4", "c4"));
@@ -895,7 +1025,7 @@ TEST_F(MovesTest, KingCornerPosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *king = board.addPiece(0, 0, 'K');
 
-	fenrir::Moves::getInstance().generateMoves(king, board, moves);
+	fenrir::Moves::get_instance().generate_moves(king, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "a1", "a2"));
 	EXPECT_TRUE(moveExists(moves, "a1", "b1"));
@@ -910,7 +1040,7 @@ TEST_F(MovesTest, KingEdgePosition)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *king = board.addPiece(3, 0, 'K');
 
-	fenrir::Moves::getInstance().generateMoves(king, board, moves);
+	fenrir::Moves::get_instance().generate_moves(king, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "a4", "a3"));
 	EXPECT_TRUE(moveExists(moves, "a4", "a5"));
@@ -927,7 +1057,7 @@ TEST_F(MovesTest, BlackKingMovement)
 	std::vector<fenrir::Move> moves;
 	const fenrir::Piece *king = board.addPiece(3, 3, 'k');
 
-	fenrir::Moves::getInstance().generateMoves(king, board, moves);
+	fenrir::Moves::get_instance().generate_moves(king, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "c3"));
 	EXPECT_TRUE(moveExists(moves, "d4", "c4"));
@@ -951,7 +1081,7 @@ TEST_F(MovesTest, KingMixedBlocking)
 	board.addPiece(2, 4, 'P');
 	board.addPiece(4, 2, 'p');
 
-	fenrir::Moves::getInstance().generateMoves(king, board, moves);
+	fenrir::Moves::get_instance().generate_moves(king, board, moves);
 
 	EXPECT_TRUE(moveExists(moves, "d4", "c3"));
 	EXPECT_TRUE(moveExists(moves, "d4", "d3"));
@@ -978,7 +1108,7 @@ TEST_F(MovesTest, KingInitialPosition)
 	board.addPiece(1, 5, 'P');
 	board.addPiece(0, 5, 'B');
 
-	fenrir::Moves::getInstance().generateMoves(king, board, moves);
+	fenrir::Moves::get_instance().generate_moves(king, board, moves);
 
 	EXPECT_EQ(moves.size(), 0);
 }
@@ -986,7 +1116,8 @@ TEST_F(MovesTest, KingInitialPosition)
 /* Stress test */
 TEST_F(MovesTest, StressTestGenerateMoves)
 {
-	if (!test::CI || std::string(test::CI) != "true")
+	if (!test::get_ci() || std::string(test::get_ci()) != "true")
+
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}
@@ -995,11 +1126,331 @@ TEST_F(MovesTest, StressTestGenerateMoves)
 
 	for (int i = 0; i < 100000; i++)
 	{
-		const fenrir::Piece *pawn = board.getPiece(1, 0);
-		if (pawn && pawn->getAlias() == 'P')
+		char pawn = board.get_piece(1, 0);
+		if (pawn == 'P')
 		{
 			std::vector<fenrir::Move> moves;
-			fenrir::Moves::getInstance().generateMoves(pawn, board, moves);
+			fenrir::RealMoves::generate_moves(1, 0, board, moves);
 		}
 	}
+}
+
+/* =====================================================================
+ * New v0.3.0 Moves Tests
+ * ===================================================================== */
+
+TEST_F(MovesTest, CastlingKingside_WhiteKing)
+{
+	MockBoard board;
+	board.addPiece(0, 4, 'K'); /* e1 */
+	board.addPiece(0, 7, 'R'); /* h1 */
+	board.set_castling("KQkq");
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(0, 4, board, moves);
+
+	bool foundKingside = false;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::CASTLE_KINGSIDE)
+		{
+			foundKingside = true;
+		}
+	}
+	EXPECT_TRUE(foundKingside);
+}
+
+TEST_F(MovesTest, CastlingQueenside_WhiteKing)
+{
+	MockBoard board;
+	board.addPiece(0, 4, 'K'); /* e1 */
+	board.addPiece(0, 0, 'R'); /* a1 */
+	board.set_castling("KQkq");
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(0, 4, board, moves);
+
+	bool foundQueenside = false;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::CASTLE_QUEENSIDE)
+		{
+			foundQueenside = true;
+		}
+	}
+	EXPECT_TRUE(foundQueenside);
+}
+
+TEST_F(MovesTest, CastlingBlocked_PieceInPath)
+{
+	MockBoard board;
+	board.addPiece(0, 4, 'K'); /* e1 */
+	board.addPiece(0, 5, 'B'); /* f1 blocks kingside */
+	board.addPiece(0, 7, 'R'); /* h1 */
+	board.set_castling("KQkq");
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(0, 4, board, moves);
+
+	bool foundKingside = false;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::CASTLE_KINGSIDE)
+		{
+			foundKingside = true;
+		}
+	}
+	EXPECT_FALSE(foundKingside);
+}
+
+TEST_F(MovesTest, CastlingNoCastlingRights)
+{
+	MockBoard board;
+	board.addPiece(0, 4, 'K'); /* e1 */
+	board.addPiece(0, 7, 'R'); /* h1 */
+	board.set_castling("-");   /* no castling rights */
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(0, 4, board, moves);
+
+	bool foundCastling = false;
+	for (const auto &m : moves)
+	{
+		if (m.is_castling())
+		{
+			foundCastling = true;
+		}
+	}
+	EXPECT_FALSE(foundCastling);
+}
+
+TEST_F(MovesTest, CastlingBlackKing_Kingside)
+{
+	MockBoard board;
+	board.addPiece(7, 4, 'k'); /* e8 */
+	board.addPiece(7, 7, 'r'); /* h8 */
+	board.set_castling("kq");
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(7, 4, board, moves);
+
+	bool foundKingside = false;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::CASTLE_KINGSIDE)
+		{
+			foundKingside = true;
+		}
+	}
+	EXPECT_TRUE(foundKingside);
+}
+
+TEST_F(MovesTest, CastlingBlackKing_Queenside)
+{
+	MockBoard board;
+	board.addPiece(7, 4, 'k'); /* e8 */
+	board.addPiece(7, 0, 'r'); /* a8 */
+	board.set_castling("kq");
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(7, 4, board, moves);
+
+	bool foundQueenside = false;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::CASTLE_QUEENSIDE)
+		{
+			foundQueenside = true;
+		}
+	}
+	EXPECT_TRUE(foundQueenside);
+}
+
+TEST_F(MovesTest, CastlingKing_NotOnStartSquare)
+{
+	/* King not on e1/e8, no castling generated */
+	MockBoard board;
+	board.addPiece(3, 4, 'K'); /* King on e4 */
+	board.addPiece(3, 7, 'R');
+	board.set_castling("KQkq");
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(3, 4, board, moves);
+
+	bool foundCastling = false;
+	for (const auto &m : moves)
+	{
+		if (m.is_castling())
+		{
+			foundCastling = true;
+		}
+	}
+	EXPECT_FALSE(foundCastling);
+}
+
+TEST_F(MovesTest, CastlingKingside_NoRookPresent)
+{
+	MockBoard board;
+	board.addPiece(0, 4, 'K'); /* e1 */
+	/* No rook at h1 */
+	board.set_castling("KQkq");
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(0, 4, board, moves);
+
+	bool foundKingside = false;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::CASTLE_KINGSIDE)
+		{
+			foundKingside = true;
+		}
+	}
+	EXPECT_FALSE(foundKingside);
+}
+
+TEST_F(MovesTest, Promotion_WhitePawnAtRank6)
+{
+	MockBoard board;
+	board.addPiece(6, 4, 'P'); /* White pawn at e7 (rank 6) */
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(6, 4, board, moves);
+
+	int promotionCount = 0;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::PROMOTION)
+		{
+			promotionCount++;
+		}
+	}
+	EXPECT_EQ(promotionCount, 4);
+
+	/* Verify all 4 pieces */
+	bool hasQ = false, hasR = false, hasB = false, hasN = false;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::PROMOTION)
+		{
+			char p = m.get_promotion_piece();
+			if (p == 'Q')
+				hasQ = true;
+			if (p == 'R')
+				hasR = true;
+			if (p == 'B')
+				hasB = true;
+			if (p == 'N')
+				hasN = true;
+		}
+	}
+	EXPECT_TRUE(hasQ);
+	EXPECT_TRUE(hasR);
+	EXPECT_TRUE(hasB);
+	EXPECT_TRUE(hasN);
+}
+
+TEST_F(MovesTest, Promotion_BlackPawnAtRank1)
+{
+	MockBoard board;
+	board.addPiece(1, 4, 'p'); /* Black pawn at e2 (rank 1) */
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(1, 4, board, moves);
+
+	int promotionCount = 0;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::PROMOTION)
+		{
+			promotionCount++;
+		}
+	}
+	EXPECT_EQ(promotionCount, 4);
+}
+
+TEST_F(MovesTest, Promotion_CapturePromotion)
+{
+	MockBoard board;
+	board.addPiece(6, 4, 'P'); /* White pawn at e7 */
+	board.addPiece(7, 3, 'r'); /* Black rook at d8 */
+	board.addPiece(7, 5, 'n'); /* Black knight at f8 */
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(6, 4, board, moves);
+
+	/* Should have 4 straight promotions + 4 + 4 capture promotions */
+	int promotionCount = 0;
+	for (const auto &m : moves)
+	{
+		if (m.get_move_type() == fenrir::MoveType::PROMOTION)
+		{
+			promotionCount++;
+		}
+	}
+	EXPECT_EQ(promotionCount, 12); /* 4 straight + 4 left capture + 4 right capture */
+}
+
+TEST_F(MovesTest, Promotion_NotAtPromotionRank)
+{
+	MockBoard board;
+	board.addPiece(3, 4, 'P'); /* Pawn at e4, not promotion rank */
+
+	std::vector<fenrir::Move> moves;
+	fenrir::RealMoves::generate_moves(3, 4, board, moves);
+
+	for (const auto &m : moves)
+	{
+		EXPECT_NE(m.get_move_type(), fenrir::MoveType::PROMOTION);
+	}
+}
+
+/* Attacks table tests */
+TEST_F(MovesTest, AttackTables_KnightAttacks)
+{
+	fenrir::init_attack_tables();
+	/* Knight at e4 (rank 3, file 4, sq 28) should attack 8 squares if not on edge */
+	EXPECT_EQ(__builtin_popcountll(fenrir::KNIGHT_ATTACKS[28]), 8);
+}
+
+TEST_F(MovesTest, AttackTables_KingAttacks)
+{
+	fenrir::init_attack_tables();
+	/* King at e4 (sq 28) should attack 8 squares */
+	EXPECT_EQ(__builtin_popcountll(fenrir::KING_ATTACKS[28]), 8);
+}
+
+TEST_F(MovesTest, AttackTables_KingAtCorner)
+{
+	fenrir::init_attack_tables();
+	/* King at a1 (sq 0) should attack 3 squares */
+	EXPECT_EQ(__builtin_popcountll(fenrir::KING_ATTACKS[0]), 3);
+}
+
+TEST_F(MovesTest, AttackTables_PawnAttacks_White)
+{
+	fenrir::init_attack_tables();
+	/* White pawn at e4 (sq 28) attacks d5 (sq 35) and f5 (sq 37) */
+	EXPECT_EQ(__builtin_popcountll(fenrir::PAWN_ATTACKS[fenrir::WHITE][28]), 2);
+}
+
+TEST_F(MovesTest, AttackTables_PawnAttacks_Black)
+{
+	fenrir::init_attack_tables();
+	/* Black pawn at e5 (sq 36) attacks d4 (sq 27) and f4 (sq 29) */
+	EXPECT_EQ(__builtin_popcountll(fenrir::PAWN_ATTACKS[fenrir::BLACK][36]), 2);
+}
+
+TEST_F(MovesTest, AttackTables_RayTable)
+{
+	fenrir::init_attack_tables();
+	/* Ray north from a1 (sq 0) should have 7 squares (a2-a8) */
+	EXPECT_EQ(__builtin_popcountll(fenrir::RAY[0][fenrir::RAY_N]), 7);
+	/* Ray east from a1 should have 7 squares (b1-h1) */
+	EXPECT_EQ(__builtin_popcountll(fenrir::RAY[0][fenrir::RAY_E]), 7);
+	/* Ray northeast from a1 should have 7 squares (b2-h8) */
+	EXPECT_EQ(__builtin_popcountll(fenrir::RAY[0][fenrir::RAY_NE]), 7);
+	/* No rays south/west/southwest from a1 */
+	EXPECT_EQ(__builtin_popcountll(fenrir::RAY[0][fenrir::RAY_S]), 0);
+	EXPECT_EQ(__builtin_popcountll(fenrir::RAY[0][fenrir::RAY_W]), 0);
 }

@@ -26,32 +26,32 @@ int main(int argc, char *argv[])
 	try
 	{
 		fenrir::Engine engine = fenrir::Engine();
-		engine.printBoard();
-		engine.makeMove(fenrir::Move("b2", "b4", fenrir::MoveType::NORMAL));
-		engine.makeMove(fenrir::Move("b8", "c6", fenrir::MoveType::NORMAL));
-		engine.makeMove(fenrir::Move("d2", "d3", fenrir::MoveType::NORMAL));
-		engine.makeMove(fenrir::Move("a7", "a5", fenrir::MoveType::NORMAL));
-		engine.printBoard();
+		engine.print_board();
+		engine.make_move(fenrir::Move("b2", "b4"));
+		engine.make_move(fenrir::Move("b8", "c6"));
+		engine.make_move(fenrir::Move("d2", "d3"));
+		engine.make_move(fenrir::Move("a7", "a5"));
+		engine.print_board();
 
 		engine.reset();
-		engine.printBoard();
+		engine.print_board();
 
 		// test rook moves
 		// engine.make_move("a2", "b3");
-		engine.makeMove(fenrir::Move("a2", "b3", fenrir::MoveType::NORMAL));
-		engine.printBoard();
+		engine.make_move(fenrir::Move("a2", "b3"));
+		engine.print_board();
 
 		// move generation
-		const std::vector<fenrir::Move> moves = engine.generateMoves("a1");
+		const std::vector<fenrir::Move> moves = engine.generate_moves("a1");
 
 		std::cout << "Generated moves for piece" << std::endl;
 		for (const auto &move : moves)
 		{
-			std::cout << move.getFrom() << " -> " << move.getTo() << std::endl;
+			std::cout << move.get_from() << " -> " << move.get_to() << std::endl;
 		}
 		std::cout << "Total moves: " << moves.size() << std::endl;
 		engine.reset();
-		engine.printBoard();
+		engine.print_board();
 	}
 	catch (const std::exception &e)
 	{

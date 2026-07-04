@@ -1,18 +1,18 @@
 /*
  *   Copyright (c) 2025 Juan Minor
-
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
-
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https:
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <gtest/gtest.h>
@@ -40,69 +40,70 @@ std::string FenTest::test_fen_string = "";
 TEST_F(FenTest, ParsePlacement)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_EQ(fen.getPlacement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+	EXPECT_EQ(fen.get_placement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
 }
 
 TEST_F(FenTest, ParseColor)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
+	EXPECT_EQ(fen.get_color(), fenrir::WHITE);
 }
 
 TEST_F(FenTest, ParseCastling)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_EQ(fen.getCastling(), "KQkq");
+	EXPECT_EQ(fen.get_castling(), "KQkq");
 }
 
 TEST_F(FenTest, ParseEnPassant)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_EQ(fen.getEnPassant(), "-");
+	EXPECT_EQ(fen.get_en_passant(), "-");
 }
 
 TEST_F(FenTest, ParseHalfmoveClock)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_EQ(fen.getHalfMoveClock(), 0);
+	EXPECT_EQ(fen.get_half_move_clock(), 0);
 }
 
 TEST_F(FenTest, ParseFullmoves)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_EQ(fen.getFullMoves(), 1);
+	EXPECT_EQ(fen.get_full_moves(), 1);
 }
 
 /* Invalid arguments */
 TEST_F(FenTest, InvalidFenStringThrows)
 {
-	EXPECT_THROW(fenrir::Fen("invalid_fen_string"), std::runtime_error);
-	EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"), std::runtime_error);
-	EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w X - 0 1"), std::runtime_error);
-	EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1"), std::runtime_error);
-	EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1x"), std::runtime_error);
-	EXPECT_THROW(fenrir::Fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq z3 0 1"), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{"invalid_fen_string"}, std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq"}, std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w X - 0 1"}, std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1"}, std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1x"}, std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq z3 0 1"}, std::runtime_error);
 }
 
 /* Edge cases */
 TEST_F(FenTest, NoCastlingRights)
 {
 	fenrir::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w - - 0 1");
-	EXPECT_EQ(fen.getCastling(), "-");
+	EXPECT_EQ(fen.get_castling(), "-");
 }
 
+/* EnPassantSquareSet */
 TEST_F(FenTest, EnPassantSquareSet)
 {
 	fenrir::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1");
-	EXPECT_EQ(fen.getEnPassant(), "e3");
+	EXPECT_EQ(fen.get_en_passant(), "e3");
 }
 
 /* Boundary values */
 TEST_F(FenTest, BoundaryValues)
 {
-	fenrir::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 255 255");
-	EXPECT_EQ(fen.getHalfMoveClock(), 255);
-	EXPECT_EQ(fen.getFullMoves(), 255);
+	fenrir::Fen fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 100 255");
+	EXPECT_EQ(fen.get_half_move_clock(), 100);
+	EXPECT_EQ(fen.get_full_moves(), 255);
 }
 
 /* Memory management */
@@ -115,7 +116,7 @@ TEST_F(FenTest, DestructorCleansUpMemory)
 /* Stress test */
 TEST_F(FenTest, StressTest)
 {
-	if (!test::CI || std::string(test::CI) != "true")
+	if (!test::get_ci() || std::string(test::get_ci()) != "true")
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}
@@ -123,423 +124,344 @@ TEST_F(FenTest, StressTest)
 	for (int i = 0; i < 100000; ++i)
 	{
 		fenrir::Fen fen(test_fen_string);
-		EXPECT_EQ(fen.getPlacement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-		EXPECT_EQ(fen.getColor(), fenrir::WHITE);
-		EXPECT_EQ(fen.getCastling(), "KQkq");
-		EXPECT_EQ(fen.getEnPassant(), "-");
-		EXPECT_EQ(fen.getHalfMoveClock(), 0);
-		EXPECT_EQ(fen.getFullMoves(), 1);
+		EXPECT_EQ(fen.get_placement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+		EXPECT_EQ(fen.get_color(), fenrir::WHITE);
+		EXPECT_EQ(fen.get_castling(), "KQkq");
+		EXPECT_EQ(fen.get_en_passant(), "-");
+		EXPECT_EQ(fen.get_half_move_clock(), 0);
+		EXPECT_EQ(fen.get_full_moves(), 1);
 	}
 }
 
 TEST_F(FenTest, SetPlacementValid)
 {
 	fenrir::Fen fen(test_fen_string);
-	fen.setPlacement("r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R");
-	EXPECT_EQ(fen.getPlacement(), "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R");
+	fen.set_placement("r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R");
+	EXPECT_EQ(fen.get_placement(), "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R");
 }
 
 TEST_F(FenTest, SetPlacementInvalid)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_THROW(fen.setPlacement("invalid_placement"), std::runtime_error);
-	EXPECT_THROW(fen.setPlacement("rnbqkbnr/pppppppp"), std::runtime_error);
-	EXPECT_THROW(fen.setPlacement("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/extra"), std::runtime_error);
+	EXPECT_THROW(fen.set_placement("invalid_placement"), std::runtime_error);
+	EXPECT_THROW(fen.set_placement("rnbqkbnr/pppppppp"), std::runtime_error);
+	EXPECT_THROW(fen.set_placement("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR/extra"), std::runtime_error);
 }
 
 TEST_F(FenTest, SetCastlingValid)
 {
 	fenrir::Fen fen(test_fen_string);
-	fen.setCastling("KQ");
-	EXPECT_EQ(fen.getCastling(), "KQ");
+	fen.set_castling("KQ");
+	EXPECT_EQ(fen.get_castling(), "KQ");
 
-	fen.setCastling("kq");
-	EXPECT_EQ(fen.getCastling(), "kq");
+	fen.set_castling("kq");
+	EXPECT_EQ(fen.get_castling(), "kq");
 
-	fen.setCastling("K");
-	EXPECT_EQ(fen.getCastling(), "K");
+	fen.set_castling("K");
+	EXPECT_EQ(fen.get_castling(), "K");
 
-	fen.setCastling("-");
-	EXPECT_EQ(fen.getCastling(), "-");
+	fen.set_castling("-");
+	EXPECT_EQ(fen.get_castling(), "-");
 }
 
 TEST_F(FenTest, SetCastlingInvalid)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_THROW(fen.setCastling("X"), std::runtime_error);
-	EXPECT_THROW(fen.setCastling("KQX"), std::runtime_error);
-	EXPECT_THROW(fen.setCastling("123"), std::runtime_error);
+	EXPECT_THROW(fen.set_castling("X"), std::runtime_error);
+	EXPECT_THROW(fen.set_castling("KQX"), std::runtime_error);
+	EXPECT_THROW(fen.set_castling("123"), std::runtime_error);
 }
 
 TEST_F(FenTest, SetEnPassantValid)
 {
 	fenrir::Fen fen(test_fen_string);
-	fen.setEnPassant("e3");
-	EXPECT_EQ(fen.getEnPassant(), "e3");
+	fen.set_en_passant("e3");
+	EXPECT_EQ(fen.get_en_passant(), "e3");
 
-	fen.setEnPassant("a6");
-	EXPECT_EQ(fen.getEnPassant(), "a6");
+	fen.set_en_passant("a6");
+	EXPECT_EQ(fen.get_en_passant(), "a6");
 
-	fen.setEnPassant("h3");
-	EXPECT_EQ(fen.getEnPassant(), "h3");
+	fen.set_en_passant("h3");
+	EXPECT_EQ(fen.get_en_passant(), "h3");
 
-	fen.setEnPassant("-");
-	EXPECT_EQ(fen.getEnPassant(), "-");
+	fen.set_en_passant("-");
+	EXPECT_EQ(fen.get_en_passant(), "-");
 }
 
 TEST_F(FenTest, SetEnPassantInvalid)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_THROW(fen.setEnPassant("e4"), std::runtime_error);
-	EXPECT_THROW(fen.setEnPassant("i3"), std::runtime_error);
-	EXPECT_THROW(fen.setEnPassant("e1"), std::runtime_error);
-	EXPECT_THROW(fen.setEnPassant("ee"), std::runtime_error);
+	EXPECT_THROW(fen.set_en_passant("e4"), std::runtime_error);
+	EXPECT_THROW(fen.set_en_passant("i3"), std::runtime_error);
+	EXPECT_THROW(fen.set_en_passant("e1"), std::runtime_error);
+	EXPECT_THROW(fen.set_en_passant("ee"), std::runtime_error);
 }
 
 TEST_F(FenTest, SetColorValid)
 {
 	fenrir::Fen fen(test_fen_string);
-	fen.setColor(fenrir::BLACK);
-	EXPECT_EQ(fen.getColor(), fenrir::BLACK);
+	fen.set_color(fenrir::BLACK);
+	EXPECT_EQ(fen.get_color(), fenrir::BLACK);
 
-	fen.setColor(fenrir::WHITE);
-	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
+	fen.set_color(fenrir::WHITE);
+	EXPECT_EQ(fen.get_color(), fenrir::WHITE);
 }
 
 TEST_F(FenTest, SetColorInvalid)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_THROW(fen.setColor(2), std::runtime_error);
-	EXPECT_THROW(fen.setColor(255), std::runtime_error);
+	EXPECT_THROW(fen.set_color(2), std::runtime_error);
+	EXPECT_THROW(fen.set_color(255), std::runtime_error);
 }
 
 TEST_F(FenTest, SetHalfmoveClock)
 {
 	fenrir::Fen fen(test_fen_string);
-	fen.setHalfMoveClock(50);
-	EXPECT_EQ(fen.getHalfMoveClock(), 50);
+	fen.set_half_move_clock(50);
+	EXPECT_EQ(fen.get_half_move_clock(), 50);
 
-	fen.setHalfMoveClock(0);
-	EXPECT_EQ(fen.getHalfMoveClock(), 0);
+	fen.set_half_move_clock(0);
+	EXPECT_EQ(fen.get_half_move_clock(), 0);
 
-	fen.setHalfMoveClock(100);
-	EXPECT_EQ(fen.getHalfMoveClock(), 100);
+	fen.set_half_move_clock(100);
+	EXPECT_EQ(fen.get_half_move_clock(), 100);
 }
 
 TEST_F(FenTest, SetFullmovesValid)
 {
 	fenrir::Fen fen(test_fen_string);
-	fen.setFullMoves(1);
-	EXPECT_EQ(fen.getFullMoves(), 1);
+	fen.set_full_moves(1);
+	EXPECT_EQ(fen.get_full_moves(), 1);
 
-	fen.setFullMoves(10);
-	EXPECT_EQ(fen.getFullMoves(), 10);
+	fen.set_full_moves(10);
+	EXPECT_EQ(fen.get_full_moves(), 10);
 
-	fen.setFullMoves(1000);
-	EXPECT_EQ(fen.getFullMoves(), 1000);
+	fen.set_full_moves(1000);
+	EXPECT_EQ(fen.get_full_moves(), 1000);
 }
 
 TEST_F(FenTest, SetFullmovesInvalid)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_THROW(fen.setFullMoves(0), std::runtime_error);
+	EXPECT_THROW(fen.set_full_moves(0), std::runtime_error);
 }
 
 TEST_F(FenTest, EmptyFenString)
 {
-	EXPECT_THROW(fenrir::Fen(""), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{""}, std::runtime_error);
 }
 
 TEST_F(FenTest, GenerateFEN)
 {
 	fenrir::Fen fen(test_fen_string);
-	std::string generated_fen = fen.generateFen();
+	std::string generated_fen = fen.generate_fen();
 	EXPECT_EQ(generated_fen, test_fen_string);
 }
+
 TEST_F(FenTest, GenerateFENAfterModifications)
 {
 	fenrir::Fen fen(test_fen_string);
-	fen.setPlacement("r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R");
-	fen.setCastling("KQ");
-	fen.setEnPassant("e3");
-	fen.setColor(fenrir::BLACK);
-	fen.setHalfMoveClock(10);
-	fen.setFullMoves(2);
+	fen.set_placement("r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R");
+	fen.set_castling("KQ");
+	fen.set_en_passant("e3");
+	fen.set_color(fenrir::BLACK);
+	fen.set_half_move_clock(10);
+	fen.set_full_moves(2);
 
-	std::string generated_fen = fen.generateFen();
+	std::string generated_fen = fen.generate_fen();
 	EXPECT_EQ(generated_fen, "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R b KQ e3 10 2");
 }
 
-TEST_F(FenTest, PermissiveModeDefaultConstructor)
+TEST_F(FenTest, DefaultConstructor)
 {
 	fenrir::Fen fen(test_fen_string);
-	EXPECT_EQ(fen.getPlacement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
-	EXPECT_EQ(fen.getCastling(), "KQkq");
-	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfMoveClock(), 0);
-	EXPECT_EQ(fen.getFullMoves(), 1);
+	EXPECT_EQ(fen.get_placement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+	EXPECT_EQ(fen.get_color(), fenrir::WHITE);
+	EXPECT_EQ(fen.get_castling(), "KQkq");
+	EXPECT_EQ(fen.get_en_passant(), "-");
+	EXPECT_EQ(fen.get_half_move_clock(), 0);
+	EXPECT_EQ(fen.get_full_moves(), 1);
 }
 
-TEST_F(FenTest, PermissiveModeExplicitConstructor)
-{
-	fenrir::Fen fen(test_fen_string, fenrir::GameMode::PERMISSIVE);
-	EXPECT_EQ(fen.getPlacement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
-	EXPECT_EQ(fen.getCastling(), "KQkq");
-	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfMoveClock(), 0);
-	EXPECT_EQ(fen.getFullMoves(), 1);
-}
-
-TEST_F(FenTest, TournamentModeValidFen)
-{
-	fenrir::Fen fen(test_fen_string, fenrir::GameMode::TOURNAMENT);
-	EXPECT_EQ(fen.getPlacement(), "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
-	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
-	EXPECT_EQ(fen.getCastling(), "KQkq");
-	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfMoveClock(), 0);
-	EXPECT_EQ(fen.getFullMoves(), 1);
-}
-
-TEST_F(FenTest, PermissiveModeAllowsHalfmoveClockOver100)
-{
-	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 150 1";
-	fenrir::Fen fen(fen_string, fenrir::GameMode::PERMISSIVE);
-	EXPECT_EQ(fen.getHalfMoveClock(), 150);
-}
-
-TEST_F(FenTest, TournamentModeRejectsHalfmoveClockOver100)
+TEST_F(FenTest, RejectsHalfmoveClockOver100)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 101 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeAllowsHalfmoveClock100)
+TEST_F(FenTest, AllowsHalfmoveClock100)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 100 1";
-	fenrir::Fen fen(fen_string, fenrir::GameMode::TOURNAMENT);
-	EXPECT_EQ(fen.getHalfMoveClock(), 100);
+	fenrir::Fen fen(fen_string);
+	EXPECT_EQ(fen.get_half_move_clock(), 100);
 }
 
-TEST_F(FenTest, TournamentModeRejectsFullmovesZero)
+TEST_F(FenTest, RejectsFullmovesZero)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, PermissiveModeAllowsInvalidPieceCountsWithPawnsOnPromotionRanks)
-{
-	std::string fen_string = "rnbqkbPr/pppppppp/8/8/8/8/pPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	fenrir::Fen fen(fen_string, fenrir::GameMode::PERMISSIVE);
-	EXPECT_EQ(fen.getPlacement(), "rnbqkbPr/pppppppp/8/8/8/8/pPPPPPPP/RNBQKBNR");
-}
-
-TEST_F(FenTest, TournamentModeRejectsWhitePawnsOnEighthRank)
+TEST_F(FenTest, RejectsWhitePawnsOnEighthRank)
 {
 	std::string fen_string = "rnbqkbPr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsBlackPawnsOnFirstRank)
+TEST_F(FenTest, RejectsBlackPawnsOnFirstRank)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBpR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, PermissiveModeAllowsAdjacentKings)
+TEST_F(FenTest, RejectsAdjacentKings)
 {
 	std::string fen_string = "8/8/8/3kK3/8/8/8/8 w - - 0 1";
-	fenrir::Fen fen(fen_string, fenrir::GameMode::PERMISSIVE);
-	EXPECT_EQ(fen.getPlacement(), "8/8/8/3kK3/8/8/8/8");
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsAdjacentKings)
-{
-	std::string fen_string = "8/8/8/3kK3/8/8/8/8 w - - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
-}
-
-TEST_F(FenTest, PermissiveModeAllowsInvalidPieceCounts)
+TEST_F(FenTest, RejectsInvalidPieceCounts)
 {
 	std::string fen_string = "QQQQQQQQ/QQQQQQQQ/QQQQQQQQ/QQQQQQQQ/qqqqqqqq/qqqqqqqq/qqqqqqqq/qqqqqqqq w - - 0 1";
-	fenrir::Fen fen(fen_string, fenrir::GameMode::PERMISSIVE);
-	EXPECT_EQ(fen.getPlacement(), "QQQQQQQQ/QQQQQQQQ/QQQQQQQQ/QQQQQQQQ/qqqqqqqq/qqqqqqqq/qqqqqqqq/qqqqqqqq");
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsInvalidPieceCounts)
+TEST_F(FenTest, SetterRejectsHalfmoveClockOver100)
 {
-	std::string fen_string = "QQQQQQQQ/QQQQQQQQ/QQQQQQQQ/QQQQQQQQ/qqqqqqqq/qqqqqqqq/qqqqqqqq/qqqqqqqq w - - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	fenrir::Fen fen(test_fen_string);
+	EXPECT_THROW(fen.set_half_move_clock(101), std::runtime_error);
 }
 
-TEST_F(FenTest, PermissiveModeSetterAllowsHalfmoveClockOver100)
+TEST_F(FenTest, SetterAllowsHalfmoveClock100)
 {
-	fenrir::Fen fen(test_fen_string, fenrir::GameMode::PERMISSIVE);
-	fen.setHalfMoveClock(200);
-	EXPECT_EQ(fen.getHalfMoveClock(), 200);
+	fenrir::Fen fen(test_fen_string);
+	fen.set_half_move_clock(100);
+	EXPECT_EQ(fen.get_half_move_clock(), 100);
 }
 
-TEST_F(FenTest, TournamentModeSetterRejectsHalfmoveClockOver100)
+TEST_F(FenTest, SetterRejectsFullmovesZero)
 {
-	fenrir::Fen fen(test_fen_string, fenrir::GameMode::TOURNAMENT);
-	EXPECT_THROW(fen.setHalfMoveClock(101), std::runtime_error);
+	fenrir::Fen fen(test_fen_string);
+	EXPECT_THROW(fen.set_full_moves(0), std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeSetterAllowsHalfmoveClock100)
+TEST_F(FenTest, SetterRejectsInvalidPlacements)
 {
-	fenrir::Fen fen(test_fen_string, fenrir::GameMode::TOURNAMENT);
-	fen.setHalfMoveClock(100);
-	EXPECT_EQ(fen.getHalfMoveClock(), 100);
-}
-
-TEST_F(FenTest, BothModesSetterRejectsFullmovesZero)
-{
-	fenrir::Fen fen_permissive(test_fen_string, fenrir::GameMode::PERMISSIVE);
-	fenrir::Fen fen_tournament(test_fen_string, fenrir::GameMode::TOURNAMENT);
-
-	EXPECT_THROW(fen_permissive.setFullMoves(0), std::runtime_error);
-	EXPECT_THROW(fen_tournament.setFullMoves(0), std::runtime_error);
-}
-
-TEST_F(FenTest, PermissiveModeSetterAllowsInvalidPlacements)
-{
-	fenrir::Fen fen(test_fen_string, fenrir::GameMode::PERMISSIVE);
+	fenrir::Fen fen(test_fen_string);
 	std::string invalid_placement = "rnbqkbPr/pppppppp/8/8/8/8/pPPPPPPP/RNBQKBNR";
-	fen.setPlacement(invalid_placement);
-	EXPECT_EQ(fen.getPlacement(), invalid_placement);
+	EXPECT_THROW(fen.set_placement(invalid_placement), std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeSetterRejectsInvalidPlacements)
-{
-	fenrir::Fen fen(test_fen_string, fenrir::GameMode::TOURNAMENT);
-	std::string invalid_placement = "rnbqkbPr/pppppppp/8/8/8/8/pPPPPPPP/RNBQKBNR";
-	EXPECT_THROW(fen.setPlacement(invalid_placement), std::runtime_error);
-}
-
-TEST_F(FenTest, TournamentModeValidComplexPosition)
+TEST_F(FenTest, ValidComplexPosition)
 {
 	std::string complex_fen = "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/3P1N2/PPP2PPP/RNBQKB1R w KQkq - 2 4";
-	fenrir::Fen fen(complex_fen, fenrir::GameMode::TOURNAMENT);
-	EXPECT_EQ(fen.getPlacement(), "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/3P1N2/PPP2PPP/RNBQKB1R");
-	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
-	EXPECT_EQ(fen.getCastling(), "KQkq");
-	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfMoveClock(), 2);
-	EXPECT_EQ(fen.getFullMoves(), 4);
+	fenrir::Fen fen(complex_fen);
+	EXPECT_EQ(fen.get_placement(), "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/3P1N2/PPP2PPP/RNBQKB1R");
+	EXPECT_EQ(fen.get_color(), fenrir::WHITE);
+	EXPECT_EQ(fen.get_castling(), "KQkq");
+	EXPECT_EQ(fen.get_en_passant(), "-");
+	EXPECT_EQ(fen.get_half_move_clock(), 2);
+	EXPECT_EQ(fen.get_full_moves(), 4);
 }
 
-TEST_F(FenTest, PermissiveModeValidComplexPosition)
-{
-	std::string complex_fen = "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/3P1N2/PPP2PPP/RNBQKB1R w KQkq - 2 4";
-	fenrir::Fen fen(complex_fen, fenrir::GameMode::PERMISSIVE);
-	EXPECT_EQ(fen.getPlacement(), "r1bqkb1r/pppp1ppp/2n2n2/4p3/4P3/3P1N2/PPP2PPP/RNBQKB1R");
-	EXPECT_EQ(fen.getColor(), fenrir::WHITE);
-	EXPECT_EQ(fen.getCastling(), "KQkq");
-	EXPECT_EQ(fen.getEnPassant(), "-");
-	EXPECT_EQ(fen.getHalfMoveClock(), 2);
-	EXPECT_EQ(fen.getFullMoves(), 4);
-}
-
-TEST_F(FenTest, TournamentModeRejectsInvalidPieceCharacter)
+TEST_F(FenTest, RejectsInvalidPieceCharacter)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBXR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsMultipleKings)
+TEST_F(FenTest, RejectsMultipleKings)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKKNR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsTooManyQueens)
+TEST_F(FenTest, RejectsTooManyQueens)
 {
 	std::string fen_string = "rnbqqqqq/qqqqqqqq/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsTooManyRooks)
+TEST_F(FenTest, RejectsTooManyRooks)
 {
 	std::string fen_string = "rrrrrrrrr/rrrrrrrrr/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsTooManyBishops)
+TEST_F(FenTest, RejectsTooManyBishops)
 {
 	std::string fen_string = "bbbbbbbbb/bbbbbbbbb/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsTooManyKnights)
+TEST_F(FenTest, RejectsTooManyKnights)
 {
 	std::string fen_string = "nnnnnnnnn/nnnnnnnnn/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsWhitePromotionExceedsLostPawns)
+TEST_F(FenTest, RejectsWhitePromotionExceedsLostPawns)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/1PPPPPPP/QQQQQQQQ w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsBlackPromotionExceedsLostPawns)
+TEST_F(FenTest, RejectsBlackPromotionExceedsLostPawns)
 {
 	std::string fen_string = "qqqqqqqq/1ppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsInvalidPieceCharacterInPlacement)
+TEST_F(FenTest, RejectsInvalidPieceCharacterInPlacement)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBXR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsWhitePawnsOn8thRankInPlacement)
+TEST_F(FenTest, RejectsWhitePawnsOn8thRankInPlacement)
 {
 	std::string fen_string = "rnbqkbnP/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsBlackPawnsOn1stRankInPlacement)
+TEST_F(FenTest, RejectsBlackPawnsOn1stRankInPlacement)
 {
 	std::string fen_string = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNp w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsWhitePawnOnEighthRankDirectly)
+TEST_F(FenTest, RejectsWhitePawnOnEighthRankDirectly)
 {
 	std::string fen_string = "rnbqkbnP/pppppppp/8/8/8/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsBlackPawnOnFirstRankDirectly)
+TEST_F(FenTest, RejectsBlackPawnOnFirstRankDirectly)
 {
 	std::string fen_string = "rnbqkbnr/ppppppp1/8/8/8/8/PPPPPPPP/RNBQKBNp w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsTooManyQueensInPlacement)
+TEST_F(FenTest, RejectsTooManyQueensInPlacement)
 {
 	std::string fen_string = "QQQQQQQQQQ/8/8/8/8/8/8/8 w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsTooManyRooksInPlacement)
+TEST_F(FenTest, RejectsTooManyRooksInPlacement)
 {
 	std::string fen_string = "RRRRRRRRRRR/8/8/8/8/8/8/8 w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsTooManyBishopsInPlacement)
+TEST_F(FenTest, RejectsTooManyBishopsInPlacement)
 {
 	std::string fen_string = "BBBBBBBBBBB/8/8/8/8/8/8/8 w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }
 
-TEST_F(FenTest, TournamentModeRejectsTooManyKnightsInPlacement)
+TEST_F(FenTest, RejectsTooManyKnightsInPlacement)
 {
 	std::string fen_string = "NNNNNNNNNNN/8/8/8/8/8/8/8 w KQkq - 0 1";
-	EXPECT_THROW(fenrir::Fen(fen_string, fenrir::GameMode::TOURNAMENT), std::runtime_error);
+	EXPECT_THROW(fenrir::Fen{fen_string}, std::runtime_error);
 }

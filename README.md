@@ -7,7 +7,7 @@ Fenrir is a C++ shared library (`libfenrir.so`) that serves as the **rules and v
 [![Build](https://img.shields.io/badge/Build-Make-green.svg)](https://www.gnu.org/software/make/)
 [![Testing](https://img.shields.io/badge/Testing-Google%20Test-red.svg)](https://github.com/google/googletest)
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
-[![Tests](https://img.shields.io/badge/Tests-300%20passing-success.svg)]()
+[![Tests](https://img.shields.io/badge/Tests-359%20passing-success.svg)]()
 
 > **Architecture**: Fenrir is the base of a three-layer system: **Fenrir** (rules, validation, move generation) -> **Agents** (Python, JS, or any language - they search and decide) -> **UIs** (mobile, web, desktop - they present and explain). Fenrir's job is to be correct, fast, and stable so everything built on top of it can be trusted.
 

@@ -1,18 +1,18 @@
 /*
  *   Copyright (c) 2025 Juan Minor
-
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
-
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https:
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <gtest/gtest.h>
@@ -38,15 +38,12 @@ protected:
 
 	void SetUp() override
 	{
-
 		cleanup_test_files();
-
 		std::filesystem::create_directories("pgn");
 	}
 
 	void TearDown() override
 	{
-
 		cleanup_test_files();
 	}
 
@@ -56,7 +53,6 @@ protected:
 
 	void cleanup_test_files()
 	{
-
 		std::filesystem::remove(test_store_file);
 		std::filesystem::remove(test_pgn_file);
 		std::filesystem::remove(io::PGN_FILE);
@@ -107,39 +103,18 @@ std::string PgnTest::test_store_file = "";
 std::string PgnTest::test_pgn_file = "";
 std::vector<std::string> PgnTest::sample_moves = {};
 
-/* Singleton tests */
-TEST_F(PgnTest, GetInstance)
+/* Constructor tests */
+TEST_F(PgnTest, ConstructorAndDestructor)
 {
-	io::Pgn &pgn1 = io::Pgn::getInstance();
-	io::Pgn &pgn2 = io::Pgn::getInstance();
-
-	EXPECT_EQ(&pgn1, &pgn2);
-}
-
-TEST_F(PgnTest, GetInstanceMacro)
-{
-	io::Pgn &pgn1 = io::PGN;
-	io::Pgn &pgn2 = io::PGN;
-
-	EXPECT_EQ(&pgn1, &pgn2);
+	io::Pgn &pgn = io::Pgn::get_instance();
+	(void)pgn;
+	SUCCEED();
 }
 
 /* Record move tests */
-TEST_F(PgnTest, RecordSingleMove)
+TEST_F(PgnTest, RecordMoveValid)
 {
-	io::Pgn &pgn = io::Pgn::getInstance();
-
-	pgn.record("e4");
-
-	EXPECT_TRUE(file_exists(io::PGN_FILE_STORE));
-
-	std::string content = read_file_content(io::PGN_FILE_STORE);
-	EXPECT_EQ(content, "e4\n");
-}
-
-TEST_F(PgnTest, RecordMultipleMoves)
-{
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	for (const auto &move : sample_moves)
 	{
@@ -168,8 +143,7 @@ TEST_F(PgnTest, RecordMoveWithMacro)
 
 TEST_F(PgnTest, RecordEmptyMove)
 {
-	io::Pgn &pgn = io::Pgn::getInstance();
-
+	io::Pgn &pgn = io::Pgn::get_instance();
 	pgn.record("");
 
 	EXPECT_TRUE(file_exists(io::PGN_FILE_STORE));
@@ -180,7 +154,7 @@ TEST_F(PgnTest, RecordEmptyMove)
 
 TEST_F(PgnTest, RecordMoveWithSpecialCharacters)
 {
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	std::string move_with_special_chars = "O-O-O+";
 	pgn.record(move_with_special_chars);
@@ -194,10 +168,9 @@ TEST_F(PgnTest, RecordMoveWithSpecialCharacters)
 /* Create PGN tests */
 TEST_F(PgnTest, CreatePgnFromEmptyStore)
 {
-
 	create_test_store_file({});
 
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 	pgn.create();
 
 	EXPECT_TRUE(file_exists(io::PGN_FILE));
@@ -217,10 +190,9 @@ TEST_F(PgnTest, CreatePgnFromEmptyStore)
 
 TEST_F(PgnTest, CreatePgnFromMovesInStore)
 {
-
 	create_test_store_file(sample_moves);
 
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 	pgn.create();
 
 	EXPECT_TRUE(file_exists(io::PGN_FILE));
@@ -229,16 +201,13 @@ TEST_F(PgnTest, CreatePgnFromMovesInStore)
 
 	EXPECT_NE(content.find("[Event \"User vs. Fenrir\"]"), std::string::npos);
 
-	EXPECT_NE(content.find("1. e4"), std::string::npos);
-	EXPECT_NE(content.find("2. e5"), std::string::npos);
-	EXPECT_NE(content.find("3. Nf3"), std::string::npos);
-	EXPECT_NE(content.find("4. Nc6"), std::string::npos);
-	EXPECT_NE(content.find("5. Bb5"), std::string::npos);
+	EXPECT_NE(content.find("1. e4 e5"), std::string::npos);
+	EXPECT_NE(content.find("2. Nf3 Nc6"), std::string::npos);
+	EXPECT_NE(content.find("3. Bb5"), std::string::npos);
 }
 
 TEST_F(PgnTest, CreatePgnWithMacro)
 {
-
 	create_test_store_file({"e4", "e5"});
 
 	io::PGN_CREATE();
@@ -246,15 +215,14 @@ TEST_F(PgnTest, CreatePgnWithMacro)
 	EXPECT_TRUE(file_exists(io::PGN_FILE));
 
 	std::string content = read_file_content(io::PGN_FILE);
-	EXPECT_NE(content.find("1. e4"), std::string::npos);
-	EXPECT_NE(content.find("2. e5"), std::string::npos);
+	EXPECT_NE(content.find("1. e4 e5"), std::string::npos);
 }
 
 TEST_F(PgnTest, CreatePgnWithSingleMove)
 {
 	create_test_store_file({"e4"});
 
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 	pgn.create();
 
 	EXPECT_TRUE(file_exists(io::PGN_FILE));
@@ -266,34 +234,27 @@ TEST_F(PgnTest, CreatePgnWithSingleMove)
 /* Error handling tests */
 TEST_F(PgnTest, CreatePgnWithoutStoreFile)
 {
-
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	EXPECT_NO_THROW(pgn.create());
 
 	if (file_exists(io::PGN_FILE))
 	{
-		std::string content = read_file_content(io::PGN_FILE);
-
 		SUCCEED();
 	}
 }
 
 TEST_F(PgnTest, RecordMoveToReadOnlyDirectory)
 {
-
-	io::Pgn &pgn = io::Pgn::getInstance();
-
+	io::Pgn &pgn = io::Pgn::get_instance();
 	EXPECT_NO_THROW(pgn.record("e4"));
 }
 
 TEST_F(PgnTest, RecordMoveWithoutPgnDirectory)
 {
-
 	std::filesystem::remove_all("pgn");
 
-	io::Pgn &pgn = io::Pgn::getInstance();
-
+	io::Pgn &pgn = io::Pgn::get_instance();
 	EXPECT_NO_THROW(pgn.record("e4"));
 
 	std::filesystem::create_directories("pgn");
@@ -303,14 +264,12 @@ TEST_F(PgnTest, RecordMoveWithoutPgnDirectory)
 
 TEST_F(PgnTest, CreatePgnWithoutPgnDirectory)
 {
-
 	std::filesystem::create_directories("pgn");
 	create_test_store_file({"e4", "e5"});
 
 	std::filesystem::remove_all("pgn");
 
-	io::Pgn &pgn = io::Pgn::getInstance();
-
+	io::Pgn &pgn = io::Pgn::get_instance();
 	EXPECT_NO_THROW(pgn.create());
 
 	std::filesystem::create_directories("pgn");
@@ -321,7 +280,7 @@ TEST_F(PgnTest, CreatePgnWithoutPgnDirectory)
 /* Integration tests */
 TEST_F(PgnTest, CompleteWorkflow)
 {
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	pgn.record("e4");
 	pgn.record("e5");
@@ -338,36 +297,32 @@ TEST_F(PgnTest, CompleteWorkflow)
 	std::string content = read_file_content(io::PGN_FILE);
 
 	EXPECT_NE(content.find("[Event \"User vs. Fenrir\"]"), std::string::npos);
-
-	EXPECT_NE(content.find("1. e4"), std::string::npos);
-	EXPECT_NE(content.find("2. e5"), std::string::npos);
-	EXPECT_NE(content.find("3. Nf3"), std::string::npos);
-	EXPECT_NE(content.find("4. Nc6"), std::string::npos);
+	EXPECT_NE(content.find("1. e4 e5"), std::string::npos);
+	EXPECT_NE(content.find("2. Nf3 Nc6"), std::string::npos);
 }
 
 TEST_F(PgnTest, MultipleRecordAndCreateCycles)
 {
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	pgn.record("e4");
 	pgn.record("e5");
 	pgn.create();
 
 	std::string first_content = read_file_content(io::PGN_FILE);
-	EXPECT_NE(first_content.find("1. e4"), std::string::npos);
-	EXPECT_NE(first_content.find("2. e5"), std::string::npos);
+	EXPECT_NE(first_content.find("1. e4 e5"), std::string::npos);
 
 	pgn.record("Nf3");
 	pgn.create();
 
 	std::string second_content = read_file_content(io::PGN_FILE);
-	EXPECT_NE(second_content.find("3. Nf3"), std::string::npos);
+	EXPECT_NE(second_content.find("2. Nf3"), std::string::npos);
 }
 
 /* Memory and performance tests */
 TEST_F(PgnTest, RecordManyMoves)
 {
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	const int num_moves = 1000;
 	for (int i = 0; i < num_moves; ++i)
@@ -381,7 +336,6 @@ TEST_F(PgnTest, RecordManyMoves)
 
 TEST_F(PgnTest, CreatePgnFromManyMoves)
 {
-
 	std::vector<std::string> many_moves;
 	for (int i = 0; i < 100; ++i)
 	{
@@ -390,7 +344,7 @@ TEST_F(PgnTest, CreatePgnFromManyMoves)
 
 	create_test_store_file(many_moves);
 
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	auto start = std::chrono::high_resolution_clock::now();
 	pgn.create();
@@ -401,8 +355,8 @@ TEST_F(PgnTest, CreatePgnFromManyMoves)
 	EXPECT_TRUE(file_exists(io::PGN_FILE));
 
 	std::string content = read_file_content(io::PGN_FILE);
-	EXPECT_NE(content.find("1. move0"), std::string::npos);
-	EXPECT_NE(content.find("100. move99"), std::string::npos);
+	EXPECT_NE(content.find("1. move0 move1"), std::string::npos);
+	EXPECT_NE(content.find("50. move98 move99"), std::string::npos);
 
 	EXPECT_LT(duration.count(), 1000);
 }
@@ -410,7 +364,7 @@ TEST_F(PgnTest, CreatePgnFromManyMoves)
 /* Edge cases and boundary tests */
 TEST_F(PgnTest, RecordVeryLongMove)
 {
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	std::string long_move(1000, 'a');
 	pgn.record(long_move);
@@ -423,7 +377,7 @@ TEST_F(PgnTest, RecordVeryLongMove)
 
 TEST_F(PgnTest, RecordMoveWithNewlines)
 {
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	std::string move_with_newlines = "e4\ntest\nmore";
 	pgn.record(move_with_newlines);
@@ -437,12 +391,12 @@ TEST_F(PgnTest, RecordMoveWithNewlines)
 /* Stress test */
 TEST_F(PgnTest, StressTest)
 {
-	if (!test::CI || std::string(test::CI) != "true")
+	if (!test::get_ci() || std::string(test::get_ci()) != "true")
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}
 
-	io::Pgn &pgn = io::Pgn::getInstance();
+	io::Pgn &pgn = io::Pgn::get_instance();
 
 	const int stress_iterations = 10000;
 	auto start = std::chrono::high_resolution_clock::now();
@@ -470,11 +424,9 @@ TEST_F(PgnTest, StressTest)
 /* Copy semantics test (should not be copyable) */
 TEST_F(PgnTest, SingletonNotCopyable)
 {
-
-	io::Pgn &pgn1 = io::Pgn::getInstance();
-	io::Pgn &pgn2 = io::Pgn::getInstance();
+	io::Pgn &pgn1 = io::Pgn::get_instance();
+	io::Pgn &pgn2 = io::Pgn::get_instance();
 
 	EXPECT_EQ(&pgn1, &pgn2);
-
 	SUCCEED();
 }

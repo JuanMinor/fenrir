@@ -14,6 +14,7 @@ set -e
 
 # Configuration
 SRC_FILES=(
+    "src/chess/attacks.cpp"
     "src/chess/board.cpp"
     "src/chrono/chrono.cpp"
     "src/engine/engine.cpp"
@@ -23,14 +24,12 @@ SRC_FILES=(
     "src/chess/move.cpp"
     "src/chess/moves.cpp"
     "src/pgn/pgn.cpp"
-    "src/chess/piece.cpp"
     "src/utils/utils.cpp"
 )
 
 TEST_SRC_FILES=(
     "tests/unit/fen.test.cpp"
     "tests/unit/board.test.cpp"
-    "tests/unit/piece.test.cpp"
     "tests/unit/engine.test.cpp"
     "tests/unit/utils.test.cpp"
     "tests/unit/move.test.cpp"
@@ -45,10 +44,13 @@ BUILD_DIR="bin/build"
 TEST_BUILD_DIR="bint/unit"
 TEST_EXECUTABLE="$TEST_BUILD_DIR/tests"
 
+# Read version
+VERSION=$(cat VERSION)
+
 # Compiler settings
 CC="g++"
-PROJECT_ROOT="/workspaces/fenrir"
-COMMON_FLAGS="-I $PROJECT_ROOT -fPIC -DFENRIR_BUILD_DLL -Wextra -Wall -Werror"
+PROJECT_ROOT="."
+COMMON_FLAGS="-I $PROJECT_ROOT -fPIC -DFENRIR_BUILD_DLL -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion -Wnull-dereference -Wdouble-promotion -Wformat=2 -DFENRIR_VERSION=\"$VERSION\""
 CXXFLAGS="$COMMON_FLAGS -g"
 COVERAGE_FLAGS="-fprofile-arcs -ftest-coverage"
 CXXFLAGS_TEST="$CXXFLAGS $COVERAGE_FLAGS"

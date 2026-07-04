@@ -16,64 +16,160 @@
  */
 
 #include "include/chess/move.h"
+#include "include/utils/utils.h"
 
 namespace fenrir
 {
 	Move::Move(const std::string &from, const std::string &to,
-			   MoveType moveType, char promotionPiece)
-		: from(from), to(to), moveType(moveType), promotionPiece(promotionPiece)
+			   MoveType type, char promotion)
+		: from_square(0), to_square(0), move_type(type), promotion_piece(promotion), invalid_squares(nullptr)
 	{
+		uint8_t rank1 = 0, file1 = 0;
+		uint8_t rank2 = 0, file2 = 0;
+		bool from_ok = false;
+		bool to_ok = false;
+
+		try
+		{
+			utils::parse_algebraic_notation(from, rank1, file1);
+			from_ok = true;
+		}
+		catch (...) {}
+
+		try
+		{
+			utils::parse_algebraic_notation(to, rank2, file2);
+			to_ok = true;
+		}
+		catch (...) {}
+
+		if (from_ok && to_ok)
+		{
+			from_square = static_cast<uint8_t>(rank1 * 8 + file1);
+			to_square = static_cast<uint8_t>(rank2 * 8 + file2);
+		}
+		else
+		{
+			invalid_squares = std::make_unique<std::pair<std::string, std::string>>(from, to);
+		}
+	}
+
+	Move::Move(uint8_t from, uint8_t to,
+			   MoveType type, char promotion)
+		: from_square(from), to_square(to), move_type(type), promotion_piece(promotion), invalid_squares(nullptr)
+	{
+	}
+
+	Move::Move(const std::string &from, const std::string &to, char promotion)
+		: Move(from, to, (promotion != '\0') ? MoveType::PROMOTION : MoveType::NORMAL, promotion)
+	{
+	}
+
+	Move::Move(uint8_t from, uint8_t to, char promotion)
+		: Move(from, to, (promotion != '\0') ? MoveType::PROMOTION : MoveType::NORMAL, promotion)
+	{
+	}
+
+	Move::Move(const Move& other)
+		: from_square(other.from_square),
+		  to_square(other.to_square),
+		  move_type(other.move_type),
+		  promotion_piece(other.promotion_piece),
+		  invalid_squares(nullptr)
+	{
+		if (other.invalid_squares)
+		{
+			invalid_squares = std::make_unique<std::pair<std::string, std::string>>(*other.invalid_squares);
+		}
+	}
+
+	Move& Move::operator=(const Move& other)
+	{
+		if (this != &other)
+		{
+			from_square = other.from_square;
+			to_square = other.to_square;
+			move_type = other.move_type;
+			promotion_piece = other.promotion_piece;
+			if (other.invalid_squares)
+			{
+				invalid_squares = std::make_unique<std::pair<std::string, std::string>>(*other.invalid_squares);
+			}
+			else
+			{
+				invalid_squares.reset();
+			}
+		}
+		return *this;
 	}
 
 	Move::~Move() {}
 
 	/* Getters */
-	const std::string &Move::getFrom() const
+	std::string Move::get_from() const
 	{
-		return this->from;
+		if (invalid_squares)
+		{
+			return invalid_squares->first;
+		}
+		return utils::get_algebraic_notation(static_cast<uint8_t>(from_square / 8), static_cast<uint8_t>(from_square % 8));
 	}
 
-	const std::string &Move::getTo() const
+	std::string Move::get_to() const
 	{
-		return this->to;
+		if (invalid_squares)
+		{
+			return invalid_squares->second;
+		}
+		return utils::get_algebraic_notation(static_cast<uint8_t>(to_square / 8), static_cast<uint8_t>(to_square % 8));
 	}
 
-	MoveType Move::getMoveType() const
+	uint8_t Move::get_from_square() const
 	{
-		return this->moveType;
+		return this->from_square;
 	}
 
-	char Move::getPromotionPiece() const
+	uint8_t Move::get_to_square() const
 	{
-		return this->promotionPiece;
+		return this->to_square;
+	}
+
+	MoveType Move::get_move_type() const
+	{
+		return this->move_type;
+	}
+
+	char Move::get_promotion_piece() const
+	{
+		return this->promotion_piece;
 	}
 
 	/* Utility methods */
-	bool Move::isCapture() const
+	bool Move::is_capture() const
 	{
-		return this->moveType == MoveType::CAPTURE || this->moveType == MoveType::EN_PASSANT;
-	};
+		return this->move_type == MoveType::CAPTURE || this->move_type == MoveType::EN_PASSANT;
+	}
 
-	bool Move::isPromotion() const
+	bool Move::is_promotion() const
 	{
-		return this->moveType == MoveType::PROMOTION;
-	};
+		return this->move_type == MoveType::PROMOTION;
+	}
 
-	bool Move::isCastling() const
+	bool Move::is_castling() const
 	{
-		return this->moveType == MoveType::CASTLE_KINGSIDE || this->moveType == MoveType::CASTLE_QUEENSIDE;
-	};
+		return this->move_type == MoveType::CASTLE_KINGSIDE || this->move_type == MoveType::CASTLE_QUEENSIDE;
+	}
 
-	std::string Move::toAlgebraicNotation() const
+	std::string Move::to_algebraic_notation() const
 	{
-		return from + to;
-	};
+		return get_from() + get_to();
+	}
 
-	std::string Move::toString() const
+	std::string Move::to_string() const
 	{
 		std::string result = "(";
 
-		switch (this->moveType)
+		switch (this->move_type)
 		{
 		case MoveType::CAPTURE:
 			result += "Capture";
@@ -89,10 +185,10 @@ namespace fenrir
 			break;
 		case MoveType::PROMOTION:
 			result += "Promotion";
-			if (this->promotionPiece != '\0')
+			if (this->promotion_piece != '\0')
 			{
 				result += " to ";
-				result += this->promotionPiece;
+				result += this->promotion_piece;
 			}
 			break;
 		case MoveType::NORMAL:
@@ -103,18 +199,18 @@ namespace fenrir
 			break;
 		}
 
-		result += ")" + from + "->" + to;
+		result += ")" + get_from() + "->" + get_to();
 
 		return result;
 	}
 
-	std::string Move::toUCINotation() const
+	std::string Move::to_uci_notation() const
 	{
-		std::string result = from + to;
+		std::string result = get_from() + get_to();
 
-		if (this->isPromotion() && this->promotionPiece != '\0')
+		if (this->is_promotion() && this->promotion_piece != '\0')
 		{
-			result += static_cast<char>(std::tolower(static_cast<unsigned char>(this->promotionPiece)));
+			result += static_cast<char>(std::tolower(static_cast<unsigned char>(this->promotion_piece)));
 		}
 
 		return result;
