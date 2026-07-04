@@ -84,14 +84,14 @@ TEST_F(ModifierTest, StreamOperatorForegroundColors)
 		color::Color::FG_BLACK, color::Color::FG_RED, color::Color::FG_GREEN, color::Color::FG_YELLOW,
 		color::Color::FG_BLUE, color::Color::FG_MAGENTA, color::Color::FG_CYAN, color::Color::FG_WHITE};
 
-	for (auto colorValue : fgColors)
+	for (auto color_value : fgColors)
 	{
-		color::Modifier modifier(colorValue);
+		color::Modifier modifier(color_value);
 		std::string output = captureModifierOutput(modifier);
 
-		EXPECT_TRUE(isValidAnsiSequence(output, colorValue));
+		EXPECT_TRUE(isValidAnsiSequence(output, color_value));
 
-		switch (colorValue)
+		switch (color_value)
 		{
 		case color::Color::FG_BLACK:
 			EXPECT_EQ(output, "\033[30m");
@@ -130,14 +130,14 @@ TEST_F(ModifierTest, StreamOperatorBackgroundColors)
 		color::Color::BG_BLACK, color::Color::BG_RED, color::Color::BG_GREEN, color::Color::BG_YELLOW,
 		color::Color::BG_BLUE, color::Color::BG_MAGENTA, color::Color::BG_CYAN, color::Color::BG_WHITE};
 
-	for (auto colorValue : bgColors)
+	for (auto color_value : bgColors)
 	{
-		color::Modifier modifier(colorValue);
+		color::Modifier modifier(color_value);
 		std::string output = captureModifierOutput(modifier);
 
-		EXPECT_TRUE(isValidAnsiSequence(output, colorValue));
+		EXPECT_TRUE(isValidAnsiSequence(output, color_value));
 
-		switch (colorValue)
+		switch (color_value)
 		{
 		case color::Color::BG_BLACK:
 			EXPECT_EQ(output, "\033[40m");
@@ -240,8 +240,8 @@ TEST_F(ModifierTest, MemoryManagement)
 	EXPECT_NO_THROW({
 		for (int i = 0; i < numModifiers; ++i)
 		{
-			color::Color colorValue = static_cast<color::Color>(static_cast<int>(color::Color::FG_RED) + (i % 8));
-			modifiers.push_back(std::make_unique<color::Modifier>(colorValue));
+			color::Color color_value = static_cast<color::Color>(static_cast<int>(color::Color::FG_RED) + (i % 8));
+			modifiers.push_back(std::make_unique<color::Modifier>(color_value));
 		}
 	});
 
@@ -265,9 +265,9 @@ TEST_F(ModifierTest, OutputFormatConsistency)
 		color::Color::FG_BLUE, color::Color::BG_BLUE, color::Color::FG_MAGENTA, color::Color::BG_MAGENTA,
 		color::Color::FG_CYAN, color::Color::BG_CYAN, color::Color::FG_WHITE, color::Color::BG_WHITE};
 
-	for (auto colorValue : allColors)
+	for (auto color_value : allColors)
 	{
-		color::Modifier modifier(colorValue);
+		color::Modifier modifier(color_value);
 		std::string output = captureModifierOutput(modifier);
 
 		EXPECT_GE(output.length(), 4);
@@ -276,7 +276,7 @@ TEST_F(ModifierTest, OutputFormatConsistency)
 
 		std::string numberPart = output.substr(2, output.length() - 3);
 		int extractedNumber = std::stoi(numberPart);
-		EXPECT_EQ(extractedNumber, static_cast<int>(colorValue));
+		EXPECT_EQ(extractedNumber, static_cast<int>(color_value));
 	}
 }
 
@@ -330,7 +330,7 @@ TEST_F(ModifierTest, StressTest)
 {
 	GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 
-	const int numThreads = 4;
+	const int num_threads = 4;
 	const int operationsPerThread = 10000;
 	std::vector<std::thread> threads;
 
@@ -353,7 +353,7 @@ TEST_F(ModifierTest, StressTest)
 		}
 	};
 
-	for (int i = 0; i < numThreads; ++i)
+	for (int i = 0; i < num_threads; ++i)
 	{
 		threads.emplace_back(workerFunction);
 	}

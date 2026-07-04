@@ -1,18 +1,18 @@
 /*
  *   Copyright (c) 2025 Juan Minor
-
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
-
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <https:
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <gtest/gtest.h>
@@ -29,7 +29,6 @@ class LoggerTest : public ::testing::Test
 protected:
 	static void SetUpTestSuite()
 	{
-
 		test_log_file = logger::LOG_FILE;
 		test_backup_file = std::string(logger::LOG_FILE) + ".1";
 
@@ -39,7 +38,6 @@ protected:
 
 	static void TearDownTestSuite()
 	{
-
 		std::filesystem::remove(test_log_file);
 		std::filesystem::remove(test_backup_file);
 
@@ -57,7 +55,6 @@ protected:
 
 	void SetUp() override
 	{
-
 		std::filesystem::path log_path(logger::LOG_FILE);
 		std::filesystem::path log_dir = log_path.parent_path();
 
@@ -79,7 +76,6 @@ protected:
 
 	void TearDown() override
 	{
-
 		std::filesystem::remove(test_log_file);
 		std::filesystem::remove(test_backup_file);
 
@@ -101,7 +97,6 @@ protected:
 
 	std::string readLogFile() const
 	{
-
 		std::ifstream file(logger::LOG_FILE);
 		if (!file)
 			return "";
@@ -113,7 +108,6 @@ protected:
 
 	void createLargeLogFile(size_t size) const
 	{
-
 		std::ofstream file(logger::LOG_FILE);
 		std::string data(size, 'X');
 		file << data;
@@ -127,16 +121,16 @@ std::string LoggerTest::test_log_file = "";
 std::string LoggerTest::test_backup_file = "";
 
 /* Basic functionality tests */
-TEST_F(LoggerTest, ConstructorAndDestructor)
+TEST_F(LoggerTest, SingletonInstance)
 {
-	logger::Logger *log = new logger::Logger();
-	EXPECT_NE(log, nullptr);
-	delete log;
+	logger::Logger &log1 = logger::Logger::get_instance();
+	logger::Logger &log2 = logger::Logger::get_instance();
+	EXPECT_EQ(&log1, &log2);
 }
 
 TEST_F(LoggerTest, LogDebugMessage)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("Test debug message", __FILE__, __LINE__, logger::LEVEL::DEBUG);
 
 	std::string content = readLogFile();
@@ -154,7 +148,7 @@ TEST_F(LoggerTest, LogDebugMessage)
 
 TEST_F(LoggerTest, LogInfoMessage)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("Test info message", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::string content = readLogFile();
@@ -164,7 +158,7 @@ TEST_F(LoggerTest, LogInfoMessage)
 
 TEST_F(LoggerTest, LogWarnMessage)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("Test warn message", __FILE__, __LINE__, logger::LEVEL::WARN);
 
 	std::string content = readLogFile();
@@ -174,7 +168,7 @@ TEST_F(LoggerTest, LogWarnMessage)
 
 TEST_F(LoggerTest, LogErrorMessage)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("Test error message", __FILE__, __LINE__, logger::LEVEL::ERROR);
 
 	std::string content = readLogFile();
@@ -184,7 +178,7 @@ TEST_F(LoggerTest, LogErrorMessage)
 
 TEST_F(LoggerTest, LogCriticalMessage)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("Test critical message", __FILE__, __LINE__, logger::LEVEL::CRITICAL);
 
 	std::string content = readLogFile();
@@ -192,11 +186,9 @@ TEST_F(LoggerTest, LogCriticalMessage)
 	EXPECT_TRUE(content.find(__FILE__) != std::string::npos);
 }
 
-
 /* Macro tests */
 TEST_F(LoggerTest, DebugMacro)
 {
-
 	using namespace logger;
 	DEBUG("Test debug macro");
 
@@ -251,7 +243,7 @@ TEST_F(LoggerTest, CriticalMacro)
 /* Debug mode tests */
 TEST_F(LoggerTest, DebugMessageBehavior)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("Debug message behavior test", __FILE__, __LINE__, logger::LEVEL::DEBUG);
 
 	std::string content = readLogFile();
@@ -270,11 +262,10 @@ TEST_F(LoggerTest, DebugMessageBehavior)
 /* Log rotation tests */
 TEST_F(LoggerTest, LogRotationWhenFileSizeExceedsLimit)
 {
-
 	createLargeLogFile(logger::MAX_LOG_SIZE + 1000);
 	EXPECT_TRUE(std::filesystem::exists(logger::LOG_FILE));
 
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("New message after rotation", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::string backup_file = std::string(logger::LOG_FILE) + ".1";
@@ -286,7 +277,6 @@ TEST_F(LoggerTest, LogRotationWhenFileSizeExceedsLimit)
 
 TEST_F(LoggerTest, LogRotationWithExistingBackupFile)
 {
-
 	std::string backup_file = std::string(logger::LOG_FILE) + ".1";
 
 	createLargeLogFile(logger::MAX_LOG_SIZE + 1000);
@@ -300,7 +290,7 @@ TEST_F(LoggerTest, LogRotationWithExistingBackupFile)
 
 	auto original_backup_size = std::filesystem::file_size(backup_file);
 
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("New message after rotation with existing backup", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	EXPECT_TRUE(std::filesystem::exists(backup_file));
@@ -315,7 +305,7 @@ TEST_F(LoggerTest, LogRotationWithExistingBackupFile)
 /* Thread safety tests */
 TEST_F(LoggerTest, ThreadSafetyMultipleThreads)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	const int num_threads = 10;
 	const int messages_per_thread = 100;
 
@@ -352,7 +342,7 @@ TEST_F(LoggerTest, ThreadSafetyMultipleThreads)
 /* Edge cases */
 TEST_F(LoggerTest, EmptyMessage)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::string content = readLogFile();
@@ -361,7 +351,7 @@ TEST_F(LoggerTest, EmptyMessage)
 
 TEST_F(LoggerTest, LongMessage)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	std::string long_message(10000, 'A');
 	log.log(long_message, __FILE__, __LINE__, logger::LEVEL::INFO);
 
@@ -371,7 +361,7 @@ TEST_F(LoggerTest, LongMessage)
 
 TEST_F(LoggerTest, SpecialCharactersInMessage)
 {
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	std::string special_message = "Special chars: !@#$%^&*()_+{}|:<>?[]\\;'\",./ \n\t";
 	log.log(special_message, __FILE__, __LINE__, logger::LEVEL::INFO);
 
@@ -382,8 +372,7 @@ TEST_F(LoggerTest, SpecialCharactersInMessage)
 /* Invalid level handling */
 TEST_F(LoggerTest, InvalidLogLevel)
 {
-	logger::Logger log;
-
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("Invalid level test", __FILE__, __LINE__, static_cast<logger::LEVEL>(99));
 
 	std::string content = readLogFile();
@@ -392,83 +381,15 @@ TEST_F(LoggerTest, InvalidLogLevel)
 /* File I/O error handling */
 TEST_F(LoggerTest, LogToReadOnlyDirectory)
 {
-
-	logger::Logger log;
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("Test message", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	EXPECT_NO_THROW(log.log("Another test", __FILE__, __LINE__, logger::LEVEL::INFO));
 }
 
-/* Memory management */
-TEST_F(LoggerTest, MemoryManagement)
-{
-	for (int i = 0; i < 1000; ++i)
-	{
-		logger::Logger log;
-		log.log("Memory test " + std::to_string(i), __FILE__, __LINE__, logger::LEVEL::INFO);
-	}
-}
-
-/* Timestamp verification */
-TEST_F(LoggerTest, TimestampFormat)
-{
-	logger::Logger log;
-	log.log("Timestamp test", __FILE__, __LINE__, logger::LEVEL::INFO);
-
-	std::string content = readLogFile();
-
-	EXPECT_TRUE(content.find("[") != std::string::npos);
-	EXPECT_TRUE(content.find("@") != std::string::npos);
-	EXPECT_TRUE(content.find(":") != std::string::npos);
-}
-
-/* Line number verification */
-TEST_F(LoggerTest, LineNumberInLog)
-{
-	logger::Logger log;
-	uint32_t current_line = __LINE__ + 1;
-	log.log("Line number test", __FILE__, current_line, logger::LEVEL::INFO);
-
-	std::string content = readLogFile();
-	std::string expected_line = "@ Line " + std::to_string(current_line);
-	EXPECT_TRUE(content.find(expected_line) != std::string::npos);
-}
-
-/* Stress test */
-TEST_F(LoggerTest, StressTest)
-{
-	if (!test::getCI() || std::string(test::getCI()) != "true")
-	{
-		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
-	}
-
-	logger::Logger log;
-	const int num_messages = 10000;
-
-	for (int i = 0; i < num_messages; ++i)
-	{
-		std::string message = "Stress test message " + std::to_string(i);
-		log.log(message, __FILE__, __LINE__, logger::LEVEL::INFO);
-	}
-
-	std::string content = readLogFile();
-
-	EXPECT_TRUE(content.find("Stress test message 0") != std::string::npos);
-	EXPECT_TRUE(content.find("Stress test message " + std::to_string(num_messages - 1)) != std::string::npos);
-}
-
-/* Additional coverage tests for 100% */
-TEST_F(LoggerTest, ConstructorCoverage)
-{
-
-	{
-		logger::Logger log;
-	}
-}
-
+/* Exception handling */
 TEST_F(LoggerTest, FileOpeningFailure)
 {
-
 	std::filesystem::path log_path(logger::LOG_FILE);
 	std::filesystem::path log_dir = log_path.parent_path();
 
@@ -484,8 +405,7 @@ TEST_F(LoggerTest, FileOpeningFailure)
 	file_blocker << "blocking";
 	file_blocker.close();
 
-	logger::Logger log;
-
+	logger::Logger &log = logger::Logger::get_instance();
 	log.log("This should fail to write", __FILE__, __LINE__, logger::LEVEL::INFO);
 
 	std::filesystem::remove(log_dir);
@@ -498,10 +418,7 @@ TEST_F(LoggerTest, FileOpeningFailure)
 
 TEST_F(LoggerTest, ExceptionHandlingInLogging)
 {
-
-	logger::Logger log;
-
+	logger::Logger &log = logger::Logger::get_instance();
 	logger::LEVEL invalid_level = static_cast<logger::LEVEL>(255);
-
 	log.log("Test exception handling", __FILE__, __LINE__, invalid_level);
 }

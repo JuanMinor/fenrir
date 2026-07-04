@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
@@ -24,6 +25,7 @@
 #include <format>
 #include "include/core/core.h"
 #include "include/chess/fen.h"
+#include "include/chess/move.h"
 #include "include/logger/logger.h"
 #include "include/modifier/modifier.h"
 #include "include/pgn/pgn.h"
@@ -33,26 +35,55 @@
 namespace fenrir
 {
 	/**
+	 * UndoState captures everything needed to perfectly reverse an apply_move().
+	 * Zero heap allocation — all primitive values.
+	 */
+	struct UndoState
+	{
+		uint64_t bitboards[12];       // full snapshot of all 12 bitboards
+		uint64_t white_occupancy;
+		uint64_t black_occupancy;
+		uint64_t combined_occupancy;
+		uint8_t  castling_rights;
+		uint8_t  en_passant_square;    // 64 = none
+		uint8_t  color;
+		uint8_t  half_move_clock;
+		uint8_t  full_moves;
+	};
+
+	/**
 	 * Board manages the 12 chess piece bitboards and board state metadata.
 	 * It contains zero heap-allocated objects and operates purely using
 	 * bitwise operations for high search performance.
 	 */
 	class Board : public AbstractBoard
 	{
+	public:
+		static constexpr uint8_t CASTLE_K = 1 << 0;
+		static constexpr uint8_t CASTLE_Q = 1 << 1;
+		static constexpr uint8_t CASTLE_k = 1 << 2;
+		static constexpr uint8_t CASTLE_q = 1 << 3;
+
 	private:
 		uint64_t bitboards[12]; // 0-5: White (P, N, B, R, Q, K), 6-11: Black (p, n, b, r, q, k)
 		uint64_t white_occupancy;
 		uint64_t black_occupancy;
 		uint64_t combined_occupancy;
 
-		std::string castling;
-		std::string enPassant;
+		uint8_t  castling_rights;
+		uint8_t  en_passant_square;    // 64 = none
+
+		mutable std::string castling_str;
+		mutable std::string en_passant_str;
+		mutable bool castling_dirty;
+		mutable bool en_passant_dirty;
+
 		uint8_t color;
-		uint8_t halfMoveClock;
-		uint8_t fullMoves;
+		uint8_t half_move_clock;
+		uint8_t full_moves;
 		Fen fen;
 
-		inline int getBitboardIndex(char alias) const
+		inline int get_bitboard_index(char alias) const
 		{
 			switch (alias)
 			{
@@ -87,12 +118,11 @@ namespace fenrir
 			return (bb & (1ULL << square)) != 0;
 		}
 
-		void buildBoard(const std::string &placement);
-		std::string generatePlacementFromBoard(void) const;
-		void logPieceAction(const std::string &action, char piece_char, uint8_t rank, uint8_t file, const std::string &emoji) const;
+		void build_board(const std::string &placement);
+		std::string generate_placement_from_board(void) const;
 
 	public:
-		explicit Board(const std::string &fenString);
+		explicit Board(const std::string &fen_string);
 		~Board() = default;
 
 		Board(const Board &) = delete;
@@ -100,18 +130,39 @@ namespace fenrir
 		Board(Board &&) = delete;
 		Board &operator=(Board &&) = delete;
 
-		std::string getFen(void);
-		const std::string &getEnPassant(void) const override;
-		char getPiece(uint8_t rank, uint8_t file) const override;
-		uint64_t getBitboard(int index) const { return bitboards[index]; }
-		uint64_t getCombinedOccupancy() const { return combined_occupancy; }
-		uint64_t getWhiteOccupancy() const { return white_occupancy; }
-		uint64_t getBlackOccupancy() const { return black_occupancy; }
-		uint8_t getColor() const { return color; }
+		std::string get_fen(void);
+		const std::string &get_en_passant(void) const override;
+		char get_piece(uint8_t rank, uint8_t file) const override;
 
-		void move(uint8_t fromRank, uint8_t fromFile, uint8_t toRank, uint8_t toFile);
+		/* AbstractBoard interface implementations */
+		uint64_t get_bitboard(int index) const override { return bitboards[index]; }
+		uint64_t get_combined_occupancy() const override { return combined_occupancy; }
+		uint64_t get_occupancy(uint8_t clr) const override
+		{
+			return (clr == WHITE) ? white_occupancy : black_occupancy;
+		}
+		uint8_t get_color() const override { return color; }
+		const std::string &get_castling_rights() const override;
+		uint64_t get_en_passant_bb() const override;
+
+		/* Legacy accessors kept for backward compatibility */
+		uint64_t get_white_occupancy() const { return white_occupancy; }
+		uint64_t get_black_occupancy() const { return black_occupancy; }
+
+		/* Make/unmake interface */
+		UndoState apply_move(const Move &move);
+		void undo_move(const UndoState &state);
+
+		/* Check detection */
+		bool is_in_check(uint8_t clr) const;
+		bool is_square_attacked_by(uint8_t square, uint8_t attacker_color) const;
+
 		void print(void) const;
 
-		void reset(const std::string &fenString);
+		uint8_t get_castling_rights_mask() const { return castling_rights; }
+		uint8_t get_en_passant_square() const { return en_passant_square; }
+		uint8_t get_half_move_clock(void) const override { return half_move_clock; }
+
+		void reset(const std::string &fen_string);
 	};
 }

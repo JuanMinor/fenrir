@@ -16,13 +16,19 @@
 # Build Configuration
 # ------------------------------------------------------------------------------
 
+PREFIX ?= /usr/local
+DESTDIR ?=
+
 # Compiler and basic flags
 CC = g++
 CC_VERSION = c++20
 PROJECT_ROOT = .
 
+# Read version
+VERSION := $(shell cat VERSION)
+
 # Common compiler flags for all builds
-COMMON_FLAGS = -std=$(CC_VERSION) -I $(PROJECT_ROOT) -fPIC -DFENRIR_BUILD_DLL -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion -Wnull-dereference -Wdouble-promotion -Wformat=2
+COMMON_FLAGS = -std=$(CC_VERSION) -I $(PROJECT_ROOT) -fPIC -DFENRIR_BUILD_DLL -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion -Wnull-dereference -Wdouble-promotion -Wformat=2 -DFENRIR_VERSION=\"$(VERSION)\"
 
 # Build mode selection (default: debug)
 BUILD_MODE ?= debug
@@ -64,7 +70,8 @@ PGN_FILES = pgn/fenrir.pgn pgn/fenrir.store.txt
 # ------------------------------------------------------------------------------
 
 # All source files for the main library
-SRC_FILES = src/chess/board.cpp \
+SRC_FILES = src/chess/attacks.cpp \
+		   src/chess/board.cpp \
 		   src/chrono/chrono.cpp \
 		   src/engine/engine.cpp \
 		   src/chess/fen.cpp \
@@ -79,6 +86,8 @@ SRC_FILES = src/chess/board.cpp \
 OBJECT_FILES = $(SRC_FILES:src/%.cpp=$(BUILD_DIR)/%.o)
 
 # Main shared library target
+SHARED_REAL = $(LIB_DIR)/libfenrir.so.$(VERSION)
+SHARED_SONAME = $(LIB_DIR)/libfenrir.so.0
 SHARED_LIB = $(LIB_DIR)/libfenrir.so
 
 # Test source files
@@ -125,7 +134,9 @@ release:
 $(SHARED_LIB): $(OBJECT_FILES)
 	@echo "🔗 Linking shared library: $@"
 	@mkdir -p $(LIB_DIR)
-	$(CC) -shared -o $@ $(OBJECT_FILES)
+	$(CC) -shared -Wl,-soname,libfenrir.so.0 -o $(SHARED_REAL) $(OBJECT_FILES)
+	ln -sf libfenrir.so.$(VERSION) $(SHARED_SONAME)
+	ln -sf libfenrir.so.0 $(SHARED_LIB)
 	@echo "✅ Shared library built successfully"
 
 # Pattern rule: build object files from source files
@@ -225,8 +236,29 @@ endif
 # Make Configuration
 # ------------------------------------------------------------------------------
 
+# Install library, headers, and generate pkg-config file
+install: all
+	@echo "Installing libfenrir to $(PREFIX)..."
+	mkdir -p $(DESTDIR)$(PREFIX)/lib
+	mkdir -p $(DESTDIR)$(PREFIX)/include/fenrir
+	mkdir -p $(DESTDIR)$(PREFIX)/lib/pkgconfig
+	cp -d $(SHARED_REAL) $(SHARED_SONAME) $(SHARED_LIB) $(DESTDIR)$(PREFIX)/lib/
+	cp -r include/* $(DESTDIR)$(PREFIX)/include/fenrir/
+	@echo "Generating fenrir.pc..."
+	@echo "prefix=$(PREFIX)" > $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "exec_prefix=\$${prefix}" >> $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "libdir=\$${exec_prefix}/lib" >> $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "includedir=\$${prefix}/include" >> $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "" >> $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "Name: fenrir" >> $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "Description: Production-grade Chess Rules Library" >> $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "Version: $(VERSION)" >> $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "Libs: -L\$${libdir} -lfenrir" >> $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "Cflags: -I\$${includedir}/fenrir" >> $(DESTDIR)$(PREFIX)/lib/pkgconfig/fenrir.pc
+	@echo "✅ Installation complete."
+
 # Declare phony targets (targets that don't create files)
-.PHONY: all debug release test coverage clean help check-debug-mode
+.PHONY: all debug release test coverage clean help check-debug-mode install
 
 # Don't delete intermediate files
 .PRECIOUS: $(OBJECT_FILES)

@@ -27,8 +27,17 @@ namespace fenrir
 	public:
 		virtual ~AbstractBoard() = default;
 
-		virtual char getPiece(uint8_t rank, uint8_t file) const = 0;
-		virtual const std::string &getEnPassant(void) const = 0;
+		virtual char get_piece(uint8_t rank, uint8_t file) const = 0;
+		virtual const std::string &get_en_passant(void) const = 0;
+
+		/* Extended interface for move generation and check detection */
+		virtual uint8_t get_color(void) const = 0;
+		virtual const std::string &get_castling_rights(void) const = 0;
+		virtual uint64_t get_occupancy(uint8_t color) const = 0;
+		virtual uint64_t get_combined_occupancy(void) const = 0;
+		virtual uint64_t get_en_passant_bb(void) const = 0;
+		virtual uint64_t get_bitboard(int index) const = 0;
+		virtual uint8_t get_half_move_clock(void) const = 0;
 	};
 
 }

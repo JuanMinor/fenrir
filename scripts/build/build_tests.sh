@@ -14,6 +14,7 @@ set -e
 
 # Configuration
 SRC_FILES=(
+    "src/chess/attacks.cpp"
     "src/chess/board.cpp"
     "src/chrono/chrono.cpp"
     "src/engine/engine.cpp"
@@ -43,10 +44,13 @@ BUILD_DIR="bin/build"
 TEST_BUILD_DIR="bint/unit"
 TEST_EXECUTABLE="$TEST_BUILD_DIR/tests"
 
+# Read version
+VERSION=$(cat VERSION)
+
 # Compiler settings
 CC="g++"
 PROJECT_ROOT="."
-COMMON_FLAGS="-I $PROJECT_ROOT -fPIC -DFENRIR_BUILD_DLL -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion -Wnull-dereference -Wdouble-promotion -Wformat=2"
+COMMON_FLAGS="-I $PROJECT_ROOT -fPIC -DFENRIR_BUILD_DLL -Wall -Wextra -Werror -pedantic -Wshadow -Wnon-virtual-dtor -Wold-style-cast -Wcast-align -Wunused -Woverloaded-virtual -Wconversion -Wsign-conversion -Wnull-dereference -Wdouble-promotion -Wformat=2 -DFENRIR_VERSION=\"$VERSION\""
 CXXFLAGS="$COMMON_FLAGS -g"
 COVERAGE_FLAGS="-fprofile-arcs -ftest-coverage"
 CXXFLAGS_TEST="$CXXFLAGS $COVERAGE_FLAGS"

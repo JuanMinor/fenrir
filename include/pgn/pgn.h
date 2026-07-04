@@ -33,23 +33,24 @@ namespace io
 		mutable std::mutex pgn_mutex;
 		Pgn();
 
-		void clearStreamFlags(std::ostream &os) const;
-		void setMetadata(std::ostream &os) const;
+		void clear_stream_flags(std::ostream &os) const;
+		void set_metadata(std::ostream &os) const;
 
 	public:
-		static Pgn &getInstance();
+		static Pgn &get_instance();
 
 		Pgn(const Pgn &) = delete;
 		Pgn &operator=(const Pgn &) = delete;
+		Pgn(Pgn &&) = delete;
+		Pgn &operator=(Pgn &&) = delete;
 
 		~Pgn();
 
-		void updateMetadata(const std::string &tag);
 		void record(const std::string &move) const;
 		void create(void) const;
 	};
 
-#define PGN Pgn::getInstance()
+#define PGN Pgn::get_instance()
 #define PGN_RECORD(MOVE) PGN.record(MOVE);
 #define PGN_CREATE() PGN.create();
 }

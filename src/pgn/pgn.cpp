@@ -1,16 +1,16 @@
 /*
  *   Copyright (c) 2025 Juan Minor
-
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
-
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -26,33 +26,29 @@ namespace io
 
 	Pgn::~Pgn() {}
 
-	Pgn &Pgn::getInstance()
+	Pgn &Pgn::get_instance()
 	{
 		static Pgn instance;
-		logger::DEBUG("PGN instance created and returned. Only one instance will be used throughout the application.");
 		return instance;
 	}
 
-	void Pgn::clearStreamFlags(std::ostream &os) const
+	void Pgn::clear_stream_flags(std::ostream &os) const
 	{
 		os.seekp(std::ios_base::beg);
 		os.clear();
 	}
 
-	void Pgn::setMetadata(std::ostream &os) const
+	void Pgn::set_metadata(std::ostream &os) const
 	{
-		auto date = chrono::Chrono().getTimeWithFormat("%Y.%m.%d");
-		std::stringstream ss;
-		ss << "[Event \"User vs. Fenrir\"]\n"
+		auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
+		this->clear_stream_flags(os);
+		os << "[Event \"User vs. Fenrir\"]\n"
 		   << "[Site \"Remote server - atom\"]\n"
 		   << "[Date \"" << date << "\"]\n"
 		   << "[Round \"1\"]\n"
 		   << "[White \"User\"]\n"
 		   << "[Black \"Fenrir\"]\n"
-		   << "[Result \"-\"]\n";
-
-		this->clearStreamFlags(os);
-		os << ss.str();
+		   << "[Result \"-\"]\n\n";
 	}
 
 	void Pgn::record(const std::string &move) const
@@ -84,13 +80,22 @@ namespace io
 			return;
 		}
 
-		this->setMetadata(pgnFile);
+		this->set_metadata(pgnFile);
 
-		std::string move;
-		unsigned long long moveCount = 0;
-		while (std::getline(storeFile, move))
+		std::string whiteMove, blackMove;
+		unsigned long long move_count = 1;
+		while (std::getline(storeFile, whiteMove))
 		{
-			pgnFile << ++moveCount << ". " << move << " ";
+			pgnFile << move_count << ". " << whiteMove;
+			if (std::getline(storeFile, blackMove))
+			{
+				pgnFile << " " << blackMove << " ";
+			}
+			else
+			{
+				pgnFile << " ";
+			}
+			move_count++;
 		}
 	}
 }

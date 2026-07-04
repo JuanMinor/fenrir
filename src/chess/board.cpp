@@ -16,25 +16,54 @@
  */
 
 #include "include/chess/board.h"
+#include "include/chess/attacks.h"
+#include <atomic>
 
 namespace fenrir
 {
-	Board::Board(const std::string &fenString)
-		: fen(fenString)
+	Board::Board(const std::string &fen_string)
+		: fen(fen_string)
 	{
-		this->castling = fen.getCastling();
-		this->enPassant = fen.getEnPassant() == "-" ? "" : fen.getEnPassant();
-		this->color = fen.getColor();
-		this->halfMoveClock = static_cast<uint8_t>(fen.getHalfMoveClock());
-		this->fullMoves = static_cast<uint8_t>(fen.getFullMoves());
+		/* Ensure attack tables are initialized (idempotent — Engine also calls this) */
+		static std::atomic<bool> tables_initialized{false};
+		if (!tables_initialized.exchange(true))
+		{
+			init_attack_tables();
+		}
 
-		this->buildBoard(fen.getPlacement());
+		std::string fen_castling = fen.get_castling();
+		this->castling_rights = 0;
+		if (fen_castling.find('K') != std::string::npos) this->castling_rights |= CASTLE_K;
+		if (fen_castling.find('Q') != std::string::npos) this->castling_rights |= CASTLE_Q;
+		if (fen_castling.find('k') != std::string::npos) this->castling_rights |= CASTLE_k;
+		if (fen_castling.find('q') != std::string::npos) this->castling_rights |= CASTLE_q;
 
-		logger::INFO("Board initialized with FEN: " + fen.getPlacement());
+		std::string fen_ep = fen.get_en_passant();
+		if (fen_ep == "-" || fen_ep.empty())
+		{
+			this->en_passant_square = 64;
+		}
+		else
+		{
+			uint8_t ep_rank = 0, ep_file = 0;
+			utils::parse_algebraic_notation(fen_ep.c_str(), ep_rank, ep_file);
+			this->en_passant_square = static_cast<uint8_t>(ep_rank * 8 + ep_file);
+		}
+
+		this->castling_dirty = true;
+		this->en_passant_dirty = true;
+
+		this->color = fen.get_color();
+		this->half_move_clock = static_cast<uint8_t>(fen.get_half_move_clock());
+		this->full_moves = static_cast<uint8_t>(fen.get_full_moves());
+
+		this->build_board(fen.get_placement());
+
+		logger::INFO("Board initialized with FEN: " + fen.get_placement());
 	}
 
 	/* Private */
-	void Board::buildBoard(const std::string &placement)
+	void Board::build_board(const std::string &placement)
 	{
 		size_t size = placement.size();
 		uint8_t rank = BOARD_SIZE - 1, file = 0;
@@ -65,7 +94,7 @@ namespace fenrir
 			}
 
 			uint8_t square_idx = static_cast<uint8_t>(rank * 8 + file);
-			int bb_idx = getBitboardIndex(c);
+			int bb_idx = get_bitboard_index(c);
 			if (bb_idx >= 0)
 			{
 				set_bit(this->bitboards[bb_idx], square_idx);
@@ -79,13 +108,11 @@ namespace fenrir
 				}
 				set_bit(this->combined_occupancy, square_idx);
 			}
-
-			this->logPieceAction("Created", c, rank, file, "✅");
 			++file;
 		}
 	}
 
-	std::string Board::generatePlacementFromBoard(void) const
+	std::string Board::generate_placement_from_board(void) const
 	{
 		std::string placement;
 		placement.reserve(80);
@@ -95,7 +122,7 @@ namespace fenrir
 			uint8_t empty_squares = 0;
 			for (uint8_t file = 0; file < BOARD_SIZE; ++file)
 			{
-				char c = this->getPiece(static_cast<uint8_t>(rank), file);
+				char c = this->get_piece(static_cast<uint8_t>(rank), file);
 				if (c == '\0')
 				{
 					++empty_squares;
@@ -122,52 +149,58 @@ namespace fenrir
 		return placement;
 	}
 
-	void Board::logPieceAction(const std::string &action, char piece_char, uint8_t rank, uint8_t file, const std::string &emoji) const
-	{
-		bool is_white = std::isupper(static_cast<unsigned char>(piece_char));
-		const std::string colorStr = is_white ? "white" : "black";
-		char lower_alias = static_cast<char>(std::tolower(static_cast<unsigned char>(piece_char)));
 
-		uint8_t piece_value = 0;
-		switch (lower_alias)
+
+	std::string Board::get_fen(void)
+	{
+		fen.set_placement(this->generate_placement_from_board());
+		fen.set_castling(this->get_castling_rights().empty() ? "-" : this->get_castling_rights());
+		fen.set_en_passant(this->get_en_passant().empty() ? "-" : this->get_en_passant());
+		fen.set_color(this->color);
+		fen.set_half_move_clock(this->half_move_clock);
+		fen.set_full_moves(this->full_moves);
+
+		return fen.generate_fen();
+	}
+
+	const std::string &Board::get_en_passant(void) const
+	{
+		if (this->en_passant_dirty)
 		{
-			case 'p': piece_value = 1; break;
-			case 'n': piece_value = 3; break;
-			case 'b': piece_value = 3; break;
-			case 'r': piece_value = 5; break;
-			case 'q': piece_value = 9; break;
-			case 'k': piece_value = 0; break;
+			if (this->en_passant_square == 64)
+			{
+				this->en_passant_str = "";
+			}
+			else
+			{
+				this->en_passant_str = utils::get_algebraic_notation(
+					this->en_passant_square / 8,
+					this->en_passant_square % 8);
+			}
+			this->en_passant_dirty = false;
 		}
-
-		std::stringstream oss;
-		oss << action << " " << colorStr << " " << PIECE_NAMES.at(lower_alias)
-			<< " in position " << utils::getAlgebraicNotation(rank, file) << " " << emoji;
-
-		std::stringstream detailed_oss;
-		detailed_oss << oss.str() << " (" << unsigned(piece_value) << " value) at <"
-					 << unsigned(rank) << ", " << unsigned(file) << ">";
-
-		logger::DEBUG(detailed_oss.str());
+		return this->en_passant_str;
 	}
 
-	std::string Board::getFen(void)
+	const std::string &Board::get_castling_rights(void) const
 	{
-		fen.setPlacement(this->generatePlacementFromBoard());
-		fen.setCastling(this->castling.empty() ? "-" : this->castling);
-		fen.setEnPassant(this->enPassant.empty() ? "-" : this->enPassant);
-		fen.setColor(this->color);
-		fen.setHalfMoveClock(this->halfMoveClock);
-		fen.setFullMoves(this->fullMoves);
-
-		return fen.generateFen();
+		if (this->castling_dirty)
+		{
+			this->castling_str = "";
+			if (this->castling_rights & CASTLE_K) this->castling_str += 'K';
+			if (this->castling_rights & CASTLE_Q) this->castling_str += 'Q';
+			if (this->castling_rights & CASTLE_k) this->castling_str += 'k';
+			if (this->castling_rights & CASTLE_q) this->castling_str += 'q';
+			if (this->castling_str.empty())
+			{
+				this->castling_str = "-";
+			}
+			this->castling_dirty = false;
+		}
+		return this->castling_str;
 	}
 
-	const std::string &Board::getEnPassant(void) const
-	{
-		return this->enPassant;
-	}
-
-	char Board::getPiece(uint8_t rank, uint8_t file) const
+	char Board::get_piece(uint8_t rank, uint8_t file) const
 	{
 		if (rank >= BOARD_SIZE || file >= BOARD_SIZE)
 		{
@@ -178,115 +211,71 @@ namespace fenrir
 		}
 		uint8_t square_idx = static_cast<uint8_t>(rank * 8 + file);
 
-		for (int i = 0; i < 12; ++i)
+		if (test_bit(this->white_occupancy, square_idx))
 		{
-			if (test_bit(this->bitboards[i], square_idx))
+			for (int i = 0; i < 6; ++i)
 			{
-				static const char aliases[12] = {
-					'P', 'N', 'B', 'R', 'Q', 'K',
-					'p', 'n', 'b', 'r', 'q', 'k'
-				};
-				return aliases[i];
+				if (test_bit(this->bitboards[i], square_idx))
+				{
+					static const char aliases[6] = { 'P', 'N', 'B', 'R', 'Q', 'K' };
+					return aliases[i];
+				}
+			}
+		}
+		else if (test_bit(this->black_occupancy, square_idx))
+		{
+			for (int i = 6; i < 12; ++i)
+			{
+				if (test_bit(this->bitboards[i], square_idx))
+				{
+					static const char aliases[6] = { 'p', 'n', 'b', 'r', 'q', 'k' };
+					return aliases[i - 6];
+				}
 			}
 		}
 		return '\0';
 	}
 
-	void Board::move(uint8_t fromRank, uint8_t fromFile, uint8_t toRank, uint8_t toFile)
+	uint64_t Board::get_en_passant_bb() const
 	{
-		if (fromRank >= BOARD_SIZE || fromFile >= BOARD_SIZE || toRank >= BOARD_SIZE || toFile >= BOARD_SIZE)
+		if (this->en_passant_square == 64)
 		{
-			LOG_THROW_ERROR(
-				"Move addresses are invalid",
-				false);
-			return;
+			return 0ULL;
 		}
-
-		uint8_t old_sq = static_cast<uint8_t>(fromRank * 8 + fromFile);
-		uint8_t new_sq = static_cast<uint8_t>(toRank * 8 + toFile);
-
-		char active_c = this->getPiece(fromRank, fromFile);
-		if (active_c == '\0')
-		{
-			LOG_THROW_ERROR(
-				"Piece at board address <" + std::to_string(unsigned(fromRank)) + ", " + std::to_string(unsigned(fromFile)) + "> is invalid",
-				false);
-			return;
-		}
-
-		char target_c = this->getPiece(toRank, toFile);
-		bool active_is_white = std::isupper(static_cast<unsigned char>(active_c));
-
-		if (target_c != '\0')
-		{
-			bool target_is_white = std::isupper(static_cast<unsigned char>(target_c));
-			if (active_is_white == target_is_white)
-			{
-				LOG_THROW_ERROR(
-					"Cannot move to address <" + std::to_string(unsigned(toRank)) + ", " + std::to_string(unsigned(toFile)) + ">",
-					false);
-				return;
-			}
-			else
-			{
-				int captured_bb_idx = getBitboardIndex(target_c);
-				if (captured_bb_idx >= 0)
-				{
-					clear_bit(this->bitboards[captured_bb_idx], new_sq);
-					if (target_is_white)
-					{
-						clear_bit(this->white_occupancy, new_sq);
-					}
-					else
-					{
-						clear_bit(this->black_occupancy, new_sq);
-					}
-				}
-			}
-		}
-
-		/* En passant logic */
-		this->enPassant = "";
-		if (std::tolower(static_cast<unsigned char>(active_c)) == 'p' && std::abs(static_cast<int>(toRank) - static_cast<int>(fromRank)) == 2)
-		{
-			this->enPassant = std::string(utils::getAlgebraicNotation(
-				static_cast<uint8_t>((static_cast<int>(toRank) + static_cast<int>(fromRank)) / 2),
-				fromFile));
-		}
-
-		int active_bb_idx = getBitboardIndex(active_c);
-		if (active_bb_idx >= 0)
-		{
-			clear_bit(this->bitboards[active_bb_idx], old_sq);
-			set_bit(this->bitboards[active_bb_idx], new_sq);
-			if (active_is_white)
-			{
-				clear_bit(this->white_occupancy, old_sq);
-				set_bit(this->white_occupancy, new_sq);
-			}
-			else
-			{
-				clear_bit(this->black_occupancy, old_sq);
-				set_bit(this->black_occupancy, new_sq);
-			}
-		}
-
-		this->combined_occupancy = this->white_occupancy | this->black_occupancy;
-
-		this->logPieceAction("Moved", active_c, toRank, toFile, "🚀");
-		io::PGN_RECORD(std::string(utils::getAlgebraicNotation(fromRank, fromFile)) + " " + utils::getAlgebraicNotation(toRank, toFile));
+		return (1ULL << this->en_passant_square);
 	}
 
-	void Board::reset(const std::string &fenString)
+	void Board::reset(const std::string &fen_string)
 	{
-		this->fen = Fen(fenString);
-		this->castling = fen.getCastling();
-		this->enPassant = fen.getEnPassant() == "-" ? "" : fen.getEnPassant();
-		this->color = fen.getColor();
-		this->halfMoveClock = static_cast<uint8_t>(fen.getHalfMoveClock());
-		this->fullMoves = static_cast<uint8_t>(fen.getFullMoves());
-		this->buildBoard(fen.getPlacement());
-		logger::INFO("Board reset to FEN: " + fenString);
+		this->fen = Fen(fen_string);
+		
+		std::string fen_castling = fen.get_castling();
+		this->castling_rights = 0;
+		if (fen_castling.find('K') != std::string::npos) this->castling_rights |= CASTLE_K;
+		if (fen_castling.find('Q') != std::string::npos) this->castling_rights |= CASTLE_Q;
+		if (fen_castling.find('k') != std::string::npos) this->castling_rights |= CASTLE_k;
+		if (fen_castling.find('q') != std::string::npos) this->castling_rights |= CASTLE_q;
+
+		std::string fen_ep = fen.get_en_passant();
+		if (fen_ep == "-" || fen_ep.empty())
+		{
+			this->en_passant_square = 64;
+		}
+		else
+		{
+			uint8_t ep_rank = 0, ep_file = 0;
+			utils::parse_algebraic_notation(fen_ep.c_str(), ep_rank, ep_file);
+			this->en_passant_square = static_cast<uint8_t>(ep_rank * 8 + ep_file);
+		}
+
+		this->castling_dirty = true;
+		this->en_passant_dirty = true;
+
+		this->color = fen.get_color();
+		this->half_move_clock = static_cast<uint8_t>(fen.get_half_move_clock());
+		this->full_moves = static_cast<uint8_t>(fen.get_full_moves());
+		this->build_board(fen.get_placement());
+		logger::INFO("Board reset to FEN: " + fen_string);
 	}
 
 	void Board::print(void) const
@@ -307,7 +296,7 @@ namespace fenrir
 					  << color::Modifier(color::Color::RESET);
 			for (uint8_t j = 0; j < BOARD_SIZE; ++j)
 			{
-				char c = this->getPiece(static_cast<uint8_t>(i), j);
+				char c = this->get_piece(static_cast<uint8_t>(i), j);
 				if (c != '\0')
 				{
 					bool is_white = std::isupper(static_cast<unsigned char>(c));
@@ -331,4 +320,425 @@ namespace fenrir
 		}
 		std::cout << color::Modifier(color::Color::RESET) << std::endl;
 	}
-}
+
+	/* =========================================================
+	 *  Make / Unmake implementation
+	 * ========================================================= */
+
+	UndoState Board::apply_move(const Move &move)
+	{
+		/* Save full state snapshot */
+		UndoState state;
+		for (int i = 0; i < 12; ++i)
+		{
+			state.bitboards[i] = this->bitboards[i];
+		}
+		state.white_occupancy   = this->white_occupancy;
+		state.black_occupancy   = this->black_occupancy;
+		state.combined_occupancy = this->combined_occupancy;
+		state.castling_rights   = this->castling_rights;
+		state.en_passant_square  = this->en_passant_square;
+		state.color             = this->color;
+		state.half_move_clock     = this->half_move_clock;
+		state.full_moves         = this->full_moves;
+
+		uint8_t from_sq = move.get_from_square();
+		uint8_t to_sq   = move.get_to_square();
+		uint8_t from_rank = static_cast<uint8_t>(from_sq / 8);
+		uint8_t from_file = static_cast<uint8_t>(from_sq % 8);
+		uint8_t to_rank   = static_cast<uint8_t>(to_sq / 8);
+		uint8_t to_file   = static_cast<uint8_t>(to_sq % 8);
+
+		char active_piece = this->get_piece(from_rank, from_file);
+		if (active_piece == '\0')
+		{
+			return state; // nothing to do
+		}
+
+		bool active_is_white = std::isupper(static_cast<unsigned char>(active_piece));
+		int active_bb_idx = get_bitboard_index(active_piece);
+
+		/* Clear en passant */
+		this->en_passant_square = 64;
+		this->en_passant_dirty = true;
+
+		MoveType mt = move.get_move_type();
+
+		/* Handle capture (remove captured piece from destination) */
+		if (mt == MoveType::CAPTURE)
+		{
+			char target_piece = this->get_piece(to_rank, to_file);
+			if (target_piece != '\0')
+			{
+				int cap_bb_idx = get_bitboard_index(target_piece);
+				if (cap_bb_idx >= 0)
+				{
+					clear_bit(this->bitboards[cap_bb_idx], to_sq);
+					if (std::isupper(static_cast<unsigned char>(target_piece)))
+					{
+						clear_bit(this->white_occupancy, to_sq);
+					}
+					else
+					{
+						clear_bit(this->black_occupancy, to_sq);
+					}
+				}
+			}
+		}
+		else if (mt == MoveType::EN_PASSANT)
+		{
+			/* Remove the captured pawn (which is on the same rank as moving pawn, EP file) */
+			uint8_t ep_file = to_file;
+			uint8_t ep_pawn_rank = from_rank; /* captured pawn is on same rank as attacker */
+			uint8_t ep_pawn_sq = static_cast<uint8_t>(ep_pawn_rank * 8 + ep_file);
+			char captured_pawn = active_is_white ? 'p' : 'P';
+			int cap_bb_idx = get_bitboard_index(captured_pawn);
+			if (cap_bb_idx >= 0)
+			{
+				clear_bit(this->bitboards[cap_bb_idx], ep_pawn_sq);
+				if (active_is_white)
+				{
+					clear_bit(this->black_occupancy, ep_pawn_sq);
+				}
+				else
+				{
+					clear_bit(this->white_occupancy, ep_pawn_sq);
+				}
+			}
+		}
+		else if (mt == MoveType::CASTLE_KINGSIDE)
+		{
+			/* Move rook: h-file to f-file */
+			uint8_t rook_from_sq = static_cast<uint8_t>(from_rank * 8 + 7); // h-file
+			uint8_t rook_to_sq   = static_cast<uint8_t>(from_rank * 8 + 5); // f-file
+			char rook_char = active_is_white ? 'R' : 'r';
+			int rook_bb_idx = get_bitboard_index(rook_char);
+			if (rook_bb_idx >= 0)
+			{
+				clear_bit(this->bitboards[rook_bb_idx], rook_from_sq);
+				set_bit(this->bitboards[rook_bb_idx], rook_to_sq);
+				if (active_is_white)
+				{
+					clear_bit(this->white_occupancy, rook_from_sq);
+					set_bit(this->white_occupancy, rook_to_sq);
+				}
+				else
+				{
+					clear_bit(this->black_occupancy, rook_from_sq);
+					set_bit(this->black_occupancy, rook_to_sq);
+				}
+			}
+		}
+		else if (mt == MoveType::CASTLE_QUEENSIDE)
+		{
+			/* Move rook: a-file to d-file */
+			uint8_t rook_from_sq = static_cast<uint8_t>(from_rank * 8 + 0); // a-file
+			uint8_t rook_to_sq   = static_cast<uint8_t>(from_rank * 8 + 3); // d-file
+			char rook_char = active_is_white ? 'R' : 'r';
+			int rook_bb_idx = get_bitboard_index(rook_char);
+			if (rook_bb_idx >= 0)
+			{
+				clear_bit(this->bitboards[rook_bb_idx], rook_from_sq);
+				set_bit(this->bitboards[rook_bb_idx], rook_to_sq);
+				if (active_is_white)
+				{
+					clear_bit(this->white_occupancy, rook_from_sq);
+					set_bit(this->white_occupancy, rook_to_sq);
+				}
+				else
+				{
+					clear_bit(this->black_occupancy, rook_from_sq);
+					set_bit(this->black_occupancy, rook_to_sq);
+				}
+			}
+		}
+
+		/* Move the active piece */
+		if (active_bb_idx >= 0)
+		{
+			/* For promotion, replace the pawn with the promotion piece */
+			if (mt == MoveType::PROMOTION)
+			{
+				char prom_char = move.get_promotion_piece();
+				/* Adjust case for color */
+				if (active_is_white)
+				{
+					prom_char = static_cast<char>(std::toupper(static_cast<unsigned char>(prom_char)));
+				}
+				else
+				{
+					prom_char = static_cast<char>(std::tolower(static_cast<unsigned char>(prom_char)));
+				}
+				int prom_bb_idx = get_bitboard_index(prom_char);
+
+				/* Remove the pawn from source */
+				clear_bit(this->bitboards[active_bb_idx], from_sq);
+
+				/* Remove any piece on destination (promotion capture) */
+				char target_at_dest = this->get_piece(to_rank, to_file);
+				if (target_at_dest != '\0')
+				{
+					int cap_bb_idx = get_bitboard_index(target_at_dest);
+					if (cap_bb_idx >= 0)
+					{
+						clear_bit(this->bitboards[cap_bb_idx], to_sq);
+						if (std::isupper(static_cast<unsigned char>(target_at_dest)))
+						{
+							clear_bit(this->white_occupancy, to_sq);
+						}
+						else
+						{
+							clear_bit(this->black_occupancy, to_sq);
+						}
+					}
+				}
+
+				/* Place promotion piece on destination */
+				if (prom_bb_idx >= 0)
+				{
+					set_bit(this->bitboards[prom_bb_idx], to_sq);
+				}
+
+				/* Update occupancy */
+				if (active_is_white)
+				{
+					clear_bit(this->white_occupancy, from_sq);
+					set_bit(this->white_occupancy, to_sq);
+				}
+				else
+				{
+					clear_bit(this->black_occupancy, from_sq);
+					set_bit(this->black_occupancy, to_sq);
+				}
+			}
+			else
+			{
+				clear_bit(this->bitboards[active_bb_idx], from_sq);
+				set_bit(this->bitboards[active_bb_idx], to_sq);
+				if (active_is_white)
+				{
+					clear_bit(this->white_occupancy, from_sq);
+					set_bit(this->white_occupancy, to_sq);
+				}
+				else
+				{
+					clear_bit(this->black_occupancy, from_sq);
+					set_bit(this->black_occupancy, to_sq);
+				}
+			}
+		}
+
+		/* Set en passant square for double pawn pushes */
+		if (std::tolower(static_cast<unsigned char>(active_piece)) == 'p' &&
+		    std::abs(static_cast<int>(to_rank) - static_cast<int>(from_rank)) == 2)
+		{
+			this->en_passant_square = static_cast<uint8_t>(((static_cast<int>(to_rank) + static_cast<int>(from_rank)) / 2) * 8 + from_file);
+			this->en_passant_dirty = true;
+		}
+
+		/* Update castling rights */
+		/* Remove rights if king moves */
+		if (std::tolower(static_cast<unsigned char>(active_piece)) == 'k')
+		{
+			if (active_is_white)
+			{
+				this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~(CASTLE_K | CASTLE_Q));
+				this->castling_dirty = true;
+			}
+			else
+			{
+				this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~(CASTLE_k | CASTLE_q));
+				this->castling_dirty = true;
+			}
+		}
+
+		/* Remove rook rights if rook moves or is captured */
+		{
+			/* White kingside rook at h1 (sq 7) */
+			if (from_sq == 7 || to_sq == 7)
+			{
+				if (this->castling_rights & CASTLE_K) {
+					this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~CASTLE_K);
+					this->castling_dirty = true;
+				}
+			}
+			/* White queenside rook at a1 (sq 0) */
+			if (from_sq == 0 || to_sq == 0)
+			{
+				if (this->castling_rights & CASTLE_Q) {
+					this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~CASTLE_Q);
+					this->castling_dirty = true;
+				}
+			}
+			/* Black kingside rook at h8 (sq 63) */
+			if (from_sq == 63 || to_sq == 63)
+			{
+				if (this->castling_rights & CASTLE_k) {
+					this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~CASTLE_k);
+					this->castling_dirty = true;
+				}
+			}
+			/* Black queenside rook at a8 (sq 56) */
+			if (from_sq == 56 || to_sq == 56)
+			{
+				if (this->castling_rights & CASTLE_q) {
+					this->castling_rights = static_cast<uint8_t>(this->castling_rights & ~CASTLE_q);
+					this->castling_dirty = true;
+				}
+			}
+		}
+
+		this->combined_occupancy = this->white_occupancy | this->black_occupancy;
+
+		/* Toggle side to move */
+		this->color = (this->color == WHITE) ? BLACK : WHITE;
+
+		/* Update move clocks */
+		if (std::tolower(static_cast<unsigned char>(active_piece)) == 'p' ||
+		    mt == MoveType::CAPTURE || mt == MoveType::EN_PASSANT || mt == MoveType::PROMOTION)
+		{
+			this->half_move_clock = 0;
+		}
+		else
+		{
+			this->half_move_clock = static_cast<uint8_t>(this->half_move_clock + 1);
+		}
+
+		if (this->color == WHITE) /* after toggle, if now white it means black just moved */
+		{
+			this->full_moves = static_cast<uint8_t>(this->full_moves + 1);
+		}
+
+		return state;
+	}
+
+	void Board::undo_move(const UndoState &state)
+	{
+		for (int i = 0; i < 12; ++i)
+		{
+			this->bitboards[i] = state.bitboards[i];
+		}
+		this->white_occupancy    = state.white_occupancy;
+		this->black_occupancy    = state.black_occupancy;
+		this->combined_occupancy = state.combined_occupancy;
+		this->castling_rights    = state.castling_rights;
+		this->en_passant_square  = state.en_passant_square;
+		this->castling_dirty     = true;
+		this->en_passant_dirty    = true;
+		this->color              = state.color;
+		this->half_move_clock      = state.half_move_clock;
+		this->full_moves          = state.full_moves;
+	}
+
+	/* =========================================================
+	 *  Check detection — uses precomputed attack tables
+	 * ========================================================= */
+
+	bool Board::is_square_attacked_by(uint8_t square, uint8_t attacker_color) const
+	{
+		/* Piece bitboard indices for the attacker */
+		/* White: P=0,N=1,B=2,R=3,Q=4,K=5 | Black: p=6,n=7,b=8,r=9,q=10,k=11 */
+		int pawn_idx   = (attacker_color == WHITE) ? 0 : 6;
+		int knight_idx = (attacker_color == WHITE) ? 1 : 7;
+		int bishop_idx = (attacker_color == WHITE) ? 2 : 8;
+		int rook_idx   = (attacker_color == WHITE) ? 3 : 9;
+		int queen_idx  = (attacker_color == WHITE) ? 4 : 10;
+		int king_idx   = (attacker_color == WHITE) ? 5 : 11;
+
+		/* Pawn attacks: the square is attacked by a pawn of attacker_color
+		   if there's a pawn on one of the squares that would attack 'square'.
+		   PAWN_ATTACKS[attacker_color][square] gives squares a pawn ON 'square' would attack.
+		   We want: which pawn squares attack 'square'?
+		   A White pawn on sq X attacks square if PAWN_ATTACKS[WHITE][X] contains square.
+		   Equivalently: use opponent's pawn attack table from the target square. */
+		uint8_t defender_color = (attacker_color == WHITE) ? BLACK : WHITE;
+		uint64_t pawn_attack_mask = PAWN_ATTACKS[defender_color][square];
+		if (pawn_attack_mask & this->bitboards[pawn_idx])
+		{
+			return true;
+		}
+
+		/* Knight attacks */
+		if (KNIGHT_ATTACKS[square] & this->bitboards[knight_idx])
+		{
+			return true;
+		}
+
+		/* King attacks */
+		if (KING_ATTACKS[square] & this->bitboards[king_idx])
+		{
+			return true;
+		}
+
+		/* Sliding pieces — bishops (diagonals) */
+		{
+			uint64_t bishops = this->bitboards[bishop_idx] | this->bitboards[queen_idx];
+			/* Check diagonal rays */
+			for (int dir : {RAY_NE, RAY_SE, RAY_SW, RAY_NW})
+			{
+				uint64_t ray = RAY[square][dir];
+				uint64_t blockers = ray & this->combined_occupancy;
+				if (blockers)
+				{
+					/* Find the first blocker in this ray direction */
+					uint8_t first_blocker;
+					if (dir == RAY_NE || dir == RAY_N || dir == RAY_NW || dir == RAY_E)
+					{
+						first_blocker = static_cast<uint8_t>(__builtin_ctzll(blockers));
+					}
+					else
+					{
+						first_blocker = static_cast<uint8_t>(63 - __builtin_clzll(blockers));
+					}
+					if ((1ULL << first_blocker) & bishops)
+					{
+						return true;
+					}
+				}
+			}
+		}
+
+		/* Sliding pieces — rooks (orthogonal) */
+		{
+			uint64_t rooks = this->bitboards[rook_idx] | this->bitboards[queen_idx];
+			for (int dir : {RAY_N, RAY_E, RAY_S, RAY_W})
+			{
+				uint64_t ray = RAY[square][dir];
+				uint64_t blockers = ray & this->combined_occupancy;
+				if (blockers)
+				{
+					uint8_t first_blocker;
+					if (dir == RAY_N || dir == RAY_E)
+					{
+						first_blocker = static_cast<uint8_t>(__builtin_ctzll(blockers));
+					}
+					else
+					{
+						first_blocker = static_cast<uint8_t>(63 - __builtin_clzll(blockers));
+					}
+					if ((1ULL << first_blocker) & rooks)
+					{
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	bool Board::is_in_check(uint8_t clr) const
+	{
+		/* Find king square */
+		int king_bb_idx = (clr == WHITE) ? 5 : 11;
+		uint64_t king_bb = this->bitboards[king_bb_idx];
+		if (king_bb == 0ULL)
+		{
+			return false; // No king on board (shouldn't happen in real game)
+		}
+		uint8_t king_square = static_cast<uint8_t>(__builtin_ctzll(king_bb));
+		uint8_t opponent = (clr == WHITE) ? BLACK : WHITE;
+		return is_square_attacked_by(king_square, opponent);
+	}
+
+} // namespace fenrir

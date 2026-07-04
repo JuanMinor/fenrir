@@ -60,7 +60,11 @@ namespace color
 
 namespace fenrir
 {
+#ifdef NDEBUG
+	constexpr bool DEBUG = false;
+#else
 	constexpr bool DEBUG = true;
+#endif
 
 	constexpr int BOARD_SIZE = 8;
 	constexpr int BOARD_MAX_LEFT = 0;
@@ -70,19 +74,6 @@ namespace fenrir
 	constexpr uint8_t BLACK = 1;
 
 
-	inline const std::unordered_map<char, const char *> PIECE_NAMES = {
-		{'p', "pawn"},
-		{'n', "knight"},
-		{'b', "bishop"},
-		{'r', "rook"},
-		{'q', "queen"},
-		{'k', "king"}};
-
-	enum class GameMode : uint8_t
-	{
-		PERMISSIVE,
-		TOURNAMENT
-	};
 
 	enum class MoveType : uint8_t
 	{
@@ -118,7 +109,7 @@ namespace logger
 
 namespace test
 {
-	inline const char *getCI()
+	inline const char *get_ci()
 	{
 		static const char *CI = getenv("CI");
 		return CI;

@@ -1,16 +1,16 @@
 /*
  *   Copyright (c) 2025 Juan Minor
-
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
-
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -44,16 +44,22 @@ namespace logger
 	Logger::Logger() {}
 	Logger::~Logger() {}
 
-	void Logger::log(const std::string &message, const char *file, uint32_t lineNumber, LEVEL level) const
+	Logger &Logger::get_instance()
+	{
+		static Logger instance;
+		return instance;
+	}
+
+	void Logger::log(const std::string &message, const char *file, uint32_t line_number, LEVEL level) const
 	{
 		if (level == LEVEL::DEBUG && !fenrir::DEBUG)
 		{
 			return;
 		}
 
-		auto timestamp = chrono::Chrono().getTimeWithFormat("%a %b %d, %Y @ %H:%M:%S");
+		auto timestamp = chrono::Chrono().get_time_with_format("%a %b %d, %Y @ %H:%M:%S");
 
-		std::lock_guard<std::mutex> guard(Logger::log_mutex);
+		std::lock_guard<std::mutex> guard(log_mutex);
 
 		rotate_logs();
 
@@ -66,11 +72,11 @@ namespace logger
 		try
 		{
 			const char *type = level_types.at(level);
-			log_file << "[" << timestamp << "] [" << file << " @ Line " << lineNumber << "]::" << type << message << std::endl;
+			log_file << "[" << timestamp << "] [" << file << " @ Line " << line_number << "]::" << type << message << std::endl;
 		}
 		catch (const std::exception &e)
 		{
-			// TODO: Handle logging failure (e.g., write to stderr or fallback log file)
+			// Fallback: do nothing or write to stderr
 		}
 	}
 

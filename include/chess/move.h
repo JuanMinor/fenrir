@@ -27,15 +27,15 @@ namespace fenrir
 	{
 		uint8_t from_square;
 		uint8_t to_square;
-		MoveType moveType;
-		char promotionPiece;
+		MoveType move_type;
+		char promotion_piece;
 		std::unique_ptr<std::pair<std::string, std::string>> invalid_squares;
 
 	public:
-		Move(const std::string &from, const std::string &to,
-			 MoveType type = MoveType::NORMAL, char promotion = '\0');
-		Move(uint8_t fromSquare, uint8_t toSquare,
-			 MoveType type = MoveType::NORMAL, char promotion = '\0');
+		Move(const std::string &from, const std::string &to, char promotion = '\0');
+		Move(uint8_t from, uint8_t to, char promotion = '\0');
+		Move(const std::string &from, const std::string &to, MoveType type, char promotion = '\0');
+		Move(uint8_t from, uint8_t to, MoveType type, char promotion = '\0');
 
 		Move(const Move& other);
 		Move& operator=(const Move& other);
@@ -45,20 +45,20 @@ namespace fenrir
 		~Move();
 
 		/* Getters */
-		std::string getFrom() const;
-		std::string getTo() const;
-		uint8_t getFromSquare() const;
-		uint8_t getToSquare() const;
-		MoveType getMoveType() const;
-		char getPromotionPiece() const;
+		std::string get_from() const;
+		std::string get_to() const;
+		uint8_t get_from_square() const;
+		uint8_t get_to_square() const;
+		MoveType get_move_type() const;
+		char get_promotion_piece() const;
 
 		/* Utility methods */
-		bool isCapture() const;
-		bool isPromotion() const;
-		bool isCastling() const;
-		std::string toAlgebraicNotation() const;
-		std::string toString() const;
-		std::string toUCINotation() const;
+		bool is_capture() const;
+		bool is_promotion() const;
+		bool is_castling() const;
+		std::string to_algebraic_notation() const;
+		std::string to_string() const;
+		std::string to_uci_notation() const;
 	};
 
 }

@@ -19,7 +19,7 @@
 
 namespace color
 {
-	Modifier::Modifier(Color colorValue) : color(colorValue) {}
+	Modifier::Modifier(Color color_value) : color(color_value) {}
 
 	Modifier::~Modifier() {}
 

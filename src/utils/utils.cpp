@@ -19,7 +19,7 @@
 
 namespace utils
 {
-	bool areChessPieceCountRulesValid(const std::unordered_map<char, uint8_t> &piece_counts)
+	bool are_chess_piece_count_rules_valid(const std::unordered_map<char, uint8_t> &piece_counts)
 	{
 		if (piece_counts.at('K') != 1 || piece_counts.at('k') != 1)
 		{
@@ -77,7 +77,7 @@ namespace utils
 		return true;
 	}
 
-	std::string getAlgebraicNotation(uint8_t rank, uint8_t file)
+	std::string get_algebraic_notation(uint8_t rank, uint8_t file)
 	{
 		if (rank >= fenrir::BOARD_SIZE || file >= fenrir::BOARD_SIZE)
 		{
@@ -86,18 +86,18 @@ namespace utils
 		return std::string(1, static_cast<char>(97 + file)) + std::to_string(rank + 1);
 	}
 
-	void logThrowError(const std::string &error, bool throw_error, const char *file, int lineno)
+	void log_throw_error(const std::string &error, bool throw_error, const char *file, int lineno)
 	{
 		if (error.empty())
 		{
-			logger::Logger().log("Error message cannot be null", file, static_cast<uint32_t>(lineno), logger::LEVEL::ERROR);
+			logger::Logger::get_instance().log("Error message cannot be null", file, static_cast<uint32_t>(lineno), logger::LEVEL::ERROR);
 			if (throw_error)
 			{
 				throw std::runtime_error("Error message cannot be null");
 			}
 		}
 
-		logger::Logger().log(error, file, static_cast<uint32_t>(lineno), logger::LEVEL::ERROR);
+		logger::Logger::get_instance().log(error, file, static_cast<uint32_t>(lineno), logger::LEVEL::ERROR);
 		if (throw_error)
 		{
 			throw std::runtime_error(error);
@@ -106,7 +106,7 @@ namespace utils
 
 
 
-	void parseAlgebraicNotation(const std::string &algebraic_notation, uint8_t &rank, uint8_t &file)
+	void parse_algebraic_notation(const std::string &algebraic_notation, uint8_t &rank, uint8_t &file)
 	{
 		if (algebraic_notation.empty() || algebraic_notation.length() != 2U || !std::isalpha(algebraic_notation[0]) || !std::isdigit(algebraic_notation[1]))
 		{
