@@ -19,7 +19,7 @@
 
 namespace utils
 {
-	bool areChessPieceCountRulesValid(const std::unordered_map<char, uint8_t> &piece_counts)
+	bool are_chess_piece_count_rules_valid(const std::unordered_map<char, uint8_t> &piece_counts)
 	{
 		if (piece_counts.at('K') != 1 || piece_counts.at('k') != 1)
 		{
@@ -46,26 +46,26 @@ namespace utils
 			return false;
 		}
 
-		int white_extra_queens = std::max(0, (int)piece_counts.at('Q') - 1);
-		int white_extra_rooks = std::max(0, (int)piece_counts.at('R') - 2);
-		int white_extra_bishops = std::max(0, (int)piece_counts.at('B') - 2);
-		int white_extra_knights = std::max(0, (int)piece_counts.at('N') - 2);
+		int white_extra_queens = std::max(0, static_cast<int>(piece_counts.at('Q')) - 1);
+		int white_extra_rooks = std::max(0, static_cast<int>(piece_counts.at('R')) - 2);
+		int white_extra_bishops = std::max(0, static_cast<int>(piece_counts.at('B')) - 2);
+		int white_extra_knights = std::max(0, static_cast<int>(piece_counts.at('N')) - 2);
 
 		int white_promoted_pieces = white_extra_queens + white_extra_rooks + white_extra_bishops + white_extra_knights;
-		int white_missing_pawns = 8 - piece_counts.at('P');
+		int white_missing_pawns = 8 - static_cast<int>(piece_counts.at('P'));
 
 		if (white_promoted_pieces > white_missing_pawns)
 		{
 			return false;
 		}
 
-		int black_extra_queens = std::max(0, (int)piece_counts.at('q') - 1);
-		int black_extra_rooks = std::max(0, (int)piece_counts.at('r') - 2);
-		int black_extra_bishops = std::max(0, (int)piece_counts.at('b') - 2);
-		int black_extra_knights = std::max(0, (int)piece_counts.at('n') - 2);
+		int black_extra_queens = std::max(0, static_cast<int>(piece_counts.at('q')) - 1);
+		int black_extra_rooks = std::max(0, static_cast<int>(piece_counts.at('r')) - 2);
+		int black_extra_bishops = std::max(0, static_cast<int>(piece_counts.at('b')) - 2);
+		int black_extra_knights = std::max(0, static_cast<int>(piece_counts.at('n')) - 2);
 
 		int black_promoted_pieces = black_extra_queens + black_extra_rooks + black_extra_bishops + black_extra_knights;
-		int black_missing_pawns = 8 - piece_counts.at('p');
+		int black_missing_pawns = 8 - static_cast<int>(piece_counts.at('p'));
 
 		if (black_promoted_pieces > black_missing_pawns)
 		{
@@ -75,36 +75,36 @@ namespace utils
 		return true;
 	}
 
-	const std::string getAlgebraicNotation(const uint8_t &rank, const uint8_t &file)
+	std::string get_algebraic_notation(uint8_t rank, uint8_t file)
 	{
 		if (rank >= fenrir::BOARD_SIZE || file >= fenrir::BOARD_SIZE)
 		{
 			LOG_THROW_ERROR("Cannot get algebraic notation for invalid board address", true);
 		}
-		return ((char(97 + file)) + std::to_string(unsigned(rank + 1))).c_str();
+		return std::string(1, static_cast<char>(97 + file)) + std::to_string(rank + 1);
 	}
 
-	void logThrowError(const std::string &error, const bool &throw_error, const char *file, const int &lineno)
+	void log_throw_error(const std::string &error, bool throw_error, const char *file, int lineno)
 	{
 		if (error.empty())
 		{
-			logger::Logger().log("Error message cannot be null", file, lineno, logger::ERROR);
+			logger::Logger::get_instance().log("Error message cannot be null", file, static_cast<uint32_t>(lineno), logger::LEVEL::ERROR);
 			if (throw_error)
 			{
 				throw std::runtime_error("Error message cannot be null");
 			}
 		}
 
-		logger::Logger().log(error, file, lineno, logger::ERROR);
+		logger::Logger::get_instance().log(error, file, static_cast<uint32_t>(lineno), logger::LEVEL::ERROR);
 		if (throw_error)
 		{
 			throw std::runtime_error(error);
 		}
 	}
 
-	void parseAlgebraicNotation(const std::string &algebraic_notation, uint8_t &rank, uint8_t &file)
+	void parse_algebraic_notation(const std::string &algebraic_notation, uint8_t &rank, uint8_t &file)
 	{
-		if (algebraic_notation.empty() || algebraic_notation.length() != 2 || !std::isalpha(algebraic_notation[0]) || !std::isdigit(algebraic_notation[1]))
+		if (algebraic_notation.empty() || algebraic_notation.length() != 2U || !std::isalpha(algebraic_notation[0]) || !std::isdigit(algebraic_notation[1]))
 		{
 			LOG_THROW_ERROR("Invalid algebraic notation", true);
 		}

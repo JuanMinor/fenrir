@@ -28,7 +28,7 @@ namespace color
 		Color color;
 
 	public:
-		Modifier(Color colorValue);
+		Modifier(Color color_value);
 		~Modifier();
 
 		friend std::ostream &operator<<(std::ostream &os, const Modifier &modifier);

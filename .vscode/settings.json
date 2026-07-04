@@ -80,8 +80,6 @@
 		"stack": "cpp"
 	},
 	"editor.formatOnSave": true,
-	"editor.fontLigatures": true,
-	"editor.fontFamily": "'JetBrains Mono'",
 	"editor.fontWeight": "500",
 	"editor.insertSpaces": false,
 	"editor.tabSize": 4,
@@ -93,37 +91,5 @@
 		"editor.insertSpaces": false,
 		"editor.tabSize": 4
 	},
-	"editor.tokenColorCustomizations": {
-		"textMateRules": [
-			{
-				"scope": [
-					"source",
-					"text",
-					"comment",
-					"string",
-					"constant",
-					"entity",
-					"keyword",
-					"markup",
-					"meta",
-					"storage",
-					"support",
-					"variable"
-				]
-			}
-		]
-	},
-	"terminal.integrated.fontFamily": "'JetBrains Mono'",
-	"terminal.integrated.fontWeight": "500",
-	"terminal.integrated.fontSize": 14,
-	"editor.codeLensFontFamily": "'JetBrains Mono'",
-	"editor.inlayHints.fontFamily": "'JetBrains Mono'",
-	"editor.inlineSuggest.fontFamily": "'JetBrains Mono'",
-	"chat.editor.fontFamily": "'JetBrains Mono'",
-	"chat.fontFamily": "'JetBrains Mono'",
-	"debug.console.fontFamily": "'JetBrains Mono'",
-	"scm.inputFontFamily": "'JetBrains Mono'",
-	"notebook.markup.fontFamily": "'JetBrains Mono'",
-	"notebook.output.fontFamily": "'JetBrains Mono'",
-	"gitlens.currentLine.fontFamily": "'JetBrains Mono'",
+	"todo-tree.ripgrep.ripgrep": "/usr/bin/rg"
 }

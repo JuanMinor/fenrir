@@ -29,20 +29,32 @@ namespace fenrir
 
 	class FENRIR_API Engine final
 	{
-		static constexpr const char *defaultFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+		static constexpr const char *DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 		std::string fen;
 		Board board;
 
+		/* Stack of undo states for Engine::undo_move() */
+		std::vector<UndoState> undo_stack;
+
 	public:
-		Engine(const std::string &fenString = defaultFen);
+		Engine(const std::string &fen_string = DEFAULT_FEN);
 		~Engine();
 
-		const std::vector<Move> generateMoves(const std::string &algebraicAddress) const;
-		std::string getFen(void);
-		void makeMove(const Move &move);
-		void printBoard(void) const;
+		static const char* version();
+
+		std::vector<Move> generate_moves(const std::string &algebraic_address);
+		std::vector<Move> generate_all_moves();
+		std::string get_fen(void);
+		void make_move(const Move &move);
+		void undo_move();
+
+		bool is_checkmate();
+		bool is_stalemate();
+		bool is_draw();
+
+		void print_board(void) const;
 		void reset();
 
-		const AbstractBoard &getBoardView() const;
+		const AbstractBoard &get_board_view() const;
 	};
 }

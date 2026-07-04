@@ -73,7 +73,7 @@ TEST_F(ChronoTest, ConstructorAndDestructor)
 
 TEST_F(ChronoTest, GetRawTime)
 {
-	time_t raw_time = chrono_obj->getRawTime();
+	time_t raw_time = chrono_obj->get_raw_time();
 	time_t system_time = std::time(nullptr);
 
 	EXPECT_TRUE(isTimeWithinRange(raw_time, system_time));
@@ -82,7 +82,7 @@ TEST_F(ChronoTest, GetRawTime)
 
 TEST_F(ChronoTest, GetLocalTimeWithNullTimer)
 {
-	tm *local_time = chrono_obj->getLocalTime(nullptr);
+	tm *local_time = chrono_obj->get_local_time(nullptr);
 
 	EXPECT_NE(local_time, nullptr);
 	EXPECT_TRUE(isValidTm(local_time));
@@ -103,7 +103,7 @@ TEST_F(ChronoTest, GetLocalTimeWithSpecificTimer)
 {
 
 	time_t epoch_time = 0;
-	tm *local_time = chrono_obj->getLocalTime(&epoch_time);
+	tm *local_time = chrono_obj->get_local_time(&epoch_time);
 
 	EXPECT_NE(local_time, nullptr);
 	EXPECT_TRUE(isValidTm(local_time));
@@ -115,7 +115,7 @@ TEST_F(ChronoTest, GetLocalTimeWithFutureTime)
 {
 
 	time_t future_time = 1893456000;
-	tm *local_time = chrono_obj->getLocalTime(&future_time);
+	tm *local_time = chrono_obj->get_local_time(&future_time);
 
 	EXPECT_NE(local_time, nullptr);
 	EXPECT_TRUE(isValidTm(local_time));
@@ -125,7 +125,7 @@ TEST_F(ChronoTest, GetLocalTimeWithFutureTime)
 TEST_F(ChronoTest, GetTimeWithFormatBasic)
 {
 	const char *format = "%Y-%m-%d %H:%M:%S";
-	auto formatted_time = chrono_obj->getTimeWithFormat(format);
+	auto formatted_time = chrono_obj->get_time_with_format(format);
 
 	std::ostringstream oss;
 	oss << formatted_time;
@@ -143,7 +143,7 @@ TEST_F(ChronoTest, GetTimeWithFormatBasic)
 TEST_F(ChronoTest, GetTimeWithFormatISO8601)
 {
 	const char *format = "%Y-%m-%dT%H:%M:%S";
-	auto formatted_time = chrono_obj->getTimeWithFormat(format);
+	auto formatted_time = chrono_obj->get_time_with_format(format);
 
 	std::ostringstream oss;
 	oss << formatted_time;
@@ -157,7 +157,7 @@ TEST_F(ChronoTest, GetTimeWithFormatISO8601)
 TEST_F(ChronoTest, GetTimeWithFormatShort)
 {
 	const char *format = "%H:%M";
-	auto formatted_time = chrono_obj->getTimeWithFormat(format);
+	auto formatted_time = chrono_obj->get_time_with_format(format);
 
 	std::ostringstream oss;
 	oss << formatted_time;
@@ -171,7 +171,7 @@ TEST_F(ChronoTest, GetTimeWithFormatShort)
 TEST_F(ChronoTest, GetTimeWithFormatDate)
 {
 	const char *format = "%Y-%m-%d";
-	auto formatted_time = chrono_obj->getTimeWithFormat(format);
+	auto formatted_time = chrono_obj->get_time_with_format(format);
 
 	std::ostringstream oss;
 	oss << formatted_time;
@@ -185,7 +185,7 @@ TEST_F(ChronoTest, GetTimeWithFormatDate)
 TEST_F(ChronoTest, GetTimeWithFormatCustom)
 {
 	const char *format = "Today is %A, %B %d, %Y";
-	auto formatted_time = chrono_obj->getTimeWithFormat(format);
+	auto formatted_time = chrono_obj->get_time_with_format(format);
 
 	std::ostringstream oss;
 	oss << formatted_time;
@@ -200,7 +200,7 @@ TEST_F(ChronoTest, GetTimeWithFormatCustom)
 TEST_F(ChronoTest, EmptyFormat)
 {
 	const char *format = "";
-	auto formatted_time = chrono_obj->getTimeWithFormat(format);
+	auto formatted_time = chrono_obj->get_time_with_format(format);
 
 	std::ostringstream oss;
 	oss << formatted_time;
@@ -212,7 +212,7 @@ TEST_F(ChronoTest, EmptyFormat)
 TEST_F(ChronoTest, InvalidFormat)
 {
 	const char *format = "%Z";
-	auto formatted_time = chrono_obj->getTimeWithFormat(format);
+	auto formatted_time = chrono_obj->get_time_with_format(format);
 
 	std::ostringstream oss;
 	oss << formatted_time;
@@ -224,8 +224,8 @@ TEST_F(ChronoTest, InvalidFormat)
 /* Consistency tests */
 TEST_F(ChronoTest, ConsistencyBetweenRawTimeAndLocalTime)
 {
-	time_t raw_time = chrono_obj->getRawTime();
-	tm *local_time = chrono_obj->getLocalTime(&raw_time);
+	time_t raw_time = chrono_obj->get_raw_time();
+	tm *local_time = chrono_obj->get_local_time(&raw_time);
 
 	EXPECT_NE(local_time, nullptr);
 	EXPECT_TRUE(isValidTm(local_time));
@@ -236,9 +236,9 @@ TEST_F(ChronoTest, ConsistencyBetweenRawTimeAndLocalTime)
 
 TEST_F(ChronoTest, MultipleCallsConsistency)
 {
-	time_t time1 = chrono_obj->getRawTime();
+	time_t time1 = chrono_obj->get_raw_time();
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
-	time_t time2 = chrono_obj->getRawTime();
+	time_t time2 = chrono_obj->get_raw_time();
 
 	EXPECT_GE(time2, time1);
 	EXPECT_TRUE(isTimeWithinRange(time1, time2, 1));
@@ -247,19 +247,19 @@ TEST_F(ChronoTest, MultipleCallsConsistency)
 /* Thread safety tests */
 TEST_F(ChronoTest, ThreadSafetyMultipleThreads)
 {
-	const int num_threads = 10;
+	const size_t num_threads = 10;
 	const int calls_per_thread = 100;
 	std::vector<std::thread> threads;
 	std::vector<std::vector<time_t>> results(num_threads);
 
-	for (int i = 0; i < num_threads; ++i)
+	for (size_t i = 0; i < num_threads; ++i)
 	{
 		threads.emplace_back([this, i, calls_per_thread, &results]()
 							 {
 			for (int j = 0; j < calls_per_thread; ++j)
 			{
-				time_t raw_time = chrono_obj->getRawTime();
-				tm* local_time = chrono_obj->getLocalTime(nullptr);
+				time_t raw_time = chrono_obj->get_raw_time();
+				tm* local_time = chrono_obj->get_local_time(nullptr);
 
 				EXPECT_GT(raw_time, 0);
 				EXPECT_NE(local_time, nullptr);
@@ -274,7 +274,7 @@ TEST_F(ChronoTest, ThreadSafetyMultipleThreads)
 		thread.join();
 	}
 
-	for (int i = 0; i < num_threads; ++i)
+	for (size_t i = 0; i < num_threads; ++i)
 	{
 		EXPECT_EQ(results[i].size(), static_cast<size_t>(calls_per_thread));
 
@@ -294,7 +294,7 @@ TEST_F(ChronoTest, PerformanceGetRawTime)
 
 	for (int i = 0; i < num_calls; ++i)
 	{
-		time_t raw_time = chrono_obj->getRawTime();
+		time_t raw_time = chrono_obj->get_raw_time();
 		EXPECT_GT(raw_time, 0);
 	}
 
@@ -311,7 +311,7 @@ TEST_F(ChronoTest, PerformanceGetLocalTime)
 
 	for (int i = 0; i < num_calls; ++i)
 	{
-		tm *local_time = chrono_obj->getLocalTime(nullptr);
+		tm *local_time = chrono_obj->get_local_time(nullptr);
 		EXPECT_NE(local_time, nullptr);
 	}
 
@@ -328,8 +328,8 @@ TEST_F(ChronoTest, MemoryManagement)
 	for (int i = 0; i < 1000; ++i)
 	{
 		chrono::Chrono temp_chrono;
-		time_t raw_time = temp_chrono.getRawTime();
-		tm *local_time = temp_chrono.getLocalTime(nullptr);
+		time_t raw_time = temp_chrono.get_raw_time();
+		tm *local_time = temp_chrono.get_local_time(nullptr);
 
 		EXPECT_GT(raw_time, 0);
 		EXPECT_NE(local_time, nullptr);
@@ -341,7 +341,7 @@ TEST_F(ChronoTest, BoundaryValuesMinTime)
 {
 
 	time_t min_time = 0;
-	tm *local_time = chrono_obj->getLocalTime(&min_time);
+	tm *local_time = chrono_obj->get_local_time(&min_time);
 
 	EXPECT_NE(local_time, nullptr);
 	EXPECT_TRUE(isValidTm(local_time));
@@ -353,7 +353,7 @@ TEST_F(ChronoTest, BoundaryValuesNegativeTime)
 
 	time_t negative_time = -86400;
 
-	EXPECT_NO_THROW(chrono_obj->getLocalTime(&negative_time));
+	EXPECT_NO_THROW(chrono_obj->get_local_time(&negative_time));
 }
 
 /* Format string validation */
@@ -370,7 +370,7 @@ TEST_F(ChronoTest, FormatStringValidation)
 	for (const char *format : valid_formats)
 	{
 		EXPECT_NO_THROW({
-			auto formatted_time = chrono_obj->getTimeWithFormat(format);
+			auto formatted_time = chrono_obj->get_time_with_format(format);
 			std::ostringstream oss;
 			oss << formatted_time;
 			std::string result = oss.str();
@@ -382,7 +382,8 @@ TEST_F(ChronoTest, FormatStringValidation)
 /* Stress test */
 TEST_F(ChronoTest, StressTest)
 {
-	if (!test::CI || std::string(test::CI) != "true")
+	if (!test::get_ci() || std::string(test::get_ci()) != "true")
+
 	{
 		GTEST_SKIP() << "🚀 Skipping stress test due to environment configuration 🌟";
 	}
@@ -392,9 +393,9 @@ TEST_F(ChronoTest, StressTest)
 
 	for (int i = 0; i < num_iterations; ++i)
 	{
-		time_t raw_time = chrono_obj->getRawTime();
-		tm *local_time = chrono_obj->getLocalTime(nullptr);
-		auto formatted_time = chrono_obj->getTimeWithFormat(format);
+		time_t raw_time = chrono_obj->get_raw_time();
+		tm *local_time = chrono_obj->get_local_time(nullptr);
+		auto formatted_time = chrono_obj->get_time_with_format(format);
 
 		EXPECT_GT(raw_time, 0);
 		EXPECT_NE(local_time, nullptr);
@@ -410,14 +411,14 @@ TEST_F(ChronoTest, StressTest)
 TEST_F(ChronoTest, RealWorldUsagePattern)
 {
 
-	time_t start_time = chrono_obj->getRawTime();
+	time_t start_time = chrono_obj->get_raw_time();
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-	time_t end_time = chrono_obj->getRawTime();
+	time_t end_time = chrono_obj->get_raw_time();
 
-	tm *start_tm = chrono_obj->getLocalTime(&start_time);
-	tm *end_tm = chrono_obj->getLocalTime(&end_time);
+	tm *start_tm = chrono_obj->get_local_time(&start_time);
+	tm *end_tm = chrono_obj->get_local_time(&end_time);
 
 	EXPECT_NE(start_tm, nullptr);
 	EXPECT_NE(end_tm, nullptr);
@@ -427,8 +428,8 @@ TEST_F(ChronoTest, RealWorldUsagePattern)
 	EXPECT_GE(end_time, start_time);
 
 	const char *log_format = "%Y-%m-%d %H:%M:%S";
-	auto start_formatted = chrono_obj->getTimeWithFormat(log_format);
-	auto end_formatted = chrono_obj->getTimeWithFormat(log_format);
+	auto start_formatted = chrono_obj->get_time_with_format(log_format);
+	auto end_formatted = chrono_obj->get_time_with_format(log_format);
 
 	std::ostringstream start_oss, end_oss;
 	start_oss << start_formatted;
