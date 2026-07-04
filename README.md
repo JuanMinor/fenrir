@@ -4,7 +4,7 @@ Fenrir is a C++ shared library (`libfenrir.so`) that serves as the **rules and v
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![C++](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
-[![Build](https://img.shields.io/badge/Build-Make-green.svg)](https://www.gnu.org/software/make/)
+[![Build](https://img.shields.io/badge/Build-CMake-blue.svg)](https://cmake.org/)
 [![Testing](https://img.shields.io/badge/Testing-Google%20Test-red.svg)](https://github.com/google/googletest)
 [![Coverage](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)]()
 [![Tests](https://img.shields.io/badge/Tests-359%20passing-success.svg)]()
@@ -13,7 +13,7 @@ Fenrir is a C++ shared library (`libfenrir.so`) that serves as the **rules and v
 
 > **Current Status**: Move generation is pseudo-legal (complete piece movement logic including en passant). Full legal move enforcement (check detection, castling, promotion, checkmate) is in progress as v0.3.0.
 
-> **🔧 Build System**: GNU Make is the only supported build system. See [Build System](#build-system) for details.
+> **🔧 Build System**: CMake is the supported build system. See [Build System](#build-system) for details.
 
 > **🐳 Development**: Uses dev containers for consistent environments. VS Code recommended. See [Development Environment](#development-environment).
 
@@ -176,29 +176,31 @@ engine.reset();
 
 ## Build System
 
-**Fenrir uses GNU Make as the primary and currently supported build system.**
-
-| Target		  | Description									   |
-| --------------- | ------------------------------------------------- |
-| `make`		  | Build shared library (`bin/lib/libfenrir.so`)	 |
-| `make debug`	| Explicitly build in debug mode (default)		  |
-| `make release`  | Build optimized release version				   |
-| `make test`	 | Run unit tests with Google Test				   |
-| `make coverage` | Generate coverage report (requires 100% coverage) |
-| `make clean`	| Clean build artifacts							 |
-| `make help`	 | Show detailed help with all available targets	 |
+**Fenrir uses CMake as the supported build system.**
 
 ### Building the Library
 
 ```bash
-# Build debug version (default)
-make
+# Configure the build system (defaults to Debug mode)
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+
+# Build the project (libraries, tests, main executable)
+cmake --build build
 
 # Build optimized release version
-make release
+cmake -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build
 
 # The shared library will be created at:
 # bin/lib/libfenrir.so
+```
+
+### Run Tests and Coverage
+
+```bash
+# Compile and run all unit tests, then generate coverage report (requires 100% coverage)
+cmake -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --target coverage
 ```
 
 ## Using the Library
@@ -210,7 +212,7 @@ make release
    ```bash
    git clone <repository-url>
    cd fenrir
-   make release  # or just 'make' for debug version
+   cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build
    ```
 
 2. **Create your application** (e.g., `my_chess_app.cpp`):
@@ -403,13 +405,12 @@ make coverage  # Generate coverage report (fails if < 100%)
 
 ### Build System
 
-**Only GNU Make is supported.** Do not use CMake, Autotools, or other build systems.
+**CMake is the supported build system.**
 
 ```bash
-make           # Build debug version (default)
-make release   # Build optimized release
-make clean     # Remove all build artifacts
-make help      # Show all available targets
+cmake -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build      # Build debug version (default)
+cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build    # Build optimized release
+rm -rf build                                                        # Clean build artifacts
 ```
 
 ## 📚 Documentation

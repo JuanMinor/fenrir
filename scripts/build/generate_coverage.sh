@@ -52,9 +52,14 @@ mv "$COVERAGE_INFO.filtered" "$COVERAGE_INFO"
 echo "🔧 Generating gcov files for unreachable code analysis..."
 for src_file in src/*/*.cpp; do
     if [ -f "$src_file" ]; then
-        obj_dir="bin/build/$(dirname "$src_file" | sed 's|src/||')"
-        if [ -d "$obj_dir" ]; then
-            gcov -o "$obj_dir" "$src_file" >/dev/null 2>&1 || true
+        gcno_file=$(find . -name "$(basename "$src_file").gcno" 2>/dev/null | head -n 1)
+        if [ -n "$gcno_file" ]; then
+            gcov -o "$gcno_file" "$src_file" >/dev/null 2>&1 || true
+        else
+            legacy_dir="bin/build/$(dirname "$src_file" | sed 's|src/||')"
+            if [ -d "$legacy_dir" ]; then
+                gcov -o "$legacy_dir" "$src_file" >/dev/null 2>&1 || true
+            fi
         fi
     fi
 done

@@ -59,8 +59,7 @@ namespace fenrir
 
 		Moves::generate_moves(rank, file, board, pseudo_legal);
 
-		/* Legal move filtering: apply each pseudo-legal move, check if our king
-		 * is left in check, undo immediately. Keep only legal moves. */
+		/* Filter pseudo-legal moves via check verification */
 		bool active_is_white = std::isupper(static_cast<unsigned char>(piece_char));
 		uint8_t active_color = active_is_white ? WHITE : BLACK;
 
@@ -84,11 +83,11 @@ namespace fenrir
 	{
 		uint8_t active_color = board.get_color();
 		std::vector<Move> all_moves;
-		/* Reuse a single buffer to avoid per-piece heap allocations */
+		/* Avoid per-piece heap allocations */
 		std::vector<Move> piece_moves;
 		piece_moves.reserve(32);
 
-		/* Iterate all squares and collect moves for active color's pieces */
+		/* Collect moves for active pieces */
 		for (uint8_t rank = 0; rank < BOARD_SIZE; ++rank)
 		{
 			for (uint8_t file = 0; file < BOARD_SIZE; ++file)
@@ -131,10 +130,10 @@ namespace fenrir
 
 	void Engine::make_move(const Move &move)
 	{
-		// Generate all legal moves in the current position
+		/* Generate legal moves */
 		std::vector<Move> legal_moves = generate_all_moves();
 		
-		// Find a matching legal move
+		/* Match move */
 		bool found = false;
 		Move matched_move = move;
 		for (const auto &m : legal_moves)
@@ -188,7 +187,7 @@ namespace fenrir
 		{
 			return false;
 		}
-		/* Check if any legal move exists */
+		/* Verify legal moves exist */
 		auto all_moves = generate_all_moves();
 		return all_moves.empty();
 	}
@@ -200,7 +199,7 @@ namespace fenrir
 		{
 			return false;
 		}
-		/* Check if any legal move exists */
+		/* Verify legal moves exist */
 		auto all_moves = generate_all_moves();
 		return all_moves.empty();
 	}

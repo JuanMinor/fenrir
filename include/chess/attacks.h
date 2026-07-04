@@ -21,21 +21,21 @@
 
 namespace fenrir
 {
-	/* Precomputed attack tables — initialized once at startup via init_attack_tables() */
+	/* Precomputed attack tables (initialized via init_attack_tables()) */
 
-	/* Knight attacks: KNIGHT_ATTACKS[sq] = bitboard of squares a knight on sq can attack */
+	/* KNIGHT_ATTACKS[sq]: Knight attack bitboard. */
 	extern uint64_t KNIGHT_ATTACKS[64];
 
-	/* King attacks: KING_ATTACKS[sq] = bitboard of squares a king on sq can attack */
+	/* KING_ATTACKS[sq]: King attack bitboard. */
 	extern uint64_t KING_ATTACKS[64];
 
-	/* Pawn attacks: PAWN_ATTACKS[color][sq] — indexed by [WHITE/BLACK][square] */
+	/* PAWN_ATTACKS[color][sq]: Pawn attack bitboard indexed by [color][square]. */
 	extern uint64_t PAWN_ATTACKS[2][64];
 
-	/* Ray tables: RAY[sq][dir] — 8 directional rays (0=N,1=NE,2=E,3=SE,4=S,5=SW,6=W,7=NW) */
+	/* RAY[sq][dir]: Ray bitboards in 8 directions (0=N, 1=NE, 2=E, 3=SE, 4=S, 5=SW, 6=W, 7=NW). */
 	extern uint64_t RAY[64][8];
 
-	/* Direction indices for RAY table */
+	/* Direction indices for RAY. */
 	constexpr int RAY_N  = 0;
 	constexpr int RAY_NE = 1;
 	constexpr int RAY_E  = 2;
@@ -45,7 +45,7 @@ namespace fenrir
 	constexpr int RAY_W  = 6;
 	constexpr int RAY_NW = 7;
 
-	/* Initialize all attack tables. Must be called once before any move generation. */
+	/* Initializes attack tables (must be called before move generation). */
 	void init_attack_tables();
 
-} // namespace fenrir
+} /* namespace fenrir */

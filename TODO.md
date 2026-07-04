@@ -114,7 +114,7 @@ Depends on: Milestone 2 complete.
 ### Phase 3A — New engine binary target
 
 - [ ] **3.1** Create `engine/` directory at repo root (sibling of `src/`). This is the search engine, a separate binary that links `libfenrir.so`.
-- [ ] **3.2** Add `make engine` target in `Makefile`: compiles `engine/*.cpp`, links `-lfenrir -L$(LIB_DIR)`, produces `bin/fenrir-engine`.
+- [ ] **3.2** Add `engine` executable target in `CMakeLists.txt`: compiles `engine/*.cpp`, links `fenrir`, produces `bin/fenrir-engine`.
 - [ ] **3.3** Add `engine/eval.cpp` + `include/engine/eval.h`: basic material evaluation.
   - Piece values: pawn=100, knight=320, bishop=330, rook=500, queen=900, king=20000 (centipawns).
   - `int evaluate(const AbstractBoard& board, uint8_t color)` — iterate all 64 bitboard squares, sum material differential from the perspective of `color`.
@@ -142,7 +142,7 @@ Depends on: Milestone 2 complete.
   - `quit` → exit
 - [ ] **3.10** Add `engine/main.cpp` — entry point: instantiates `Engine`, `Search`, `UCI`, runs the I/O loop.
 - [ ] **3.11** Test the engine binary manually with Arena or any UCI-capable GUI. Play at least 10 games vs itself.
-- [ ] **3.12** Add a `make bench` target: runs a fixed perft (position + depth) and prints nodes/sec. Perft results must match known values (use `kiwipete` FEN as reference).
+- [ ] **3.12** Add a `bench` custom target in `CMakeLists.txt`: runs a fixed perft (position + depth) and prints nodes/sec. Perft results must match known values (use `kiwipete` FEN as reference).
 
 ---
 
@@ -157,7 +157,7 @@ Each binding wraps only the public `Engine` API: `generateAllMoves`, `makeMove`,
 - [ ] **4.1** Add `bindings/python/` directory.
 - [ ] **4.2** Write a `ctypes`-based binding in `fenrir.py`: load `libfenrir.so` via `ctypes.CDLL`, wrap each public `Engine` method. Expose a `FenrirEngine` Python class.
 - [ ] **4.3** Add a `pybind11` alternative in `bindings/python/pybind/`: provides a proper Python module (`import fenrir`), better type safety, no manual marshaling.
-- [ ] **4.4** Add `make python` build target — builds the pybind11 extension `.so`.
+- [ ] **4.4** Add `python` target in `CMakeLists.txt` — builds the pybind11 extension `.so`.
 - [ ] **4.5** Write `tests/python/test_engine.py`: at least 20 tests covering move generation, FEN round-trip, makeMove, checkmate detection.
 
 ### Java
@@ -165,7 +165,7 @@ Each binding wraps only the public `Engine` API: `generateAllMoves`, `makeMove`,
 - [ ] **4.6** Add `bindings/java/` directory.
 - [ ] **4.7** Add a C JNI shim layer `bindings/java/jni/fenrir_jni.cpp` — thin wrappers that translate between JNI types and Fenrir C++ types. Expose as `libfenrir_jni.so`.
 - [ ] **4.8** Add `bindings/java/src/io/fenrir/FenrirEngine.java` — Java class that loads `libfenrir_jni.so` via `System.loadLibrary` and wraps the native methods.
-- [ ] **4.9** Add `make java` build target.
+- [ ] **4.9** Add `java` target in `CMakeLists.txt`.
 - [ ] **4.10** Write JUnit tests `bindings/java/tests/FenrirEngineTest.java`.
 
 ### Rust
@@ -204,7 +204,7 @@ Each binding wraps only the public `Engine` API: `generateAllMoves`, `makeMove`,
 Depends on: Milestone 4 (C header) complete.
 
 - [ ] **5.1** Install `emscripten` toolchain. Add `.devcontainer` package or document in `README.md`.
-- [ ] **5.2** Add `make wasm` target: compiles with `emcc`, exports `fenrir_c.h` functions, outputs `bin/wasm/fenrir.wasm` + `fenrir.js`.
+- [ ] **5.2** Add `wasm` target in `CMakeLists.txt`: compiles with `emcc`, exports `fenrir_c.h` functions, outputs `bin/wasm/fenrir.wasm` + `fenrir.js`.
 - [ ] **5.3** Add `bindings/js/fenrir.js` — ES module wrapper around the WASM module. Exposes `async createEngine(fen)` and all `Engine` methods as `async` JS functions.
 - [ ] **5.4** Write jest tests `bindings/js/tests/fenrir.test.js`.
 
@@ -212,8 +212,9 @@ Depends on: Milestone 4 (C header) complete.
 
 ## Cross-Cutting (do alongside milestones as they become relevant)
 
-- [ ] **X.1** CI/CD: add `.github/workflows/ci.yml` — on every push: `make test`, `make coverage` (must be 100%), `make release`, upload `libfenrir.so` as a build artifact.
-- [ ] **X.2** CI: add a perft regression job — runs `make bench` and fails if nodes/sec drops > 10% from baseline.
+- [x] **X.0** Migrate build system from GNU Make to CMake, preserving all test coverage reporting and exact tables.
+- [ ] **X.1** CI/CD: add `.github/workflows/ci.yml` — on every push: run tests, run coverage target (must be 100%), build release version, upload `libfenrir.so` as a build artifact.
+- [ ] **X.2** CI: add a perft regression job — runs bench target and fails if performance drops > 10% from baseline.
 - [ ] **X.3** Add `CONTRIBUTING.md` — build instructions, test requirements, coverage rule, coding conventions.
 - [ ] **X.4** Replace `vector<Move>` return values with output-parameter versions throughout `Moves` (already done in places) — eliminates one heap allocation per `generateAllMoves()` call. Audit the entire API for unnecessary heap allocations.
 - [ ] **X.5** Add Zobrist hashing in `Board`: compute a `uint64_t hash` incrementally in `applyMove`/`undoMove`. Used by repetition detection (Milestone 2) and transposition tables (future).

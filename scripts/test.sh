@@ -18,7 +18,11 @@ PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 
 # Function to run tests
 run_tests() {
-	(cd "$PROJECT_ROOT" && make clean test coverage)
+	(cd "$PROJECT_ROOT" && \
+	 rm -rf build && \
+	 cmake -B build -DCMAKE_BUILD_TYPE=Debug && \
+	 cmake --build build && \
+	 cmake --build build --target coverage)
 }
 
 # Main execution
