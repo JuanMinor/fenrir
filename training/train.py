@@ -15,27 +15,34 @@ class ChessDataset(Dataset):
     def __init__(self, data_dir):
         self.data_dir = data_dir
         self.samples = []
+        self.buffer = self.samples
         self.load_data()
 
     def update(self):
+        new_files_count = 0
         if not os.path.exists(self.data_dir):
-            return
-            
-        for file in os.listdir(self.data_dir):
-            if file.endswith('.jsonl'):
-                path = os.path.join(self.data_dir, file)
-                with open(path, 'r') as f:
-                    for line in f:
-                        if line.strip():
-                            self.samples.append(json.loads(line))
+            return 0
+        
+        for filename in os.listdir(self.data_dir):
+            if filename.endswith(".jsonl"):
+                filepath = os.path.join(self.data_dir, filename)
                 try:
-                    os.remove(path)
+                    with open(filepath, 'r') as f:
+                        for line in f:
+                            if not line.strip():
+                                continue
+                            data = json.loads(line)
+                            self.buffer.append(data)
+                    os.remove(filepath)
+                    new_files_count += 1
                 except Exception as e:
-                    print(f"Failed to delete {path}: {e}")
+                    print(f"Error reading {filename}: {e}")
         
         # Keep only the latest 100,000 samples (replay buffer)
         if len(self.samples) > 100000:
             self.samples = self.samples[-100000:]
+        
+        return new_files_count
                             
     def load_data(self):
         self.update()
@@ -87,10 +94,10 @@ def train():
     dataset = ChessDataset(data_dir)
     
     while True:
-        dataset.update()
-        if len(dataset) < 32:
-            print(f"Waiting for more data... Currently have {len(dataset)} positions.")
-            time.sleep(10)
+        new_files = dataset.update()
+        if len(dataset) < 32 or new_files == 0:
+            print(f"Waiting for new data... Buffer size: {len(dataset)}. New files: {new_files}")
+            time.sleep(1)
             continue
             
         dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
