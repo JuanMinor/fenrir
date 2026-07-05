@@ -153,11 +153,19 @@ namespace fenrir
         
         if (evaluator)
         {
-            auto future = evaluator->request_evaluation(engine.get_board_view());
-            NNResult res = future.get();
-            root->expand(engine, res.policy);
+            try {
+                auto future = evaluator->request_evaluation(engine.get_board_view());
+                NNResult res = future.get();
+                root->expand(engine, res.policy);
+            } catch (const std::exception& e) {
+                std::cerr << "Root evaluation failed: " << e.what() << "\n";
+                root->expand(engine);
+            }
         }
-        else root->expand(engine);
+        else
+        {
+            root->expand(engine);
+        }
 
         if (apply_noise) {
             root->add_dirichlet_noise(0.25, 0.3); // 25% noise, alpha 0.3
@@ -229,11 +237,15 @@ namespace fenrir
             {
                 if (evaluator)
                 {
-                    auto future = evaluator->request_evaluation(thread_engine.get_board_view());
-                    NNResult res = future.get();
-                    
-                    node->expand(thread_engine, res.policy);
-                    result = res.value; 
+                    try {
+                        auto future = evaluator->request_evaluation(thread_engine.get_board_view());
+                        NNResult res = future.get();
+                        node->expand(thread_engine, res.policy);
+                        result = res.value; 
+                    } catch (const std::exception& e) {
+                        node->expand(thread_engine);
+                        result = simulate(thread_engine);
+                    }
                 }
                 else
                 {

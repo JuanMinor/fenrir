@@ -17,8 +17,7 @@ class ChessDataset(Dataset):
         self.samples = []
         self.load_data()
 
-    def load_data(self):
-        self.samples = []
+    def update(self):
         if not os.path.exists(self.data_dir):
             return
             
@@ -29,6 +28,17 @@ class ChessDataset(Dataset):
                     for line in f:
                         if line.strip():
                             self.samples.append(json.loads(line))
+                try:
+                    os.remove(path)
+                except Exception as e:
+                    print(f"Failed to delete {path}: {e}")
+        
+        # Keep only the latest 100,000 samples (replay buffer)
+        if len(self.samples) > 100000:
+            self.samples = self.samples[-100000:]
+                            
+    def load_data(self):
+        self.update()
                             
     def fen_to_tensor(self, fen):
         # Stub: parse FEN to 14x8x8 tensor matching C++ engine representation
@@ -59,12 +69,10 @@ def train():
     except ImportError:
         has_dml = False
 
-    if torch.cuda.is_available():
-        device = torch.device('cuda')
-    elif has_dml and torch_directml.is_available():
+    if has_dml and torch_directml.is_available():
         device = torch_directml.device()
     else:
-        device = torch.device('cpu')
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
     print(f"Using device: {device}")
     
@@ -76,8 +84,10 @@ def train():
     
     print(f"Watching directory for data: {data_dir}")
     
+    dataset = ChessDataset(data_dir)
+    
     while True:
-        dataset = ChessDataset(data_dir)
+        dataset.update()
         if len(dataset) < 32:
             print(f"Waiting for more data... Currently have {len(dataset)} positions.")
             time.sleep(10)
