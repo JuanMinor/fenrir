@@ -18,6 +18,22 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# ONNX Runtime Integration
+include(FetchContent)
+set(ONNXRUNTIME_VERSION "1.16.3")
+if(WIN32)
+    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-win-x64-${ONNXRUNTIME_VERSION}.zip")
+else()
+    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-linux-x64-${ONNXRUNTIME_VERSION}.tgz")
+endif()
+
+FetchContent_Declare(
+  onnxruntime
+  URL ${ONNXRUNTIME_URL}
+  DOWNLOAD_EXTRACT_TIMESTAMP true
+)
+FetchContent_MakeAvailable(onnxruntime)
+
 # Common Warning Flags
 set(COMMON_WARNING_FLAGS
     -Wall
@@ -70,7 +86,12 @@ target_compile_definitions(fenrir_core PRIVATE
 )
 
 target_compile_options(fenrir_core PRIVATE ${COMMON_WARNING_FLAGS})
-target_include_directories(fenrir_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(fenrir_core PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${onnxruntime_SOURCE_DIR}/include
+)
+target_link_directories(fenrir_core PUBLIC ${onnxruntime_SOURCE_DIR}/lib)
+target_link_libraries(fenrir_core PUBLIC onnxruntime)
 
 # 2. Main Executable target: fenrir (was mainh)
 add_executable(fenrir main.cpp)
