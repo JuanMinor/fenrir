@@ -104,14 +104,18 @@ namespace fenrir
                 
                 std::streamsize size = file.tellg();
                 file.seekg(0, std::ios::beg);
-                std::vector<char> buffer(static_cast<size_t>(size));
-                if (!file.read(buffer.data(), size)) return; // Failed to read, try again later
+                std::vector<char> temp_buffer(static_cast<size_t>(size));
+                if (!file.read(temp_buffer.data(), size)) return; // Failed to read, try again later
 
                 Ort::SessionOptions session_options;
                 session_options.SetIntraOpNumThreads(1);
                 session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
                 
-                auto new_session = std::make_unique<Ort::Session>(*env, buffer.data(), buffer.size(), session_options);
+                // CRITICAL: We must destroy the old session before freeing/overwriting the old buffer!
+                session.reset();
+                model_buffer = std::move(temp_buffer);
+
+                auto new_session = std::make_unique<Ort::Session>(*env, model_buffer.data(), model_buffer.size(), session_options);
 
                 session = std::move(new_session);
                 last_model_load_time = write_time;

@@ -58,6 +58,7 @@ namespace fenrir
         std::thread worker_thread;
 
         std::unique_ptr<Ort::Env> env;
+        std::vector<char> model_buffer;
         std::unique_ptr<Ort::Session> session;
         std::filesystem::file_time_type last_model_load_time;
         std::chrono::steady_clock::time_point last_reload_check_time;
