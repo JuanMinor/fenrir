@@ -120,8 +120,7 @@ def train():
                                        'value': {0: 'batch_size'}})
         os.replace(onnx_tmp_path, onnx_path)
         print(f"Exported updated weights to {onnx_path}")
-        
-        break # Exit after one epoch for testing purposes
+
 
 if __name__ == "__main__":
     train()
