@@ -66,8 +66,20 @@ namespace fenrir
 		std::vector<Move> legal;
 		legal.reserve(pseudo_legal.size());
 
+		uint8_t opp_color = (active_color == WHITE) ? BLACK : WHITE;
 		for (const Move &m : pseudo_legal)
 		{
+			if (m.get_move_type() == MoveType::CASTLE_KINGSIDE || m.get_move_type() == MoveType::CASTLE_QUEENSIDE)
+			{
+				if (board.is_in_check(active_color)) continue;
+				uint8_t base_rank = (active_color == WHITE) ? 0 : 7;
+				if (m.get_move_type() == MoveType::CASTLE_KINGSIDE) {
+					if (board.is_square_attacked_by(static_cast<uint8_t>(base_rank * 8 + 5), opp_color)) continue;
+				} else {
+					if (board.is_square_attacked_by(static_cast<uint8_t>(base_rank * 8 + 3), opp_color)) continue;
+				}
+			}
+
 			UndoState undo = board.apply_move(m);
 			bool in_check = board.is_in_check(active_color);
 			board.undo_move(undo);
@@ -106,8 +118,20 @@ namespace fenrir
 				piece_moves.clear();
 				Moves::generate_moves(rank, file, board, piece_moves);
 
+				uint8_t opp_color = (active_color == WHITE) ? BLACK : WHITE;
 				for (const Move &m : piece_moves)
 				{
+					if (m.get_move_type() == MoveType::CASTLE_KINGSIDE || m.get_move_type() == MoveType::CASTLE_QUEENSIDE)
+					{
+						if (board.is_in_check(active_color)) continue;
+						uint8_t base_rank = (active_color == WHITE) ? 0 : 7;
+						if (m.get_move_type() == MoveType::CASTLE_KINGSIDE) {
+							if (board.is_square_attacked_by(static_cast<uint8_t>(base_rank * 8 + 5), opp_color)) continue;
+						} else {
+							if (board.is_square_attacked_by(static_cast<uint8_t>(base_rank * 8 + 3), opp_color)) continue;
+						}
+					}
+
 					UndoState undo = board.apply_move(m);
 					bool in_check = board.is_in_check(active_color);
 					board.undo_move(undo);
@@ -150,21 +174,20 @@ namespace fenrir
 
 		if (!found)
 		{
-			uint8_t from_rank, from_file;
-			utils::parse_algebraic_notation(move.get_from(), from_rank, from_file);
-			char piece = board.get_piece(from_rank, from_file);
-			if (piece == '\0')
-			{
-				logger::ERROR("No piece found at " + move.get_from());
-				return;
-			}
-			logger::WARN("Non-legal or out-of-turn move requested: " + move.get_from() + " -> " + move.get_to() + ". Playing anyway in permissive mode.");
+			logger::ERROR("Illegal or out-of-turn move requested: " + move.get_from() + " -> " + move.get_to());
+			throw std::invalid_argument("Illegal or out-of-turn move requested: " + move.get_from() + " -> " + move.get_to());
 		}
 
 		UndoState state = board.apply_move(matched_move);
 		undo_stack.push_back(state);
 
 		logger::DEBUG("Made move from " + matched_move.get_from() + " to " + matched_move.get_to());
+	}
+
+	void Engine::make_move_fast(const Move &move)
+	{
+		UndoState state = board.apply_move(move);
+		undo_stack.push_back(state);
 	}
 
 	void Engine::undo_move()

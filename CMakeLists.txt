@@ -43,7 +43,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
 # Mode-specific compilation flags
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O2 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -flto -march=native")
 
 # 1. Main Shared Library target: fenrir
 add_library(fenrir SHARED
@@ -58,6 +58,7 @@ add_library(fenrir SHARED
     src/chess/moves.cpp
     src/pgn/pgn.cpp
     src/utils/utils.cpp
+    src/abi/c_api.cpp
 )
 
 target_compile_definitions(fenrir PRIVATE
@@ -78,6 +79,11 @@ set_target_properties(fenrir PROPERTIES
 add_executable(mainh main.cpp)
 target_link_libraries(mainh PRIVATE fenrir)
 
+# 2.5 Perft Executable target: perft
+add_executable(perft src/perft/perft.cpp)
+target_link_libraries(perft PRIVATE fenrir)
+target_compile_options(perft PRIVATE ${COMMON_WARNING_FLAGS})
+
 # 3. Tests and Coverage target (only built in Debug mode as testing in Release is disabled)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     find_package(GTest REQUIRED)
@@ -94,6 +100,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         tests/unit/chrono.test.cpp
         tests/unit/modifier.test.cpp
         tests/unit/pgn.test.cpp
+        tests/unit/c_api.test.cpp
     )
 
     target_link_libraries(tests PRIVATE

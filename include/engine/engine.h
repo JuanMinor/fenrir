@@ -45,6 +45,7 @@ namespace fenrir
 		std::vector<Move> generate_all_moves();
 		std::string get_fen(void);
 		void make_move(const Move &move);
+		void make_move_fast(const Move &move);
 		void undo_move();
 
 		bool is_checkmate();
