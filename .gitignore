@@ -77,3 +77,13 @@ dkms.conf
 # CMake
 /build
 /build-release
+/build_release
+/build-debug
+/build_debug
+
+# MCTS & game training data
+/data
+
+# Python
+__pycache__/
+.venv/

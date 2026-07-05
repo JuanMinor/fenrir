@@ -45,8 +45,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -flto -march=native")
 
-# 1. Main Shared Library target: fenrir
-add_library(fenrir SHARED
+# 1. Main Static Library target: fenrir_core
+add_library(fenrir_core STATIC
     src/chess/attacks.cpp
     src/chess/board.cpp
     src/chrono/chrono.cpp
@@ -59,29 +59,26 @@ add_library(fenrir SHARED
     src/pgn/pgn.cpp
     src/utils/utils.cpp
     src/abi/c_api.cpp
+    src/search/mcts.cpp
+    src/eval/nn_eval.cpp
+    src/uci/uci.cpp
+    src/selfplay/selfplay.cpp
 )
 
-target_compile_definitions(fenrir PRIVATE
-    FENRIR_BUILD_DLL
+target_compile_definitions(fenrir_core PRIVATE
     FENRIR_VERSION="${FENRIR_VERSION}"
 )
 
-target_compile_options(fenrir PRIVATE ${COMMON_WARNING_FLAGS})
-target_include_directories(fenrir PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(fenrir_core PRIVATE ${COMMON_WARNING_FLAGS})
+target_include_directories(fenrir_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Versioning and SOVERSION to match Make behavior
-set_target_properties(fenrir PROPERTIES
-    VERSION ${FENRIR_VERSION}
-    SOVERSION 0
-)
-
-# 2. Main Executable target: mainh
-add_executable(mainh main.cpp)
-target_link_libraries(mainh PRIVATE fenrir)
+# 2. Main Executable target: fenrir (was mainh)
+add_executable(fenrir main.cpp)
+target_link_libraries(fenrir PRIVATE fenrir_core)
 
 # 2.5 Perft Executable target: perft
 add_executable(perft src/perft/perft.cpp)
-target_link_libraries(perft PRIVATE fenrir)
+target_link_libraries(perft PRIVATE fenrir_core)
 target_compile_options(perft PRIVATE ${COMMON_WARNING_FLAGS})
 
 # 3. Tests and Coverage target (only built in Debug mode as testing in Release is disabled)
@@ -101,10 +98,14 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         tests/unit/modifier.test.cpp
         tests/unit/pgn.test.cpp
         tests/unit/c_api.test.cpp
+        tests/unit/mcts.test.cpp
+        tests/unit/nn_eval.test.cpp
+        tests/unit/uci.test.cpp
+        tests/unit/selfplay.test.cpp
     )
 
     target_link_libraries(tests PRIVATE
-        fenrir
+        fenrir_core
         GTest::gtest_main
         GTest::gtest
         Threads::Threads
@@ -118,11 +119,16 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     )
 
     # Enable coverage flags
+    target_compile_options(fenrir_core PRIVATE -fprofile-arcs -ftest-coverage)
+    target_link_options(fenrir_core PRIVATE -fprofile-arcs -ftest-coverage)
+
     target_compile_options(fenrir PRIVATE -fprofile-arcs -ftest-coverage)
     target_link_options(fenrir PRIVATE -fprofile-arcs -ftest-coverage)
 
     target_compile_options(tests PRIVATE -fprofile-arcs -ftest-coverage)
     target_link_options(tests PRIVATE -fprofile-arcs -ftest-coverage)
+    target_compile_options(perft PRIVATE -fprofile-arcs -ftest-coverage)
+    target_link_options(perft PRIVATE -fprofile-arcs -ftest-coverage)
 
     # 4. Coverage Custom Target (always runs generate_coverage.sh)
     add_custom_target(coverage
@@ -136,8 +142,7 @@ endif()
 include(GNUInstallDirs)
 
 install(TARGETS fenrir
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 install(DIRECTORY include/

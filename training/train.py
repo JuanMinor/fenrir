@@ -1,0 +1,113 @@
+import os
+import json
+import time
+import torch
+import torch.optim as optim
+import torch.nn.functional as F
+from torch.utils.data import Dataset, DataLoader
+from model import AlphaZeroNet
+
+# Stub: Map algebraic moves to indices 0-4095
+def uci_to_index(uci_move):
+    return hash(uci_move) % 4096
+
+class ChessDataset(Dataset):
+    def __init__(self, data_dir):
+        self.data_dir = data_dir
+        self.samples = []
+        self.load_data()
+
+    def load_data(self):
+        self.samples = []
+        if not os.path.exists(self.data_dir):
+            return
+            
+        for file in os.listdir(self.data_dir):
+            if file.endswith('.jsonl'):
+                path = os.path.join(self.data_dir, file)
+                with open(path, 'r') as f:
+                    for line in f:
+                        if line.strip():
+                            self.samples.append(json.loads(line))
+                            
+    def fen_to_tensor(self, fen):
+        # Stub: parse FEN to 14x8x8 tensor matching C++ engine representation
+        # Consider using `python-chess` library to parse FEN directly into bitboards
+        return torch.zeros((14, 8, 8), dtype=torch.float32)
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        sample = self.samples[idx]
+        tensor = self.fen_to_tensor(sample['fen'])
+        
+        policy = torch.zeros(4096, dtype=torch.float32)
+        for move, prob in sample['policy'].items():
+            policy[uci_to_index(move)] = prob
+            
+        value = torch.tensor([sample['result']], dtype=torch.float32)
+        # Normalize result from [0, 1] to [-1, 1] for tanh
+        value = (value * 2) - 1
+        
+        return tensor, policy, value
+
+def train():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f"Using device: {device}")
+    
+    model = AlphaZeroNet().to(device)
+    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    
+    # Path logic mirroring C++ output
+    data_dir = "D:\\fenrir_data\\" if os.name == 'nt' else "../data/selfplay/"
+    
+    print(f"Watching directory for data: {data_dir}")
+    
+    while True:
+        dataset = ChessDataset(data_dir)
+        if len(dataset) < 32:
+            print(f"Waiting for more data... Currently have {len(dataset)} positions.")
+            time.sleep(10)
+            continue
+            
+        dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+        
+        model.train()
+        total_loss = 0
+        for batch_idx, (tensors, policies, values) in enumerate(dataloader):
+            tensors, policies, values = tensors.to(device), policies.to(device), values.to(device)
+            
+            optimizer.zero_grad()
+            
+            pred_policies, pred_values = model(tensors)
+            
+            # Policy loss (Cross Entropy) and Value loss (MSE)
+            # Softmax is applied intrinsically by cross_entropy if targets are probabilities? 
+            # Note: PyTorch cross_entropy with probabilities requires careful handling, 
+            # or manual log_softmax + NLL_loss. We'll use cross_entropy natively assuming logits.
+            policy_loss = -torch.sum(policies * F.log_softmax(pred_policies, dim=1), dim=1).mean()
+            value_loss = F.mse_loss(pred_values, values)
+            
+            loss = policy_loss + value_loss
+            loss.backward()
+            optimizer.step()
+            
+            total_loss += loss.item()
+            
+        print(f"Epoch finished. Loss: {total_loss/len(dataloader):.4f}")
+        
+        # Export back to ONNX for C++ Engine
+        dummy_input = torch.randn(1, 14, 8, 8, device=device)
+        onnx_path = "../bin/fenrir_model.onnx"
+        torch.onnx.export(model, dummy_input, onnx_path, 
+                         input_names=['input'], output_names=['policy', 'value'],
+                         dynamic_axes={'input': {0: 'batch_size'},
+                                       'policy': {0: 'batch_size'},
+                                       'value': {0: 'batch_size'}})
+        print(f"Exported updated weights to {onnx_path}")
+        
+        break # Exit after one epoch for testing purposes
+
+if __name__ == "__main__":
+    train()

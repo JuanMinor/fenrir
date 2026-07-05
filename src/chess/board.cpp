@@ -208,13 +208,7 @@ namespace fenrir
 
 	char Board::get_piece(uint8_t rank, uint8_t file) const
 	{
-		if (rank >= BOARD_SIZE || file >= BOARD_SIZE)
-		{
-			LOG_THROW_ERROR(
-				"Address <" + std::to_string(unsigned(rank)) + ", " + std::to_string(unsigned(file)) + "> is invalid",
-				false);
-			return '\0';
-		}
+		if (rank >= BOARD_SIZE || file >= BOARD_SIZE) return '\0';
 		uint8_t square_idx = static_cast<uint8_t>(rank * 8 + file);
 
 		if (test_bit(this->white_occupancy, square_idx))

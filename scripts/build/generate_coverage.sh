@@ -30,6 +30,8 @@ echo "📊 Generating coverage report..."
 # Run tests first
 echo "🧪 Running tests..."
 bint/unit/tests
+# Run perft with split FEN to cover FEN reconstruction logic (lines 33, 34 of perft.cpp)
+bin/perft 1 rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 
 # Generate coverage data
 # Configuration is loaded from .lcovrc (disables checksums for gcov 15.x compatibility)
