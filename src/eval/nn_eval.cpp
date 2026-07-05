@@ -199,19 +199,30 @@ namespace fenrir
         const char* input_names[] = {"input"};
         const char* output_names[] = {"policy", "value"};
         
-        auto output_tensors = session->Run(Ort::RunOptions{nullptr}, input_names, &input_tensor, 1, output_names, 2);
-        
-        const float* policy_data = output_tensors[0].GetTensorMutableData<float>();
-        const float* value_data = output_tensors[1].GetTensorMutableData<float>();
-        
-        size_t policy_size = 4096; // Flat policy output size from the model
-        
-        for (size_t i = 0; i < batch_size_actual; ++i)
-        {
-            NNResult res;
-            res.value = static_cast<double>(value_data[i]);
-            res.policy.assign(policy_data + i * policy_size, policy_data + (i + 1) * policy_size);
-            promises[i].set_value(res);
+        try {
+            auto output_tensors = session->Run(Ort::RunOptions{nullptr}, input_names, &input_tensor, 1, output_names, 2);
+            
+            const float* policy_data = output_tensors[0].GetTensorMutableData<float>();
+            const float* value_data = output_tensors[1].GetTensorMutableData<float>();
+            
+            size_t policy_size = 4096; // Flat policy output size from the model
+            
+            for (size_t i = 0; i < batch_size_actual; ++i)
+            {
+                NNResult res;
+                res.value = static_cast<double>(value_data[i]);
+                res.policy.assign(policy_data + i * policy_size, policy_data + (i + 1) * policy_size);
+                promises[i].set_value(res);
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "ONNX inference error: " << e.what() << "\n";
+            for (size_t i = 0; i < batch_size_actual; ++i)
+            {
+                NNResult res;
+                res.value = 0.5;
+                res.policy.resize(4096, 0.01);
+                promises[i].set_value(res);
+            }
         }
     }
 }
