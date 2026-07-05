@@ -35,31 +35,40 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(onnxruntime)
 
 # Common Warning Flags
-set(COMMON_WARNING_FLAGS
-    -Wall
-    -Wextra
-    -Werror
-    -pedantic
-    -Wshadow
-    -Wnon-virtual-dtor
-    -Wold-style-cast
-    -Wcast-align
-    -Wunused
-    -Woverloaded-virtual
-    -Wconversion
-    -Wsign-conversion
-    -Wnull-dereference
-    -Wdouble-promotion
-    -Wformat=2
-)
+if(MSVC)
+    set(COMMON_WARNING_FLAGS
+        /W4
+        /WX
+    )
+else()
+    set(COMMON_WARNING_FLAGS
+        -Wall
+        -Wextra
+        -Werror
+        -pedantic
+        -Wshadow
+        -Wnon-virtual-dtor
+        -Wold-style-cast
+        -Wcast-align
+        -Wunused
+        -Woverloaded-virtual
+        -Wconversion
+        -Wsign-conversion
+        -Wnull-dereference
+        -Wdouble-promotion
+        -Wformat=2
+    )
+endif()
 
 # Output directories mirroring the original Make layout
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 
-# Mode-specific compilation flags
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -flto -march=native")
+# Mode-specific compilation flags (only for GCC/Clang)
+if(NOT MSVC)
+    set(CMAKE_CXX_FLAGS_DEBUG "-g")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG -flto -march=native")
+endif()
 
 # 1. Main Static Library target: fenrir_core
 add_library(fenrir_core STATIC
