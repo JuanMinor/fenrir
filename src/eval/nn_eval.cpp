@@ -7,15 +7,11 @@ namespace fenrir
     NNEvaluator::NNEvaluator(const std::string& path, size_t b_size)
         : model_path(path), batch_size(b_size), stop_worker(false)
     {
-#ifdef FENRIR_USE_ONNX
-        // Initialize ONNX Runtime environment
         env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "Fenrir_NN");
-        Ort::SessionOptions session_options;
-        session_options.SetIntraOpNumThreads(1);
-        session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
-        // DirectML / ROCm providers would be appended to session_options here.
-        session = std::make_unique<Ort::Session>(*env, model_path.c_str(), session_options);
-#endif
+        last_model_load_time = std::filesystem::file_time_type::min();
+        last_reload_check_time = std::chrono::steady_clock::now() - std::chrono::seconds(2);
+        
+        try_reload_model();
 
         worker_thread = std::thread(&NNEvaluator::batch_worker_loop, this);
     }
@@ -85,10 +81,42 @@ namespace fenrir
         return future;
     }
 
+    void NNEvaluator::try_reload_model()
+    {
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_reload_check_time).count() < 1 && session) {
+            return;
+        }
+        last_reload_check_time = now;
+
+        if (!std::filesystem::exists(model_path)) return;
+
+        std::error_code ec;
+        auto write_time = std::filesystem::last_write_time(model_path, ec);
+        if (ec) return;
+
+        if (write_time > last_model_load_time || !session) {
+            try {
+                Ort::SessionOptions session_options;
+                session_options.SetIntraOpNumThreads(1);
+                session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
+                
+                auto new_session = std::make_unique<Ort::Session>(*env, model_path.c_str(), session_options);
+                session = std::move(new_session);
+                last_model_load_time = write_time;
+                std::cout << "Successfully loaded ONNX model: " << model_path << "\n";
+            } catch (const std::exception& e) {
+                std::cerr << "Failed to reload ONNX model: " << e.what() << "\n";
+            }
+        }
+    }
+
     void NNEvaluator::batch_worker_loop()
     {
         while (true)
         {
+            try_reload_model();
+            
             std::vector<EvalRequest> batch;
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
@@ -136,8 +164,17 @@ namespace fenrir
 
     void NNEvaluator::evaluate_batch(const std::vector<std::vector<float>>& batch_features, std::vector<std::promise<NNResult>>& promises)
     {
-#ifdef FENRIR_USE_ONNX
-        if (!session) return;
+        if (!session) {
+            // Mock inference fallback when model is not available
+            for (size_t i = 0; i < batch_features.size(); ++i)
+            {
+                NNResult res;
+                res.value = 0.5; // Draw evaluation
+                res.policy.resize(4096, 0.01); // Flat uniform policy
+                promises[i].set_value(res);
+            }
+            return;
+        }
         
         size_t batch_size_actual = batch_features.size();
         size_t feature_size = 14 * 8 * 8;
@@ -171,15 +208,5 @@ namespace fenrir
             res.policy.assign(policy_data + i * policy_size, policy_data + (i + 1) * policy_size);
             promises[i].set_value(res);
         }
-#else
-        // Mock inference for now
-        for (size_t i = 0; i < batch_features.size(); ++i)
-        {
-            NNResult res;
-            res.value = 0.5; // Draw evaluation
-            res.policy.resize(4096, 0.01); // Flat uniform policy
-            promises[i].set_value(res);
-        }
-#endif
     }
 }

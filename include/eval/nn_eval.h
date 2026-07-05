@@ -8,10 +8,13 @@
 #include <mutex>
 #include <condition_variable>
 #include <string>
-
-#ifdef FENRIR_USE_ONNX
+#include <filesystem>
+#include <chrono>
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 #include <onnxruntime_cxx_api.h>
-#endif
+#pragma GCC diagnostic pop
 
 namespace fenrir
 {
@@ -34,6 +37,7 @@ namespace fenrir
     private:
         void batch_worker_loop();
         void evaluate_batch(const std::vector<std::vector<float>>& batch_features, std::vector<std::promise<NNResult>>& promises);
+        void try_reload_model();
 
         std::string model_path;
         size_t batch_size;
@@ -49,9 +53,9 @@ namespace fenrir
         bool stop_worker;
         std::thread worker_thread;
 
-#ifdef FENRIR_USE_ONNX
         std::unique_ptr<Ort::Env> env;
         std::unique_ptr<Ort::Session> session;
-#endif
+        std::filesystem::file_time_type last_model_load_time;
+        std::chrono::steady_clock::time_point last_reload_check_time;
     };
 }

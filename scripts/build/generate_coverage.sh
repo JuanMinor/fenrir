@@ -28,6 +28,9 @@ mkdir -p "$COVERAGE_DIR" "$DEBUG_DIR"
 echo "📊 Generating coverage report..."
 
 # Run tests first
+mkdir -p onnx
+cp tests/dummy.onnx onnx/fenrir.onnx
+
 echo "🧪 Running tests..."
 bint/unit/tests
 # Run perft with split FEN to cover FEN reconstruction logic and depth > 1 to cover loop body

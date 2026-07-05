@@ -97,14 +97,16 @@ def train():
             
         print(f"Epoch finished. Loss: {total_loss/len(dataloader):.4f}")
         
-        # Export back to ONNX for C++ Engine
+        # Export back to ONNX for C++ Engine atomically
         dummy_input = torch.randn(1, 14, 8, 8, device=device)
+        onnx_tmp_path = "../onnx/fenrir.onnx.tmp"
         onnx_path = "../onnx/fenrir.onnx"
-        torch.onnx.export(model, dummy_input, onnx_path, 
+        torch.onnx.export(model, dummy_input, onnx_tmp_path, 
                          input_names=['input'], output_names=['policy', 'value'],
                          dynamic_axes={'input': {0: 'batch_size'},
                                        'policy': {0: 'batch_size'},
                                        'value': {0: 'batch_size'}})
+        os.replace(onnx_tmp_path, onnx_path)
         print(f"Exported updated weights to {onnx_path}")
         
         break # Exit after one epoch for testing purposes

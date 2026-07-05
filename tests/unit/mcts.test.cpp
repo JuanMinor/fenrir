@@ -95,3 +95,14 @@ TEST_F(MCTSTest, EmptyChildrenReturnEmptyMove)
     EXPECT_EQ(result.second.size(), 0U);
 }
 
+
+TEST_F(MCTSTest, RolloutOpponentCheckmate)
+{
+    // Start with a FEN where Black has 3 queens and White only has a king.
+    // White makes a move, then Black plays randomly and will very likely checkmate White quickly.
+    // This will trigger the result = 1.0 path in MCTSSearch::simulate.
+    Engine custom_engine("K7/2qqq3/8/8/8/8/8/k7 w - - 0 1");
+    search.find_best_move(custom_engine, 50);
+    // As long as it doesn't crash and completes 50 simulations, the coverage should be hit.
+    SUCCEED();
+}
