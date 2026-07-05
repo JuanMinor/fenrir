@@ -162,7 +162,18 @@ namespace fenrir
                     promises.push_back(std::move(req.promise));
                 }
 
-                evaluate_batch(batch_features, promises);
+                try {
+                    evaluate_batch(batch_features, promises);
+                } catch (const std::exception& e) {
+                    std::cerr << "Unhandled exception in evaluate_batch: " << e.what() << "\n";
+                    for (auto& p : promises)
+                    {
+                        NNResult res;
+                        res.value = 0.5;
+                        res.policy.resize(4096, 0.01);
+                        p.set_value(res);
+                    }
+                }
             }
         }
     }
