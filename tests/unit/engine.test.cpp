@@ -123,12 +123,7 @@ TEST_F(EngineTest, GenerateMovesEmptySquare)
 
 TEST_F(EngineTest, MakeMoveFromEmptySquare)
 {
-	testing::internal::CaptureStderr();
-	engine.make_move(fenrir::Move("e4", "e5"));
-	std::string error_output = testing::internal::GetCapturedStderr();
-
-	EXPECT_EQ(get_piece("e4"), '.');
-	EXPECT_EQ(get_piece("e5"), '.');
+	EXPECT_THROW(engine.make_move(fenrir::Move("e4", "e5")), std::invalid_argument);
 }
 
 TEST_F(EngineTest, PrintBoard)
@@ -152,14 +147,14 @@ TEST_F(EngineTest, StressTestManyMovesAndResets)
 	for (int i = 0; i < num_iterations; ++i)
 	{
 		engine.make_move(fenrir::Move("b2", "b4"));
-		engine.make_move(fenrir::Move("b4", "b2"));
+		engine.make_move(fenrir::Move("b7", "b5"));
 
 		engine.reset();
 
 		ASSERT_EQ(get_piece("b2"), 'P');
 		ASSERT_EQ(get_piece("e1"), 'K');
 		ASSERT_EQ(get_piece("e8"), 'k');
-		ASSERT_EQ(get_piece("e4"), '.');
+		ASSERT_EQ(get_piece("b7"), 'p');
 	}
 }
 
@@ -195,12 +190,12 @@ TEST_F(EngineTest, UndoMove_EmptyStack)
 TEST_F(EngineTest, UndoMove_MultipleUndos)
 {
 	engine.make_move(fenrir::Move("e2", "e4"));
-	engine.make_move(fenrir::Move("d2", "d4"));
+	engine.make_move(fenrir::Move("e7", "e5"));
 	engine.undo_move();
 	engine.undo_move();
 
 	EXPECT_EQ(get_piece("e2"), 'P');
-	EXPECT_EQ(get_piece("d2"), 'P');
+	EXPECT_EQ(get_piece("e7"), 'p');
 }
 
 TEST_F(EngineTest, IsCheckmate_InitialPosition_False)
@@ -386,7 +381,7 @@ TEST_F(EngineTest, Promotion_BlackPawnAtRank2)
 
 TEST_F(EngineTest, Promotion_MakeMove_PawnBecomesQueen)
 {
-	fenrir::Engine e("4k3/4P3/8/8/8/8/8/4K3 w - - 0 1");
+	fenrir::Engine e("k7/4P3/8/8/8/8/8/4K3 w - - 0 1");
 	e.make_move(fenrir::Move("e7", "e8", fenrir::MoveType::PROMOTION, 'Q'));
 
 	uint8_t rank, file;
@@ -453,4 +448,16 @@ TEST_F(EngineTest, IsDraw_ThreefoldRepetition)
 	e.make_move(fenrir::Move("f3", "g1"));
 	e.make_move(fenrir::Move("f6", "g8"));
 	EXPECT_TRUE(e.is_draw());
+}
+
+TEST_F(EngineTest, MakeMoveFast)
+{
+	engine.make_move_fast(fenrir::Move("e2", "e4"));
+	
+	uint8_t rank, file;
+	utils::parse_algebraic_notation("e4", rank, file);
+	EXPECT_EQ(engine.get_board_view().get_piece(rank, file), 'P');
+	
+	utils::parse_algebraic_notation("e2", rank, file);
+	EXPECT_EQ(engine.get_board_view().get_piece(rank, file), '\0');
 }

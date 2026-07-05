@@ -133,11 +133,10 @@ fenrir/
 ### Build
 
 ```bash
-make              # Debug build of libfenrir.so
-make release      # Optimized build (-O2 -DNDEBUG, dynamic logs compiled out)
-make test         # Run all 342 unit tests
-make coverage     # Generate HTML coverage report (must remain 100%)
-make clean        # Remove all build artifacts
+cmake -B build -DCMAKE_BUILD_TYPE=Debug && cmake --build build       # Debug build of libfenrir.so and tests
+cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build     # Optimized build (-O2 -DNDEBUG)
+cmake --build build --target coverage                                # Run tests and generate coverage report
+rm -rf build                                                         # Clean all build artifacts
 ```
 
 ### Coordinate & Naming Conventions
@@ -150,6 +149,6 @@ make clean        # Remove all build artifacts
 ## Common Pitfalls
 
 1. **Do not break 100% coverage** - every new code path needs a unit test.
-2. **Do not add CMake** - GNU Make only.
+2. **Use CMake** - CMake is the supported build system.
 3. **`Board` is not copyable** - Rule of Five, copy/move deleted to ensure strict reference-based engine pass-downs.
 4. **Avoid String Allocations in Search** - Never query `get_en_passant()` or `get_castling_rights()` during search loops (e.g. `apply_move`, `generate_moves`). Use byte-level equivalents `en_passant_square` and `castling_rights` directly.

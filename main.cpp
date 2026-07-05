@@ -36,12 +36,12 @@ int main(int argc, char *argv[])
 		engine.reset();
 		engine.print_board();
 
-		// test rook moves
-		// engine.make_move("a2", "b3");
+		/* Test rook moves */
+		/* engine.make_move("a2", "b3"); */
 		engine.make_move(fenrir::Move("a2", "b3"));
 		engine.print_board();
 
-		// move generation
+		/* Generate moves */
 		const std::vector<fenrir::Move> moves = engine.generate_moves("a1");
 
 		std::cout << "Generated moves for piece" << std::endl;

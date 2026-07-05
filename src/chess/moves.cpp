@@ -45,11 +45,11 @@ namespace fenrir
 		constexpr int8_t direction_vectors[8][2] = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}, {1, 1}, {-1, -1}, {1, -1}, {-1, 1}};
 		slide_in_directions(rank, file, piece_char, board, moves, direction_vectors, 8, true);
 
-		/* Castling generation */
+		/* Castling moves */
 		bool is_white = std::isupper(static_cast<unsigned char>(piece_char));
 		const std::string &castling = board.get_castling_rights();
 
-		/* King must be on its starting square */
+		/* Verify king start square */
 		uint8_t expected_rank = is_white ? 0U : 7U;
 		uint8_t expected_file = 4U; /* e-file */
 
@@ -64,11 +64,11 @@ namespace fenrir
 		char ks_right = is_white ? 'K' : 'k';
 		if (castling.find(ks_right) != std::string::npos)
 		{
-			/* Check squares between king and rook are empty (f and g files) */
+			/* Verify empty path (f, g files) */
 			uint8_t f_file = 5U, g_file = 6U;
 			if (board.get_piece(rank, f_file) == '\0' && board.get_piece(rank, g_file) == '\0')
 			{
-				/* Rook must be present at h-file */
+				/* Verify rook on h-file */
 				char rook_char = is_white ? 'R' : 'r';
 				if (board.get_piece(rank, 7) == rook_char)
 				{
@@ -82,13 +82,13 @@ namespace fenrir
 		char qs_right = is_white ? 'Q' : 'q';
 		if (castling.find(qs_right) != std::string::npos)
 		{
-			/* Check squares between king and rook are empty (d, c, b files) */
+			/* Verify empty path (d, c, b files) */
 			uint8_t d_file = 3U, c_file = 2U, b_file = 1U;
 			if (board.get_piece(rank, d_file) == '\0' &&
 				board.get_piece(rank, c_file) == '\0' &&
 				board.get_piece(rank, b_file) == '\0')
 			{
-				/* Rook must be present at a-file */
+				/* Verify rook on a-file */
 				char rook_char = is_white ? 'R' : 'r';
 				if (board.get_piece(rank, 0) == rook_char)
 				{
@@ -125,10 +125,10 @@ namespace fenrir
 		}
 	}
 
-	/* Helper to add promotion moves for a pawn that can promote */
+	/* Append pawn promotion moves */
 	static void addPromotionMoves(uint8_t from_sq, uint8_t to_sq, std::vector<Move> &moves)
 	{
-		/* Emit 4 promotion moves: Q, R, B, N */
+		/* Append Q, R, B, N promotions */
 		static const char promotion_pieces[4] = {'Q', 'R', 'B', 'N'};
 		for (char p : promotion_pieces)
 		{
@@ -142,7 +142,7 @@ namespace fenrir
 		int direction = is_white ? 1 : -1;
 		uint8_t from_sq = static_cast<uint8_t>(rank * 8 + file);
 
-		/* Promotion rank: white promotes at rank 7, black at rank 0 */
+		/* Promotion ranks */
 		uint8_t promotion_rank = is_white ? 7U : 0U;
 
 		int new_rank_int = static_cast<int>(rank) + direction;
@@ -160,7 +160,7 @@ namespace fenrir
 			}
 		}
 
-		/* Diagonal captures (left) */
+		/* Left diagonal capture */
 		if (file > 0 && new_rank_int >= 0 && new_rank_int < BOARD_SIZE)
 		{
 			char target = board.get_piece(static_cast<uint8_t>(new_rank_int), static_cast<uint8_t>(file - 1));
@@ -183,7 +183,7 @@ namespace fenrir
 			}
 		}
 
-		/* Diagonal captures (right) */
+		/* Right diagonal capture */
 		if (file < BOARD_SIZE - 1 && new_rank_int >= 0 && new_rank_int < BOARD_SIZE)
 		{
 			char target = board.get_piece(static_cast<uint8_t>(new_rank_int), static_cast<uint8_t>(file + 1));
@@ -206,7 +206,7 @@ namespace fenrir
 			}
 		}
 
-		/* Double push from starting rank */
+		/* Double push from start rank */
 		if ((is_white && rank == 1) || (!is_white && rank == 6))
 		{
 			if (board.get_piece(static_cast<uint8_t>(rank + direction), file) == '\0')
@@ -220,7 +220,7 @@ namespace fenrir
 			}
 		}
 
-		/* En passant */
+		/* En passant capture */
 		const std::string &en_passant = board.get_en_passant();
 		if (!en_passant.empty())
 		{
