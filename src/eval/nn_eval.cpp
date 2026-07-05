@@ -1,6 +1,7 @@
 #include "include/eval/nn_eval.h"
 #include <chrono>
 #include <iostream>
+#include <fstream>
 
 namespace fenrir
 {
@@ -97,16 +98,21 @@ namespace fenrir
 
         if (write_time > last_model_load_time || !session) {
             try {
+                // Read the entire file into memory to avoid memory-mapped file locks (Access Violation on Windows)
+                std::ifstream file(model_path, std::ios::binary | std::ios::ate);
+                if (!file.is_open()) return; // File is locked by Python, try again later
+                
+                std::streamsize size = file.tellg();
+                file.seekg(0, std::ios::beg);
+                std::vector<char> buffer(static_cast<size_t>(size));
+                if (!file.read(buffer.data(), size)) return; // Failed to read, try again later
+
                 Ort::SessionOptions session_options;
                 session_options.SetIntraOpNumThreads(1);
                 session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
                 
-#ifdef _WIN32
-                std::wstring wide_model_path = std::wstring(model_path.begin(), model_path.end());
-                auto new_session = std::make_unique<Ort::Session>(*env, wide_model_path.c_str(), session_options);
-#else
-                auto new_session = std::make_unique<Ort::Session>(*env, model_path.c_str(), session_options);
-#endif
+                auto new_session = std::make_unique<Ort::Session>(*env, buffer.data(), buffer.size(), session_options);
+
                 session = std::move(new_session);
                 last_model_load_time = write_time;
                 std::cout << "Successfully loaded ONNX model: " << model_path << "\n";
