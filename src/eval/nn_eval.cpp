@@ -101,7 +101,12 @@ namespace fenrir
                 session_options.SetIntraOpNumThreads(1);
                 session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
                 
+#ifdef _WIN32
+                std::wstring wide_model_path = std::wstring(model_path.begin(), model_path.end());
+                auto new_session = std::make_unique<Ort::Session>(*env, wide_model_path.c_str(), session_options);
+#else
                 auto new_session = std::make_unique<Ort::Session>(*env, model_path.c_str(), session_options);
+#endif
                 session = std::move(new_session);
                 last_model_load_time = write_time;
                 std::cout << "Successfully loaded ONNX model: " << model_path << "\n";

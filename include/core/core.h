@@ -20,13 +20,16 @@
 #include <unordered_map>
 #include <cstdint>
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
 
 /* Export dll symbols */
 #if defined(_WIN32) || defined(_WIN64)
 #ifdef FENRIR_BUILD_DLL
 #define FENRIR_API __declspec(dllexport)
 #else
-#define FENRIR_API __declspec(dllimport)
+#define FENRIR_API
 #endif
 #elif defined(__GNUC__) && __GNUC__ >= 4
 #define FENRIR_API __attribute__((visibility("default")))
@@ -84,6 +87,27 @@ namespace fenrir
 		CASTLE_QUEENSIDE,
 		PROMOTION
 	};
+
+	// Cross-platform bitscan utilities
+	inline uint8_t bitscan_forward(uint64_t bb) {
+#if defined(_MSC_VER)
+		unsigned long index;
+		_BitScanForward64(&index, bb);
+		return static_cast<uint8_t>(index);
+#else
+		return static_cast<uint8_t>(__builtin_ctzll(bb));
+#endif
+	}
+
+	inline uint8_t bitscan_reverse(uint64_t bb) {
+#if defined(_MSC_VER)
+		unsigned long index;
+		_BitScanReverse64(&index, bb);
+		return static_cast<uint8_t>(index);
+#else
+		return static_cast<uint8_t>(63 - __builtin_clzll(bb));
+#endif
+	}
 }
 
 namespace io
@@ -111,8 +135,16 @@ namespace test
 {
 	inline const char *get_ci()
 	{
+#ifdef _MSC_VER
+		char* val = nullptr;
+		size_t len = 0;
+		_dupenv_s(&val, &len, "CI");
+		static const char* CI = val;
+		return CI;
+#else
 		static const char *CI = getenv("CI");
 		return CI;
+#endif
 	}
 }
 

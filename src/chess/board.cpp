@@ -687,11 +687,11 @@ namespace fenrir
 					uint8_t first_blocker;
 					if (dir == RAY_NE || dir == RAY_N || dir == RAY_NW || dir == RAY_E)
 					{
-						first_blocker = static_cast<uint8_t>(__builtin_ctzll(blockers));
+						first_blocker = fenrir::bitscan_forward(blockers);
 					}
 					else
 					{
-						first_blocker = static_cast<uint8_t>(63 - __builtin_clzll(blockers));
+						first_blocker = fenrir::bitscan_reverse(blockers);
 					}
 					if ((1ULL << first_blocker) & bishops)
 					{
@@ -713,11 +713,11 @@ namespace fenrir
 					uint8_t first_blocker;
 					if (dir == RAY_N || dir == RAY_E)
 					{
-						first_blocker = static_cast<uint8_t>(__builtin_ctzll(blockers));
+						first_blocker = fenrir::bitscan_forward(blockers);
 					}
 					else
 					{
-						first_blocker = static_cast<uint8_t>(63 - __builtin_clzll(blockers));
+						first_blocker = fenrir::bitscan_reverse(blockers);
 					}
 					if ((1ULL << first_blocker) & rooks)
 					{
@@ -739,7 +739,7 @@ namespace fenrir
 		{
 			return false; /* No king on board */
 		}
-		uint8_t king_square = static_cast<uint8_t>(__builtin_ctzll(king_bb));
+		uint8_t king_square = fenrir::bitscan_forward(king_bb);
 		uint8_t opponent = (clr == WHITE) ? BLACK : WHITE;
 		return is_square_attacked_by(king_square, opponent);
 	}

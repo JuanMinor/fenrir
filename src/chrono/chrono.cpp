@@ -32,7 +32,11 @@ namespace chrono
 			temp_timer = std::time(nullptr);
 			timer = &temp_timer;
 		}
+#ifdef _MSC_VER
+		localtime_s(&local_time_buf, timer);
+#else
 		localtime_r(timer, &local_time_buf);
+#endif
 		return &local_time_buf;
 	}
 

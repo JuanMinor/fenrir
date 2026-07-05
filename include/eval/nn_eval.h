@@ -10,11 +10,15 @@
 #include <string>
 #include <filesystem>
 #include <chrono>
+#ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
+#endif
 #include <onnxruntime_cxx_api.h>
+#ifdef __GNUC__
 #pragma GCC diagnostic pop
+#endif
 
 namespace fenrir
 {
