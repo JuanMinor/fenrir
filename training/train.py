@@ -53,7 +53,19 @@ class ChessDataset(Dataset):
         return tensor, policy, value
 
 def train():
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    try:
+        import torch_directml
+        has_dml = True
+    except ImportError:
+        has_dml = False
+
+    if torch.cuda.is_available():
+        device = torch.device('cuda')
+    elif has_dml and torch_directml.is_available():
+        device = torch_directml.device()
+    else:
+        device = torch.device('cpu')
+        
     print(f"Using device: {device}")
     
     model = AlphaZeroNet().to(device)

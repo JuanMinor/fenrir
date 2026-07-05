@@ -106,6 +106,18 @@ target_link_libraries(fenrir_core PUBLIC onnxruntime)
 add_executable(fenrir main.cpp)
 target_link_libraries(fenrir PRIVATE fenrir_core)
 
+if(WIN32)
+    add_custom_command(TARGET fenrir POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${onnxruntime_SOURCE_DIR}/lib/onnxruntime.dll"
+            $<TARGET_FILE_DIR:fenrir>
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_CURRENT_SOURCE_DIR}/onnx"
+            "$<TARGET_FILE_DIR:fenrir>/onnx"
+        COMMENT "Copying onnxruntime.dll and onnx models to binary directory"
+    )
+endif()
+
 # 2.5 Perft Executable target: perft
 add_executable(perft src/perft/perft.cpp)
 target_link_libraries(perft PRIVATE fenrir_core)
