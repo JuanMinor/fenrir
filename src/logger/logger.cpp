@@ -74,9 +74,9 @@ namespace logger
 			const char *type = level_types.at(level);
 			log_file << "[" << timestamp << "] [" << file << " @ Line " << line_number << "]::" << type << message << std::endl;
 		}
-		catch (const std::exception &)
+		catch (const std::exception &e)
 		{
-			/* Fallback: no-op */
+			(void)e; /* Fallback: no-op */
 		}
 	}
 

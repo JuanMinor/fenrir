@@ -60,7 +60,7 @@ def train():
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     
     # Path logic mirroring C++ output
-    data_dir = "D:\\fenrir_data\\" if os.name == 'nt' else "../data/selfplay/"
+    data_dir = "data/selfplay/"
     
     print(f"Watching directory for data: {data_dir}")
     
@@ -99,8 +99,8 @@ def train():
         
         # Export back to ONNX for C++ Engine atomically
         dummy_input = torch.randn(1, 14, 8, 8, device=device)
-        onnx_tmp_path = "../onnx/fenrir.onnx.tmp"
-        onnx_path = "../onnx/fenrir.onnx"
+        onnx_tmp_path = "onnx/fenrir.onnx.tmp"
+        onnx_path = "onnx/fenrir.onnx"
         torch.onnx.export(model, dummy_input, onnx_tmp_path, 
                          input_names=['input'], output_names=['policy', 'value'],
                          dynamic_axes={'input': {0: 'batch_size'},

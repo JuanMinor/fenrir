@@ -14,11 +14,7 @@ namespace fenrir
 
     std::string SelfPlay::get_output_dir()
     {
-#ifdef _WIN32
-        std::string dir = "D:\\fenrir_data\\";
-#else
         std::string dir = "data/selfplay/";
-#endif
         std::filesystem::create_directories(dir);
         return dir;
     }
