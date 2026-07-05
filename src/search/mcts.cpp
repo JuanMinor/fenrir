@@ -182,12 +182,19 @@ namespace fenrir
 
         for (int i = 0; i < num_threads; ++i)
         {
-            workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread);
+            try {
+                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread);
+            } catch (const std::exception& e) {
+                std::cerr << "Thread creation failed: " << e.what() << "\n";
+                break; // Just proceed with the threads we successfully created
+            }
         }
 
         for (auto& w : workers)
         {
-            w.join();
+            if (w.joinable()) {
+                w.join();
+            }
         }
 
         Move best_move(0, 0);
