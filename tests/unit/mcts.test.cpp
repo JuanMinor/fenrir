@@ -98,11 +98,13 @@ TEST_F(MCTSTest, EmptyChildrenReturnEmptyMove)
 
 TEST_F(MCTSTest, RolloutOpponentCheckmate)
 {
-    // Start with a FEN where Black has 3 queens and White only has a king.
-    // White makes a move, then Black plays randomly and will very likely checkmate White quickly.
-    // This will trigger the result = 1.0 path in MCTSSearch::simulate.
-    Engine custom_engine("K7/2qqq3/8/8/8/8/8/k7 w - - 0 1");
-    search.find_best_move(custom_engine, 50);
-    // As long as it doesn't crash and completes 50 simulations, the coverage should be hit.
+    // Start with a FEN where Black has 3 queens and White has a king and a pawn.
+    // White's king is trapped, so its only legal moves are pawn moves.
+    // White plays a pawn move, then Black (in the rollout) plays randomly 
+    // and will easily checkmate White's trapped king with its 3 queens.
+    // This will reliably trigger the result = 1.0 path in MCTSSearch::simulate.
+    Engine custom_engine("K7/2qqq3/8/8/8/8/1P6/k7 w - - 0 1");
+    search.find_best_move(custom_engine, 400);
+    // As long as it doesn't crash and completes simulations, the coverage should be hit reliably.
     SUCCEED();
 }
