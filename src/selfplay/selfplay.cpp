@@ -51,7 +51,7 @@ namespace fenrir
         std::cout << "Games: " << max_games << "\n";
         std::cout << "Output Directory: " << get_output_dir() << "\n\n";
 
-        auto evaluator = std::make_unique<NNEvaluator>("dummy_model_path.onnx");
+        auto evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx");
         auto search = std::make_unique<MCTSSearch>(evaluator.get(), 16);
 
         std::mt19937 rng(std::random_device{}());

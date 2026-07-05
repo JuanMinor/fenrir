@@ -99,7 +99,7 @@ def train():
         
         # Export back to ONNX for C++ Engine
         dummy_input = torch.randn(1, 14, 8, 8, device=device)
-        onnx_path = "../onnx/fenrir_model.onnx"
+        onnx_path = "../onnx/fenrir.onnx"
         torch.onnx.export(model, dummy_input, onnx_path, 
                          input_names=['input'], output_names=['policy', 'value'],
                          dynamic_axes={'input': {0: 'batch_size'},
