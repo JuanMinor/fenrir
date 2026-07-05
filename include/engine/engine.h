@@ -33,19 +33,19 @@ namespace fenrir
 		std::string fen;
 		Board board;
 
-		/* Stack of undo states for Engine::undo_move() */
 		std::vector<UndoState> undo_stack;
 
 	public:
 		Engine(const std::string &fen_string = DEFAULT_FEN);
 		~Engine();
 
-		static const char* version();
+		static const char *version();
 
 		std::vector<Move> generate_moves(const std::string &algebraic_address);
 		std::vector<Move> generate_all_moves();
 		std::string get_fen(void);
 		void make_move(const Move &move);
+		void make_move_fast(const Move &move);
 		void undo_move();
 
 		bool is_checkmate();

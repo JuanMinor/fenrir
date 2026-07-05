@@ -73,3 +73,7 @@ dkms.conf
 
 # Debug
 /.debug
+
+# CMake
+/build
+/build-release

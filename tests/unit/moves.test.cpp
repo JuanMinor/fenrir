@@ -149,7 +149,7 @@ public:
 
 	uint64_t get_bitboard(int /*index*/) const override
 	{
-		return 0ULL; // MockBoard doesn't track per-piece bitboards
+		return 0ULL; /* MockBoard doesn't track per-piece bitboards */
 	}
 
 	uint8_t get_half_move_clock(void) const override
@@ -342,7 +342,7 @@ TEST_F(MovesTest, EmptySquare)
 
 	fenrir::Moves::get_instance().generate_moves(empty, board, moves);
 
-	// Directly invoke real Moves to cover null/empty checks
+	/* Directly invoke RealMoves to cover null/empty checks */
 	fenrir::RealMoves::generate_moves(3, 4, board, moves);
 
 	EXPECT_TRUE(moves.empty());

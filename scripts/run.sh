@@ -19,13 +19,12 @@ PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 # Function to clean and build the project
 build_project() {
 	echo "Cleaning and building the project..."
-	(cd "$PROJECT_ROOT" && make clean release)
+	(cd "$PROJECT_ROOT" && rm -rf build && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build)
 }
 
 # Function to run the Fenrir engine with the default FEN string
 run_engine() {
 	echo "Running the Fenrir engine..."
-	(cd "$PROJECT_ROOT" && g++ -O2 -DNDEBUG -I . -fPIC -DFENRIR_BUILD_DLL -o bin/mainh main.cpp -Lbin/lib -lfenrir)
 	(cd "$PROJECT_ROOT" && LD_LIBRARY_PATH=bin/lib ./bin/mainh)
 }
 

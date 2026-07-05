@@ -1,0 +1,10 @@
+prefix=@PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: fenrir
+Description: Production-grade Chess Rules Library
+Version: @FENRIR_VERSION@
+Libs: -L${libdir} -lfenrir
+Cflags: -I${includedir}/fenrir

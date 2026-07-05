@@ -19,7 +19,7 @@
 
 namespace fenrir
 {
-	/* Use literal indices: 0 = WHITE pawn attacks, 1 = BLACK pawn attacks */
+	/* White pawn attacks = 0, black pawn attacks = 1 */
 	static constexpr int ATTACK_WHITE = 0;
 	static constexpr int ATTACK_BLACK = 1;
 
@@ -30,15 +30,15 @@ uint64_t RAY[64][8];
 
 void init_attack_tables()
 {
-	/* rank/file delta pairs for knight moves */
+	/* Knight move deltas */
 	constexpr int knight_rank_deltas[8] = {2,  2, -2, -2,  1,  1, -1, -1};
 	constexpr int knight_file_deltas[8] = {1, -1,  1, -1,  2, -2,  2, -2};
 
-	/* rank/file delta pairs for king moves */
+	/* King move deltas */
 	constexpr int king_rank_deltas[8] = {1, 1, 0, -1, -1, -1,  0,  1};
 	constexpr int king_file_deltas[8] = {0, 1, 1,  1,  0, -1, -1, -1};
 
-	/* ray direction deltas: N, NE, E, SE, S, SW, W, NW */
+	/* Ray direction deltas: N, NE, E, SE, S, SW, W, NW */
 	constexpr int ray_rank_deltas[8] = {1,  1,  0, -1, -1, -1,  0,  1};
 	constexpr int ray_file_deltas[8] = {0,  1,  1,  1,  0, -1, -1, -1};
 
@@ -47,7 +47,7 @@ void init_attack_tables()
 		int rank = sq / 8;
 		int file = sq % 8;
 
-		/* Knight attacks */
+		/* Precompute knight attacks */
 		uint64_t knight_bb = 0ULL;
 		for (int i = 0; i < 8; ++i)
 		{
@@ -60,7 +60,7 @@ void init_attack_tables()
 		}
 		KNIGHT_ATTACKS[sq] = knight_bb;
 
-		/* King attacks */
+		/* Precompute king attacks */
 		uint64_t king_bb = 0ULL;
 		for (int i = 0; i < 8; ++i)
 		{
@@ -73,7 +73,7 @@ void init_attack_tables()
 		}
 		KING_ATTACKS[sq] = king_bb;
 
-		/* Pawn attacks — WHITE (color=0): attacks one rank forward diagonally */
+		/* White pawn attacks (rank + 1) */
 		uint64_t white_pawn_bb = 0ULL;
 		if (rank + 1 < 8)
 		{
@@ -82,7 +82,7 @@ void init_attack_tables()
 		}
 		PAWN_ATTACKS[ATTACK_WHITE][sq] = white_pawn_bb;
 
-		/* Pawn attacks — BLACK (color=1): attacks one rank backward diagonally */
+		/* Black pawn attacks (rank - 1) */
 		uint64_t black_pawn_bb = 0ULL;
 		if (rank - 1 >= 0)
 		{
@@ -91,7 +91,7 @@ void init_attack_tables()
 		}
 		PAWN_ATTACKS[ATTACK_BLACK][sq] = black_pawn_bb;
 
-		/* Ray tables */
+		/* Precompute rays */
 		for (int dir = 0; dir < 8; ++dir)
 		{
 			uint64_t ray_bb = 0ULL;
@@ -108,4 +108,4 @@ void init_attack_tables()
 	}
 }
 
-} // namespace fenrir
+} /* namespace fenrir */

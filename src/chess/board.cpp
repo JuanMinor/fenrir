@@ -24,7 +24,7 @@ namespace fenrir
 	Board::Board(const std::string &fen_string)
 		: fen(fen_string)
 	{
-		/* Ensure attack tables are initialized (idempotent — Engine also calls this) */
+		/* Initialize attack tables (idempotent) */
 		static std::atomic<bool> tables_initialized{false};
 		if (!tables_initialized.exchange(true))
 		{
@@ -72,7 +72,7 @@ namespace fenrir
 		size_t size = placement.size();
 		uint8_t rank = BOARD_SIZE - 1, file = 0;
 
-		// Initialize bitboards and occupancy
+		/* Clear bitboards and occupancy */
 		for (int i = 0; i < 12; ++i)
 		{
 			this->bitboards[i] = 0ULL;
@@ -337,7 +337,7 @@ namespace fenrir
 
 	UndoState Board::apply_move(const Move &move)
 	{
-		/* Save full state snapshot */
+		/* Save state snapshot */
 		UndoState state;
 		for (int i = 0; i < 12; ++i)
 		{
@@ -362,19 +362,19 @@ namespace fenrir
 		char active_piece = this->get_piece(from_rank, from_file);
 		if (active_piece == '\0')
 		{
-			return state; // nothing to do
+			return state; /* No active piece */
 		}
 
 		bool active_is_white = std::isupper(static_cast<unsigned char>(active_piece));
 		int active_bb_idx = get_bitboard_index(active_piece);
 
-		/* Clear en passant */
+		/* Clear EP square */
 		this->en_passant_square = 64;
 		this->en_passant_dirty = true;
 
 		MoveType mt = move.get_move_type();
 
-		/* Handle capture (remove captured piece from destination) */
+		/* Remove captured piece from destination */
 		if (mt == MoveType::CAPTURE)
 		{
 			char target_piece = this->get_piece(to_rank, to_file);
@@ -397,9 +397,9 @@ namespace fenrir
 		}
 		else if (mt == MoveType::EN_PASSANT)
 		{
-			/* Remove the captured pawn (which is on the same rank as moving pawn, EP file) */
+			/* Remove captured EP pawn */
 			uint8_t ep_file = to_file;
-			uint8_t ep_pawn_rank = from_rank; /* captured pawn is on same rank as attacker */
+			uint8_t ep_pawn_rank = from_rank;
 			uint8_t ep_pawn_sq = static_cast<uint8_t>(ep_pawn_rank * 8 + ep_file);
 			char captured_pawn = active_is_white ? 'p' : 'P';
 			int cap_bb_idx = get_bitboard_index(captured_pawn);
@@ -418,9 +418,9 @@ namespace fenrir
 		}
 		else if (mt == MoveType::CASTLE_KINGSIDE)
 		{
-			/* Move rook: h-file to f-file */
-			uint8_t rook_from_sq = static_cast<uint8_t>(from_rank * 8 + 7); // h-file
-			uint8_t rook_to_sq = static_cast<uint8_t>(from_rank * 8 + 5);	// f-file
+			/* Move rook: H to F (kingside castle) */
+			uint8_t rook_from_sq = static_cast<uint8_t>(from_rank * 8 + 7); /* h-file */
+			uint8_t rook_to_sq = static_cast<uint8_t>(from_rank * 8 + 5);	/* f-file */
 			char rook_char = active_is_white ? 'R' : 'r';
 			int rook_bb_idx = get_bitboard_index(rook_char);
 			if (rook_bb_idx >= 0)
@@ -441,9 +441,9 @@ namespace fenrir
 		}
 		else if (mt == MoveType::CASTLE_QUEENSIDE)
 		{
-			/* Move rook: a-file to d-file */
-			uint8_t rook_from_sq = static_cast<uint8_t>(from_rank * 8 + 0); // a-file
-			uint8_t rook_to_sq = static_cast<uint8_t>(from_rank * 8 + 3);	// d-file
+			/* Move rook: A to D (queenside castle) */
+			uint8_t rook_from_sq = static_cast<uint8_t>(from_rank * 8 + 0); /* a-file */
+			uint8_t rook_to_sq = static_cast<uint8_t>(from_rank * 8 + 3);	/* d-file */
 			char rook_char = active_is_white ? 'R' : 'r';
 			int rook_bb_idx = get_bitboard_index(rook_char);
 			if (rook_bb_idx >= 0)
@@ -463,14 +463,14 @@ namespace fenrir
 			}
 		}
 
-		/* Move the active piece */
+		/* Move active piece */
 		if (active_bb_idx >= 0)
 		{
-			/* For promotion, replace the pawn with the promotion piece */
+			/* Perform pawn promotion */
 			if (mt == MoveType::PROMOTION)
 			{
 				char prom_char = move.get_promotion_piece();
-				/* Adjust case for color */
+				/* Match piece color case */
 				if (active_is_white)
 				{
 					prom_char = static_cast<char>(std::toupper(static_cast<unsigned char>(prom_char)));
@@ -481,10 +481,10 @@ namespace fenrir
 				}
 				int prom_bb_idx = get_bitboard_index(prom_char);
 
-				/* Remove the pawn from source */
+				/* Remove pawn from source square */
 				clear_bit(this->bitboards[active_bb_idx], from_sq);
 
-				/* Remove any piece on destination (promotion capture) */
+				/* Clear destination square */
 				char target_at_dest = this->get_piece(to_rank, to_file);
 				if (target_at_dest != '\0')
 				{
@@ -503,13 +503,13 @@ namespace fenrir
 					}
 				}
 
-				/* Place promotion piece on destination */
+				/* Place promotion piece */
 				if (prom_bb_idx >= 0)
 				{
 					set_bit(this->bitboards[prom_bb_idx], to_sq);
 				}
 
-				/* Update occupancy */
+				/* Update occupancy bitboards */
 				if (active_is_white)
 				{
 					clear_bit(this->white_occupancy, from_sq);
@@ -538,7 +538,7 @@ namespace fenrir
 			}
 		}
 
-		/* Set en passant square for double pawn pushes */
+		/* Set EP square on double pawn push */
 		if (std::tolower(static_cast<unsigned char>(active_piece)) == 'p' &&
 			std::abs(static_cast<int>(to_rank) - static_cast<int>(from_rank)) == 2)
 		{
@@ -547,7 +547,7 @@ namespace fenrir
 		}
 
 		/* Update castling rights */
-		/* Remove rights if king moves */
+		/* Revoke castling rights on king move */
 		if (std::tolower(static_cast<unsigned char>(active_piece)) == 'k')
 		{
 			if (active_is_white)
@@ -562,9 +562,9 @@ namespace fenrir
 			}
 		}
 
-		/* Remove rook rights if rook moves or is captured */
+		/* Revoke castling rights on rook move or capture */
 		{
-			/* White kingside rook at h1 (sq 7) */
+			/* White kingside rook H1 */
 			if (from_sq == 7 || to_sq == 7)
 			{
 				if (this->castling_rights & CASTLE_K)
@@ -573,7 +573,7 @@ namespace fenrir
 					this->castling_dirty = true;
 				}
 			}
-			/* White queenside rook at a1 (sq 0) */
+			/* White queenside rook A1 */
 			if (from_sq == 0 || to_sq == 0)
 			{
 				if (this->castling_rights & CASTLE_Q)
@@ -582,7 +582,7 @@ namespace fenrir
 					this->castling_dirty = true;
 				}
 			}
-			/* Black kingside rook at h8 (sq 63) */
+			/* Black kingside rook H8 */
 			if (from_sq == 63 || to_sq == 63)
 			{
 				if (this->castling_rights & CASTLE_k)
@@ -591,7 +591,7 @@ namespace fenrir
 					this->castling_dirty = true;
 				}
 			}
-			/* Black queenside rook at a8 (sq 56) */
+			/* Black queenside rook A8 */
 			if (from_sq == 56 || to_sq == 56)
 			{
 				if (this->castling_rights & CASTLE_q)
@@ -604,10 +604,10 @@ namespace fenrir
 
 		this->combined_occupancy = this->white_occupancy | this->black_occupancy;
 
-		/* Toggle side to move */
+		/* Toggle active color */
 		this->color = (this->color == WHITE) ? BLACK : WHITE;
 
-		/* Update move clocks */
+		/* Update move counters */
 		if (std::tolower(static_cast<unsigned char>(active_piece)) == 'p' ||
 			mt == MoveType::CAPTURE || mt == MoveType::EN_PASSANT || mt == MoveType::PROMOTION)
 		{
@@ -650,8 +650,8 @@ namespace fenrir
 
 	bool Board::is_square_attacked_by(uint8_t square, uint8_t attacker_color) const
 	{
-		/* Piece bitboard indices for the attacker */
-		/* White: P=0,N=1,B=2,R=3,Q=4,K=5 | Black: p=6,n=7,b=8,r=9,q=10,k=11 */
+		/* Attacker piece indices */
+		/* White: 0-5 (P, N, B, R, Q, K), Black: 6-11 (p, n, b, r, q, k) */
 		int pawn_idx = (attacker_color == WHITE) ? 0 : 6;
 		int knight_idx = (attacker_color == WHITE) ? 1 : 7;
 		int bishop_idx = (attacker_color == WHITE) ? 2 : 8;
@@ -659,12 +659,7 @@ namespace fenrir
 		int queen_idx = (attacker_color == WHITE) ? 4 : 10;
 		int king_idx = (attacker_color == WHITE) ? 5 : 11;
 
-		/* Pawn attacks: the square is attacked by a pawn of attacker_color
-		   if there's a pawn on one of the squares that would attack 'square'.
-		   PAWN_ATTACKS[attacker_color][square] gives squares a pawn ON 'square' would attack.
-		   We want: which pawn squares attack 'square'?
-		   A White pawn on sq X attacks square if PAWN_ATTACKS[WHITE][X] contains square.
-		   Equivalently: use opponent's pawn attack table from the target square. */
+		/* Pawn attacks */
 		uint8_t defender_color = (attacker_color == WHITE) ? BLACK : WHITE;
 		uint64_t pawn_attack_mask = PAWN_ATTACKS[defender_color][square];
 		if (pawn_attack_mask & this->bitboards[pawn_idx])
@@ -684,17 +679,17 @@ namespace fenrir
 			return true;
 		}
 
-		/* Sliding pieces — bishops (diagonals) */
+		/* Bishop diagonal attacks */
 		{
 			uint64_t bishops = this->bitboards[bishop_idx] | this->bitboards[queen_idx];
-			/* Check diagonal rays */
+			/* Check diagonal ray directions */
 			for (int dir : {RAY_NE, RAY_SE, RAY_SW, RAY_NW})
 			{
 				uint64_t ray = RAY[square][dir];
 				uint64_t blockers = ray & this->combined_occupancy;
 				if (blockers)
 				{
-					/* Find the first blocker in this ray direction */
+					/* Find first blocker on ray */
 					uint8_t first_blocker;
 					if (dir == RAY_NE || dir == RAY_N || dir == RAY_NW || dir == RAY_E)
 					{
@@ -712,7 +707,7 @@ namespace fenrir
 			}
 		}
 
-		/* Sliding pieces — rooks (orthogonal) */
+		/* Rook orthogonal attacks */
 		{
 			uint64_t rooks = this->bitboards[rook_idx] | this->bitboards[queen_idx];
 			for (int dir : {RAY_N, RAY_E, RAY_S, RAY_W})
@@ -748,11 +743,11 @@ namespace fenrir
 		uint64_t king_bb = this->bitboards[king_bb_idx];
 		if (king_bb == 0ULL)
 		{
-			return false; // No king on board (shouldn't happen in real game)
+			return false; /* No king on board */
 		}
 		uint8_t king_square = static_cast<uint8_t>(__builtin_ctzll(king_bb));
 		uint8_t opponent = (clr == WHITE) ? BLACK : WHITE;
 		return is_square_attacked_by(king_square, opponent);
 	}
 
-} // namespace fenrir
+} /* namespace fenrir */
