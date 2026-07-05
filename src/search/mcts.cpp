@@ -158,6 +158,7 @@ namespace fenrir
                 NNResult res = future.get();
                 root->expand(engine, res.policy);
             } catch (const std::exception& e) {
+                (void)e; // silence unreferenced variable warning
                 std::cerr << "Root evaluation failed: " << e.what() << "\n";
                 root->expand(engine);
             }
@@ -243,6 +244,7 @@ namespace fenrir
                         node->expand(thread_engine, res.policy);
                         result = res.value; 
                     } catch (const std::exception& e) {
+                        (void)e; // silence unreferenced variable warning
                         node->expand(thread_engine);
                         result = simulate(thread_engine);
                     }
