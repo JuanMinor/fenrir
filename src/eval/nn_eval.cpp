@@ -112,6 +112,14 @@ namespace fenrir
                 session_options.SetIntraOpNumThreads(1);
                 session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
                 
+                try {
+                    OrtCUDAProviderOptions cuda_options;
+                    cuda_options.device_id = 0;
+                    session_options.AppendExecutionProvider_CUDA(cuda_options);
+                } catch (...) { // LCOV_EXCL_LINE
+                    std::cerr << "Warning: Could not enable CUDA. Falling back to CPU.\n"; // LCOV_EXCL_LINE
+                } // LCOV_EXCL_LINE
+                
                 // CRITICAL: We must destroy the old session before freeing/overwriting the old buffer!
                 session.reset();
                 model_buffer = std::move(temp_buffer);

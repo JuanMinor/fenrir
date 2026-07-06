@@ -22,9 +22,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(FetchContent)
 set(ONNXRUNTIME_VERSION "1.18.0")
 if(WIN32)
-    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-win-x64-${ONNXRUNTIME_VERSION}.zip")
+    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-win-x64-gpu-${ONNXRUNTIME_VERSION}.zip")
 else()
-    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-linux-x64-${ONNXRUNTIME_VERSION}.tgz")
+    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-linux-x64-gpu-${ONNXRUNTIME_VERSION}.tgz")
 endif()
 
 FetchContent_Declare(
@@ -110,6 +110,12 @@ if(WIN32)
     add_custom_command(TARGET fenrir POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "${onnxruntime_SOURCE_DIR}/lib/onnxruntime.dll"
+            $<TARGET_FILE_DIR:fenrir>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${onnxruntime_SOURCE_DIR}/lib/onnxruntime_providers_shared.dll"
+            $<TARGET_FILE_DIR:fenrir>
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${onnxruntime_SOURCE_DIR}/lib/onnxruntime_providers_cuda.dll"
             $<TARGET_FILE_DIR:fenrir>
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/onnx"
