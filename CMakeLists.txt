@@ -20,7 +20,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ONNX Runtime Integration
 include(FetchContent)
-set(ONNXRUNTIME_VERSION "1.16.3")
+set(ONNXRUNTIME_VERSION "1.18.0")
 if(WIN32)
     set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-win-x64-${ONNXRUNTIME_VERSION}.zip")
 else()

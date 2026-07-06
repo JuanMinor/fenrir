@@ -79,7 +79,9 @@ namespace fenrir
                 Move chosen_move = best_move;
                 if (moves_played < 30) {
                     std::vector<double> weights;
-                    for (const auto& p : raw_policy) weights.push_back(p.second);
+                    for (const auto& p : raw_policy) {
+                        weights.push_back(p.second);
+                    }
                     std::discrete_distribution<size_t> dist(weights.begin(), weights.end());
                     chosen_move = raw_policy[dist(rng)].first; 
                 }

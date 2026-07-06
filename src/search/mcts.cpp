@@ -119,7 +119,7 @@ namespace fenrir
         }
 
         std::vector<std::thread> workers;
-        int sims_per_thread = simulations / num_threads;
+        int sims_per_thread = num_threads > 0 ? simulations / num_threads : simulations;
         if (sims_per_thread == 0) sims_per_thread = 1;
 
         for (int i = 0; i < num_threads; ++i)
@@ -177,7 +177,7 @@ namespace fenrir
         }
 
         std::vector<std::thread> workers;
-        int sims_per_thread = simulations / num_threads;
+        int sims_per_thread = num_threads > 0 ? simulations / num_threads : simulations;
         if (sims_per_thread == 0) sims_per_thread = 1;
 
         for (int i = 0; i < num_threads; ++i)
@@ -188,6 +188,13 @@ namespace fenrir
                 std::cerr << "Thread creation failed: " << e.what() << "\n";
                 break; // Just proceed with the threads we successfully created
             }
+        }
+
+        if (workers.empty())
+        {
+            // Fallback to synchronous search on the main thread if OS is completely out of handles
+            std::cerr << "Warning: Falling back to synchronous search!\n";
+            search_worker(std::make_unique<Engine>(engine.get_fen()), root.get(), simulations);
         }
 
         for (auto& w : workers)

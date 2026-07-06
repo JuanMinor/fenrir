@@ -108,3 +108,10 @@ TEST_F(MCTSTest, RolloutOpponentCheckmate)
     // As long as it doesn't crash and completes simulations, the coverage should be hit reliably.
     SUCCEED();
 }
+
+TEST_F(MCTSTest, FallbackToSynchronous)
+{
+    MCTSSearch sync_search(nullptr, 0); // 0 threads to trigger fallback
+    auto result = sync_search.find_best_move_with_policy(engine, 10, false);
+    EXPECT_NE(result.first.to_uci_notation(), "0000");
+}
