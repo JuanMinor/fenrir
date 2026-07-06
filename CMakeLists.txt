@@ -22,15 +22,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(FetchContent)
 set(ONNXRUNTIME_VERSION "1.18.0")
 if(WIN32)
-    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-win-x64-gpu-${ONNXRUNTIME_VERSION}.zip")
+    set(ONNXRUNTIME_URL "https://www.nuget.org/api/v2/package/Microsoft.ML.OnnxRuntime.DirectML/${ONNXRUNTIME_VERSION}")
 else()
-    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-linux-x64-gpu-${ONNXRUNTIME_VERSION}.tgz")
+    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-linux-x64-${ONNXRUNTIME_VERSION}.tgz")
 endif()
 
 FetchContent_Declare(
   onnxruntime
   URL ${ONNXRUNTIME_URL}
-  DOWNLOAD_EXTRACT_TIMESTAMP true
 )
 FetchContent_MakeAvailable(onnxruntime)
 
@@ -97,9 +96,16 @@ target_compile_definitions(fenrir_core PRIVATE
 target_compile_options(fenrir_core PRIVATE ${COMMON_WARNING_FLAGS})
 target_include_directories(fenrir_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${onnxruntime_SOURCE_DIR}/include
+    $<$<BOOL:${WIN32}>:${onnxruntime_SOURCE_DIR}/build/native/include>
+    $<$<NOT:$<BOOL:${WIN32}>>:${onnxruntime_SOURCE_DIR}/include>
 )
-target_link_directories(fenrir_core PUBLIC ${onnxruntime_SOURCE_DIR}/lib)
+
+if(WIN32)
+    target_link_directories(fenrir_core PUBLIC ${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native)
+else()
+    target_link_directories(fenrir_core PUBLIC ${onnxruntime_SOURCE_DIR}/lib)
+endif()
+
 target_link_libraries(fenrir_core PUBLIC onnxruntime)
 
 # 2. Main Executable target: fenrir (was mainh)
@@ -109,13 +115,7 @@ target_link_libraries(fenrir PRIVATE fenrir_core)
 if(WIN32)
     add_custom_command(TARGET fenrir POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${onnxruntime_SOURCE_DIR}/lib/onnxruntime.dll"
-            $<TARGET_FILE_DIR:fenrir>
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${onnxruntime_SOURCE_DIR}/lib/onnxruntime_providers_shared.dll"
-            $<TARGET_FILE_DIR:fenrir>
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${onnxruntime_SOURCE_DIR}/lib/onnxruntime_providers_cuda.dll"
+            "${onnxruntime_SOURCE_DIR}/runtimes/win-x64/native/onnxruntime.dll"
             $<TARGET_FILE_DIR:fenrir>
         COMMAND ${CMAKE_COMMAND} -E copy_directory
             "${CMAKE_CURRENT_SOURCE_DIR}/onnx"

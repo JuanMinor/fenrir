@@ -2,6 +2,10 @@
 #include <chrono>
 #include <iostream>
 #include <fstream>
+#include <stdexcept>
+#ifdef _WIN32
+#include <dml_provider_factory.h>
+#endif
 
 namespace fenrir
 {
@@ -112,13 +116,13 @@ namespace fenrir
                 session_options.SetIntraOpNumThreads(1);
                 session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
                 
+#ifdef _WIN32
                 try {
-                    OrtCUDAProviderOptions cuda_options;
-                    cuda_options.device_id = 0;
-                    session_options.AppendExecutionProvider_CUDA(cuda_options);
+                    Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(session_options, 0));
                 } catch (...) { // LCOV_EXCL_LINE
-                    std::cerr << "Warning: Could not enable CUDA. Falling back to CPU.\n"; // LCOV_EXCL_LINE
+                    std::cerr << "Warning: Could not enable DirectML. Falling back to CPU.\n"; // LCOV_EXCL_LINE
                 } // LCOV_EXCL_LINE
+#endif
                 
                 // CRITICAL: We must destroy the old session before freeing/overwriting the old buffer!
                 session.reset();
