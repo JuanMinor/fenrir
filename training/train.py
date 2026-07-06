@@ -135,7 +135,12 @@ def train():
                          dynamic_axes={'input': {0: 'batch_size'},
                                        'policy': {0: 'batch_size'},
                                        'value': {0: 'batch_size'}})
-        os.replace(onnx_tmp_path, onnx_path)
+        while True:
+            try:
+                os.replace(onnx_tmp_path, onnx_path)
+                break
+            except PermissionError:
+                time.sleep(0.01)
         print(f"Exported updated weights to {onnx_path}")
 
 

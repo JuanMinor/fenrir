@@ -103,6 +103,7 @@ namespace fenrir
                 if (!file.is_open()) return; // File is locked by Python, try again later
                 
                 std::streamsize size = file.tellg();
+                if (size <= 0) return; // Prevent empty file or error
                 file.seekg(0, std::ios::beg);
                 std::vector<char> temp_buffer(static_cast<size_t>(size));
                 if (!file.read(temp_buffer.data(), size)) return; // Failed to read, try again later
@@ -178,10 +179,12 @@ namespace fenrir
                     std::cerr << "Unhandled exception in evaluate_batch: " << e.what() << "\n";
                     for (auto& p : promises)
                     {
-                        NNResult res;
-                        res.value = 0.5;
-                        res.policy.resize(4096, 0.01);
-                        p.set_value(res);
+                        try {
+                            NNResult res;
+                            res.value = 0.5;
+                            res.policy.resize(4096, 0.01);
+                            p.set_value(res);
+                        } catch (...) {}
                     }
                 }
             }
@@ -220,13 +223,20 @@ namespace fenrir
         const char* input_names[] = {"input"};
         const char* output_names[] = {"policy", "value"};
         
+        std::vector<bool> promise_set(batch_size_actual, false);
         try {
             auto output_tensors = session->Run(Ort::RunOptions{nullptr}, input_names, &input_tensor, 1, output_names, 2);
             
+            auto policy_info = output_tensors[0].GetTensorTypeAndShapeInfo();
+            auto value_info = output_tensors[1].GetTensorTypeAndShapeInfo();
+            size_t policy_size = 4096; // Flat policy output size from the model
+            
+            if (policy_info.GetElementCount() < batch_size_actual * policy_size || value_info.GetElementCount() < batch_size_actual) {
+                throw std::runtime_error("ONNX model returned unexpected tensor size."); // LCOV_EXCL_LINE
+            }
+            
             const float* policy_data = output_tensors[0].GetTensorMutableData<float>();
             const float* value_data = output_tensors[1].GetTensorMutableData<float>();
-            
-            size_t policy_size = 4096; // Flat policy output size from the model
             
             for (size_t i = 0; i < batch_size_actual; ++i)
             {
@@ -234,15 +244,21 @@ namespace fenrir
                 res.value = static_cast<double>(value_data[i]);
                 res.policy.assign(policy_data + i * policy_size, policy_data + (i + 1) * policy_size);
                 promises[i].set_value(res);
+                promise_set[i] = true;
             }
         } catch (const std::exception& e) {
             std::cerr << "ONNX inference error: " << e.what() << "\n";
             for (size_t i = 0; i < batch_size_actual; ++i)
             {
-                NNResult res;
-                res.value = 0.5;
-                res.policy.resize(4096, 0.01);
-                promises[i].set_value(res);
+                if (!promise_set[i]) {
+                    try {
+                        NNResult res;
+                        res.value = 0.5;
+                        res.policy.resize(4096, 0.01);
+                        promises[i].set_value(res);
+                    } catch (...) {}
+                    promise_set[i] = true;
+                }
             }
         }
     }
