@@ -124,17 +124,20 @@ def train():
         
         model.train()
         total_loss = 0
+        batches_processed = 0
+        
+        # Prevent massive overfitting by doing a maximum of 50 random batches per update
+        # instead of a full epoch over the entire replay buffer every single time.
         for batch_idx, (tensors, policies, values) in enumerate(dataloader):
+            if batches_processed >= 50:
+                break
+                
             tensors, policies, values = tensors.to(device), policies.to(device), values.to(device)
             
             optimizer.zero_grad()
             
             pred_policies, pred_values = model(tensors)
             
-            # Policy loss (Cross Entropy) and Value loss (MSE)
-            # Softmax is applied intrinsically by cross_entropy if targets are probabilities? 
-            # Note: PyTorch cross_entropy with probabilities requires careful handling, 
-            # or manual log_softmax + NLL_loss. We'll use cross_entropy natively assuming logits.
             policy_loss = -torch.sum(policies * F.log_softmax(pred_policies, dim=1), dim=1).mean()
             value_loss = F.mse_loss(pred_values, values)
             
@@ -143,8 +146,10 @@ def train():
             optimizer.step()
             
             total_loss += loss.item()
+            batches_processed += 1
             
-        print(f"Epoch finished. Loss: {total_loss/len(dataloader):.4f}")
+        avg_loss = total_loss / max(1, batches_processed)
+        print(f"Training cycle finished. Loss: {avg_loss:.4f} (over {batches_processed} batches)")
         
         # Export back to ONNX for C++ Engine atomically
         dummy_input = torch.randn(1, 14, 8, 8, device=device)
