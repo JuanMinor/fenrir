@@ -48,9 +48,29 @@ class ChessDataset(Dataset):
         self.update()
                             
     def fen_to_tensor(self, fen):
-        # Stub: parse FEN to 14x8x8 tensor matching C++ engine representation
-        # Consider using `python-chess` library to parse FEN directly into bitboards
-        return torch.zeros((14, 8, 8), dtype=torch.float32)
+        import chess
+        board = chess.Board(fen)
+        tensor = torch.zeros((14, 8, 8), dtype=torch.float32)
+        
+        for square in chess.SQUARES:
+            piece = board.piece_at(square)
+            if piece:
+                color_offset = 0 if piece.color == chess.WHITE else 6
+                piece_type_offset = piece.piece_type - 1 
+                channel = color_offset + piece_type_offset
+                
+                rank = chess.square_rank(square)
+                file = chess.square_file(square)
+                tensor[channel, rank, file] = 1.0
+                
+        color_val = 1.0 if board.turn == chess.WHITE else -1.0
+        tensor[12, :, :] = color_val
+        
+        castling_rights = fen.split(' ')[2]
+        castling_val = float(ord(castling_rights[0]))
+        tensor[13, :, :] = castling_val
+        
+        return tensor
 
     def __len__(self):
         return len(self.samples)

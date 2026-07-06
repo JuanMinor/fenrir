@@ -115,11 +115,13 @@ namespace fenrir
                 // CRITICAL: We must destroy the old session before freeing/overwriting the old buffer!
                 session.reset();
                 model_buffer = std::move(temp_buffer);
+                
+                // Mark as loaded so we don't infinitely retry a corrupted file
+                last_model_load_time = write_time;
 
                 auto new_session = std::make_unique<Ort::Session>(*env, model_buffer.data(), model_buffer.size(), session_options);
 
                 session = std::move(new_session);
-                last_model_load_time = write_time;
                 std::cout << "Successfully loaded ONNX model: " << model_path << "\n";
             } catch (const std::exception& e) {
                 std::cerr << "Failed to reload ONNX model: " << e.what() << "\n";
