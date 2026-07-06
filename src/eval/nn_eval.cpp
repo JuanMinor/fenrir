@@ -118,6 +118,8 @@ namespace fenrir
                 
 #ifdef _WIN32
                 try {
+                    session_options.DisableMemPattern();
+                    session_options.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
                     Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(session_options, 0));
                 } catch (...) { // LCOV_EXCL_LINE
                     std::cerr << "Warning: Could not enable DirectML. Falling back to CPU.\n"; // LCOV_EXCL_LINE
