@@ -4,6 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 #ifdef _WIN32
+#define NOMINMAX
 #include <dml_provider_factory.h>
 #endif
 
