@@ -30,6 +30,8 @@ endif()
 FetchContent_Declare(
   onnxruntime
   URL ${ONNXRUNTIME_URL}
+  DOWNLOAD_NAME onnxruntime_dml.zip
+  DOWNLOAD_EXTRACT_TIMESTAMP true
 )
 FetchContent_MakeAvailable(onnxruntime)
 
