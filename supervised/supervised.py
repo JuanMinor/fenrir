@@ -155,11 +155,17 @@ def train_supervised(pgn_path="games.pgn", chunk_size=30000):
     # AWS Optimization: Force native CUDA for maximum performance
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    print(f"Using device: {device}")
+    # AWS Optimization: Enable TF32 and CuDNN Benchmarking for Tensor Cores
+    torch.backends.cudnn.benchmark = True
+    torch.backends.cuda.matmul.allow_tf32 = True
+    torch.backends.cudnn.allow_tf32 = True
 
     # Initialize fresh network
     model = AlphaZeroNet().to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
+    
+    # Enable Mixed Precision to double the speed
+    scaler = torch.amp.GradScaler('cuda')
 
     total_games_processed = 0
     if os.path.exists("fenrir_checkpoint.pth") and os.path.exists("fenrir_checkpoint.json"):
@@ -259,15 +265,19 @@ def train_supervised(pgn_path="games.pgn", chunk_size=30000):
                     b_values = b_values.to(device, non_blocking=True)
 
                     optimizer.zero_grad(set_to_none=True)
-                    pred_policies, pred_values = model(b_tensors)
+                    
+                    with torch.amp.autocast('cuda'):
+                        pred_policies, pred_values = model(b_tensors)
 
-                    # AWS Optimization: Native C++ Cross Entropy is 100x faster than manual one-hot scattering
-                    policy_loss = F.cross_entropy(pred_policies, b_policies)
-                    value_loss = F.mse_loss(pred_values, b_values)
+                        # AWS Optimization: Native C++ Cross Entropy is 100x faster than manual one-hot scattering
+                        policy_loss = F.cross_entropy(pred_policies, b_policies)
+                        value_loss = F.mse_loss(pred_values, b_values)
 
-                    loss = policy_loss + value_loss
-                    loss.backward()
-                    optimizer.step()
+                        loss = policy_loss + value_loss
+                        
+                    scaler.scale(loss).backward()
+                    scaler.step(optimizer)
+                    scaler.update()
 
                     total_loss += loss.item()
                     batches += 1
