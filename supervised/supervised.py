@@ -159,10 +159,6 @@ def train_supervised(pgn_path="games.pgn", chunk_size=30000):
 
     # Initialize fresh network
     model = AlphaZeroNet().to(device)
-    if torch.cuda.is_available() and int(torch.__version__.split('.')[0]) >= 2:
-        print("Compiling model with torch.compile for massive speedup...")
-        model = torch.compile(model)
-        
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     total_games_processed = 0
