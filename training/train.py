@@ -7,9 +7,11 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from model import AlphaZeroNet
 
+import zlib
+
 # Stub: Map algebraic moves to indices 0-4095
 def uci_to_index(uci_move):
-    return hash(uci_move) % 4096
+    return zlib.crc32(uci_move.encode()) % 4096
 
 class ChessDataset(Dataset):
     def __init__(self, data_dir):
@@ -52,22 +54,20 @@ class ChessDataset(Dataset):
         board = chess.Board(fen)
         tensor = torch.zeros((14, 8, 8), dtype=torch.float32)
         
-        for square in chess.SQUARES:
-            piece = board.piece_at(square)
-            if piece:
-                color_offset = 0 if piece.color == chess.WHITE else 6
-                piece_type_offset = piece.piece_type - 1 
-                channel = color_offset + piece_type_offset
-                
-                rank = chess.square_rank(square)
-                file = chess.square_file(square)
-                tensor[channel, rank, file] = 1.0
+        for square, piece in board.piece_map().items():
+            color_offset = 0 if piece.color == chess.WHITE else 6
+            piece_type_offset = piece.piece_type - 1 
+            channel = color_offset + piece_type_offset
+            
+            rank = chess.square_rank(square)
+            file = chess.square_file(square)
+            tensor[channel, rank, file] = 1.0
                 
         color_val = 1.0 if board.turn == chess.WHITE else -1.0
         tensor[12, :, :] = color_val
         
         castling_rights = fen.split(' ')[2]
-        castling_val = float(ord(castling_rights[0]))
+        castling_val = float(ord(castling_rights[0])) if len(castling_rights) > 0 else 0.0
         tensor[13, :, :] = castling_val
         
         return tensor
@@ -105,6 +105,12 @@ def train():
     
     model = AlphaZeroNet().to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
+    
+    # Check for PyTorch checkpoint to resume training
+    checkpoint_path = "onnx/fenrir.pth"
+    if os.path.exists(checkpoint_path):
+        print(f"Loading existing weights from {checkpoint_path}...")
+        model.load_state_dict(torch.load(checkpoint_path, weights_only=True))
     
     # Path logic mirroring C++ output
     data_dir = "data/selfplay/"
@@ -155,18 +161,29 @@ def train():
         dummy_input = torch.randn(1, 14, 8, 8, device=device)
         onnx_tmp_path = "onnx/fenrir.onnx.tmp"
         onnx_path = "onnx/fenrir.onnx"
-        torch.onnx.export(model, dummy_input, onnx_tmp_path, 
-                         input_names=['input'], output_names=['policy', 'value'],
-                         dynamic_axes={'input': {0: 'batch_size'},
-                                       'policy': {0: 'batch_size'},
-                                       'value': {0: 'batch_size'}})
+        torch.onnx.export(
+            model,
+            dummy_input,
+            onnx_tmp_path,
+            export_params=True,
+            opset_version=14,
+            do_constant_folding=True,
+            input_names=['input'],
+            output_names=['policy', 'value'],
+            dynamic_axes={'input': {0: 'batch_size'},
+                          'policy': {0: 'batch_size'},
+                          'value': {0: 'batch_size'}}
+        )
         while True:
             try:
                 os.replace(onnx_tmp_path, onnx_path)
                 break
             except PermissionError:
                 time.sleep(0.01)
-        print(f"Exported updated weights to {onnx_path}")
+                
+        # Save PyTorch checkpoint for resuming
+        torch.save(model.state_dict(), "onnx/fenrir.pth")
+        print(f"Exported updated weights to {onnx_path} and onnx/fenrir.pth")
 
 
 if __name__ == "__main__":

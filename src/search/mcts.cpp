@@ -4,6 +4,20 @@
 
 namespace fenrir
 {
+    namespace
+    {
+        uint32_t crc32(const std::string& str) {
+            uint32_t crc = 0xFFFFFFFF;
+            for (char c : str) {
+                crc ^= static_cast<uint8_t>(c);
+                for (int i = 0; i < 8; i++) {
+                    crc = (crc >> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
+                }
+            }
+            return ~crc;
+        }
+    }
+
     MCTSNode::MCTSNode(MCTSNode* parent_node, const Move& m, uint8_t color)
         : parent(parent_node), move(m), color_to_move(color), 
           visits(0), win_score(0.0), virtual_loss(0), prior(0.0), is_expanded(false)
@@ -29,7 +43,8 @@ namespace fenrir
             }
             else
             {
-                children.back()->prior = (i < policy.size()) ? policy[i] : (1.0 / static_cast<double>(moves.size()));
+                uint32_t idx = crc32(moves[i].to_uci_notation()) % 4096;
+                children.back()->prior = (idx < policy.size()) ? policy[idx] : 0.0;
             }
         }
         is_expanded.store(true);
@@ -61,6 +76,19 @@ namespace fenrir
         double c = 1.414;
         double u = c * prior * std::sqrt(total_visits) / (1 + v);
         return q + u;
+    }
+
+    int MCTSNode::get_max_depth() const
+    {
+        if (!is_expanded.load() || children.empty()) return 0;
+        int max_d = 0;
+        for (const auto& child : children)
+        {
+            if (child->visits.load() > 0) {
+                max_d = std::max(max_d, child->get_max_depth());
+            }
+        }
+        return 1 + max_d;
     }
 
     void MCTSNode::add_dirichlet_noise(double epsilon, double alpha)
@@ -97,7 +125,7 @@ namespace fenrir
 
     MCTSSearch::~MCTSSearch() = default;
 
-    Move MCTSSearch::find_best_move(Engine& engine, int simulations)
+    Move MCTSSearch::find_best_move(Engine& engine, int time_limit_ms, int max_simulations)
     {
         uint8_t root_color = engine.get_board_view().get_color();
         Move empty_move(0, 0); 
@@ -119,12 +147,19 @@ namespace fenrir
         }
 
         std::vector<std::thread> workers;
-        int sims_per_thread = num_threads > 0 ? simulations / num_threads : simulations;
-        if (sims_per_thread == 0) sims_per_thread = 1;
+        int sims_per_thread = -1;
+        bool use_time = (time_limit_ms > 0);
+        
+        if (!use_time) {
+            sims_per_thread = num_threads > 0 ? max_simulations / num_threads : max_simulations;
+            if (sims_per_thread <= 0) sims_per_thread = 1;
+        }
+
+        auto end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(std::max(1, time_limit_ms));
 
         for (int i = 0; i < num_threads; ++i)
         {
-            workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread);
+            workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread, end_time, use_time);
         }
 
         for (auto& w : workers)
@@ -134,14 +169,22 @@ namespace fenrir
 
         Move best_move(0, 0);
         int max_visits = -1;
+        double best_score = 0.5;
         for (auto& child : root->children)
         {
             if (child->visits.load() > max_visits)
             {
                 max_visits = child->visits.load();
                 best_move = child->move;
+                best_score = child->win_score.load() / std::max(1, child->visits.load());
             }
         }
+
+        int total_nodes = root->visits.load();
+        int max_depth = root->get_max_depth();
+        int score_cp = static_cast<int>((best_score - 0.5) * 200); // Convert win rate [0, 1] to centipawns
+        std::cout << "info depth " << max_depth << " nodes " << total_nodes << " score cp " << score_cp << " pv " << best_move.to_uci_notation() << std::endl;
+
         return best_move;
     }
 
@@ -183,7 +226,7 @@ namespace fenrir
         for (int i = 0; i < num_threads; ++i)
         {
             try {
-                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread);
+                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread, std::chrono::steady_clock::now(), false);
             } catch (const std::exception& e) {
                 std::cerr << "Thread creation failed: " << e.what() << "\n";
                 break; // Just proceed with the threads we successfully created
@@ -194,7 +237,7 @@ namespace fenrir
         {
             // Fallback to synchronous search on the main thread if OS is completely out of handles
             std::cerr << "Warning: Falling back to synchronous search!\n";
-            search_worker(std::make_unique<Engine>(engine.get_fen()), root.get(), simulations);
+            search_worker(std::make_unique<Engine>(engine.get_fen()), root.get(), simulations, std::chrono::steady_clock::now(), false);
         }
 
         for (auto& w : workers)
@@ -222,13 +265,25 @@ namespace fenrir
         return {best_move, policy};
     }
 
-    void MCTSSearch::search_worker(std::unique_ptr<Engine> thread_engine_ptr, MCTSNode* root, int simulations)
+    void MCTSSearch::search_worker(std::unique_ptr<Engine> thread_engine_ptr, MCTSNode* root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
     {
         Engine& thread_engine = *thread_engine_ptr;
         std::mt19937 local_rng(std::random_device{}());
+        int sim_count = 0;
 
-        for (int i = 0; i < simulations; ++i)
+        while (true)
         {
+            if (use_time) {
+                // Check time periodically to avoid massive std::chrono syscall overhead
+                if ((sim_count & 15) == 0 && std::chrono::steady_clock::now() >= end_time) {
+                    break;
+                }
+            } else {
+                if (sim_count >= simulations) {
+                    break;
+                }
+            }
+            sim_count++;
             MCTSNode* node = root;
             
             while (node->is_expanded.load() && !node->children.empty())

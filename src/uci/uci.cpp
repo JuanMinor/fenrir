@@ -93,22 +93,34 @@ namespace fenrir
 
     void UCI::parse_go(const std::string& command)
     {
-        // Default to 800 simulations for now, could parse nodes or time
-        int simulations = 800; 
+        int simulations = -1; 
+        int move_time = -1;
+        int wtime = -1, btime = -1;
         std::istringstream is(command);
         std::string token;
         is >> token; // consume "go"
         
         while (is >> token)
         {
-            if (token == "nodes")
-            {
-                is >> simulations;
-            }
-            // Add time parsing logic here later
+            if (token == "nodes") is >> simulations;
+            else if (token == "movetime") is >> move_time;
+            else if (token == "wtime") is >> wtime;
+            else if (token == "btime") is >> btime;
         }
 
-        Move best_move = search->find_best_move(*engine, simulations);
+        // Time management logic
+        int allocated_time_ms = 1000; // default 1 second if nothing provided
+        if (move_time != -1) {
+            allocated_time_ms = move_time;
+        } else if (wtime != -1 || btime != -1) {
+            int time_left = (engine->get_board_view().get_color() == 0) ? wtime : btime;
+            allocated_time_ms = time_left / 30; // standard rule of thumb: use 1/30th of remaining time
+            if (allocated_time_ms < 100) allocated_time_ms = 100;
+        } else if (simulations != -1) {
+            allocated_time_ms = -1; // flag to use node limit instead of time
+        }
+
+        Move best_move = search->find_best_move(*engine, allocated_time_ms, simulations);
         std::cout << "bestmove " << best_move.to_uci_notation() << std::endl;
     }
 }

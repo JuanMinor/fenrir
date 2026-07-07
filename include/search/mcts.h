@@ -38,6 +38,7 @@ namespace fenrir
         void backpropagate(double result); 
 
         double puct_value(int total_visits) const;
+        int get_max_depth() const;
     };
 
     class MCTSSearch
@@ -46,11 +47,11 @@ namespace fenrir
         MCTSSearch(NNEvaluator* evaluator = nullptr, int threads = 16);
         ~MCTSSearch();
 
-        Move find_best_move(Engine& engine, int simulations);
+        Move find_best_move(Engine& engine, int time_limit_ms, int max_simulations = -1);
         std::pair<Move, std::vector<std::pair<Move, double>>> find_best_move_with_policy(Engine& engine, int simulations, bool apply_noise = false);
         
     private:
-        void search_worker(std::unique_ptr<Engine> thread_engine, MCTSNode* root, int simulations);
+        void search_worker(std::unique_ptr<Engine> thread_engine, MCTSNode* root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time);
         double simulate(Engine& engine);
         
         NNEvaluator* evaluator;
