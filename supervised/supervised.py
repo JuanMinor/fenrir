@@ -254,8 +254,8 @@ def train_supervised(pgn_path="games.pgn", chunk_size=30000):
             print(f"Starting training on chunk ({len(dataset)} positions)...")
             model.train()
 
-            # AWS Optimization: 3 epochs per chunk (3 passes over the data)
-            epochs_per_chunk = 3
+            # AWS Optimization: 1 epoch per chunk (since we have 94 Million games, multiple passes are mathematically redundant and waste time!)
+            epochs_per_chunk = 1
             for epoch in range(epochs_per_chunk):
                 total_loss = 0
                 batches = 0
