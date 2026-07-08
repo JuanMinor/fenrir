@@ -7,60 +7,55 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 from model import AlphaZeroNet
 
-import zlib
-
-# Stub: Map algebraic moves to indices 0-4095
-def uci_to_index(uci_move):
+# Map algebraic moves to AlphaZero 4672-channel actions
+# Takes the active turn side ('w' or 'b') to properly map string castling text
+def uci_to_index(uci_move, turn='w'):
     uci_move = uci_move.strip()
 
-    # DEFENSIVE GUARD: If it's short or uses standard castling notation, map it manually
-    if len(uci_move) < 4 or 'O' in uci_move or 'o' in uci_move:
-        # If your self-play logs are written from White's perspective mostly, or if you just
-        # need to bypass the crash, we can explicitly map common string formats:
-        if uci_move in ["O-O", "o-o"]:
-            uci_move = "e1g1" # Fallback guess for Kingside (will be overwritten if wrong)
-        elif uci_move in ["O-O-O", "o-o-o"]:
-            uci_move = "e1c1" # Fallback guess for Queenside
-        else:
-            return 0 # Skip entirely if it's completely unparseable garbage
+    # 1. Catch and translate standard python-chess SAN castling text
+    if uci_move == "O-O":
+        uci_move = "e1g1" if turn == 'w' else "e8g8"
+    elif uci_move == "O-O-O":
+        uci_move = "e1c1" if turn == 'w' else "e8c8"
 
-    try:
-        from_file = ord(uci_move[0]) - ord('a')
-        from_rank = int(uci_move[1]) - 1
-        to_file = ord(uci_move[2]) - ord('a')
-        to_rank = int(uci_move[3]) - 1
+    # Absolute safety catch for any other malformed short strings
+    if len(uci_move) < 4:
+        return 0
 
-        from_sq = from_rank * 8 + from_file
-        dx = to_file - from_file
-        dy = to_rank - from_rank
+    from_file = ord(uci_move[0]) - ord('a')
+    from_rank = int(uci_move[1]) - 1
+    to_file = ord(uci_move[2]) - ord('a')
+    to_rank = int(uci_move[3]) - 1
 
-        promo = uci_move[4].lower() if len(uci_move) > 4 else None
-        channel = 0
+    from_sq = from_rank * 8 + from_file
+    dx = to_file - from_file
+    dy = to_rank - from_rank
 
-        # 1. Underpromotions
-        if promo and promo != 'q':
-            promo_dir = dx + 1
-            promo_type = {'n': 0, 'b': 1, 'r': 2}[promo]
-            channel = 64 + (promo_dir * 3) + promo_type
+    promo = uci_move[4].lower() if len(uci_move) > 4 else None
+    channel = 0
 
-        # 2. Knight moves
-        elif abs(dx) * abs(dy) == 2:
-            knight_lookups = [(1,2), (2,1), (2,-1), (1,-2), (-1,-2), (-2,-1), (-2,1), (-1,2)]
-            channel = 56 + knight_lookups.index((dx, dy))
+    # 1. Underpromotions (Knight, Bishop, Rook)
+    if promo and promo != 'q':
+        promo_dir = dx + 1
+        promo_type = {'n': 0, 'b': 1, 'r': 2}[promo]
+        channel = 64 + (promo_dir * 3) + promo_type
 
-        # 3. Queen-like moves
-        else:
-            step_x = 0 if dx == 0 else (1 if dx > 0 else -1)
-            step_y = 0 if dy == 0 else (1 if dy > 0 else -1)
-            distance = max(abs(dx), abs(dy))
+    # 2. Knight moves
+    elif abs(dx) * abs(dy) == 2:
+        knight_lookups = [(1,2), (2,1), (2,-1), (1,-2), (-1,-2), (-2,-1), (-2,1), (-1,2)]
+        channel = 56 + knight_lookups.index((dx, dy))
 
-            dirs = [(0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1), (-1,0), (-1,1)]
-            dir_idx = dirs.index((step_x, step_y))
-            channel = (dir_idx * 7) + (distance - 1)
+    # 3. Queen-like moves (Straight, Diagonal, Queen Promotions)
+    else:
+        step_x = 0 if dx == 0 else (1 if dx > 0 else -1)
+        step_y = 0 if dy == 0 else (1 if dy > 0 else -1)
+        distance = max(abs(dx), abs(dy))
 
-        return (from_sq * 73) + channel
-    except Exception:
-        return 0 # Absolute safety net to keep the training loop alive no matter what
+        dirs = [(0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1), (-1,0), (-1,1)]
+        dir_idx = dirs.index((step_x, step_y))
+        channel = (dir_idx * 7) + (distance - 1)
+
+    return (from_sq * 73) + channel
 
 class ChessDataset(Dataset):
     def __init__(self, data_dir):
@@ -138,10 +133,15 @@ class ChessDataset(Dataset):
         sample = self.samples[idx]
         tensor = self.fen_to_tensor(sample['fen'])
 
-        #policy = torch.zeros(4096, dtype=torch.float32)
+        # Set output tensor structure to AlphaZero standard 4,672
         policy = torch.zeros(4672, dtype=torch.float32)
+
+        # Safely extract the current active turn from the FEN string to guide the castling parser
+        fen_parts = sample['fen'].split(' ')
+        turn_color = fen_parts[1] if len(fen_parts) > 1 else 'w'
+
         for move, prob in sample['policy'].items():
-            policy[uci_to_index(move)] = prob
+            policy[uci_to_index(move, turn_color)] = prob
 
         value = torch.tensor([sample['result']], dtype=torch.float32)
         # Normalize result from [0, 1] to [-1, 1] for tanh
@@ -193,7 +193,6 @@ def train():
         batches_processed = 0
 
         # Prevent massive overfitting by doing a maximum of 50 random batches per update
-        # instead of a full epoch over the entire replay buffer every single time.
         for batch_idx, (tensors, policies, values) in enumerate(dataloader):
             if batches_processed >= 50:
                 break
