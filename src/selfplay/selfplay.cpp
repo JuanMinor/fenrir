@@ -108,7 +108,7 @@ namespace fenrir
             }
 
             games_in_batch++;
-            if (games_in_batch >= 50 || i == max_games) {
+            if (games_in_batch >= 10 || i == max_games) {
                 batch_out.close();
                 std::string ready_filename = temp_filename;
                 size_t pos = ready_filename.find("temp_");
