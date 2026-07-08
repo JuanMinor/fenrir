@@ -31,14 +31,22 @@ class ChessDataset(Dataset):
                 try:
                     with open(filepath, 'r') as f:
                         for line in f:
-                            if not line.strip():
+                            line = line.strip()
+                            if not line:
                                 continue
-                            data = json.loads(line)
-                            self.buffer.append(data)
+                            try:
+                                data = json.loads(line)
+                                self.buffer.append(data)
+                            except json.JSONDecodeError:
+                                pass # Skip partially flushed lines
                     os.remove(filepath)
                     new_files_count += 1
                 except Exception as e:
                     print(f"Error reading {filename}: {e}")
+                    try:
+                        os.remove(filepath)
+                    except:
+                        pass
         
         # Keep only the latest 100,000 samples (replay buffer)
         if len(self.samples) > 100000:
