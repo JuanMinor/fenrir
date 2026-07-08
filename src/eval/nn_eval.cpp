@@ -130,8 +130,10 @@ namespace fenrir
                     OrtCUDAProviderOptions cuda_options;
                     cuda_options.device_id = gpu_id_;
                     session_options.AppendExecutionProvider_CUDA(cuda_options);
-                } catch (...) {
+                } catch (const std::exception &e)
+                {
                     std::cerr << "Warning: Could not enable CUDA for GPU " << gpu_id_ << ". Falling back to CPU.\n";
+                    std::cerr << "ONNX Runtime Error: " << e.what() << "\n";
                 }
 #endif
                 
