@@ -124,7 +124,7 @@ class ChessDataset(Dataset):
         tensor = self.fen_to_tensor(sample['fen'])
 
         #policy = torch.zeros(4096, dtype=torch.float32)
-		policy = torch.zeros(4672, dtype=torch.float32)
+        policy = torch.zeros(4672, dtype=torch.float32)
         for move, prob in sample['policy'].items():
             policy[uci_to_index(move)] = prob
 
