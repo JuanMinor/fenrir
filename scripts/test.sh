@@ -21,8 +21,8 @@ run_tests() {
 	(cd "$PROJECT_ROOT" && \
 	 rm -rf build && \
 	 cmake -B build -DCMAKE_BUILD_TYPE=Debug && \
-	 cmake --build build && \
-	 cmake --build build --target coverage)
+	 cmake --build build --parallel && \
+	 cmake --build build --parallel --target coverage)
 }
 
 # Main execution

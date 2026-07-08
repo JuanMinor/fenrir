@@ -109,6 +109,13 @@ TEST_F(BoardTest, MovePawnAndEnPassantIsCleared)
 	EXPECT_EQ(board.get_en_passant(), "");
 }
 
+TEST_F(BoardTest, GetPieceCharOutOfBounds)
+{
+    fenrir::Board board(valid_fen_position);
+    EXPECT_EQ(board.get_piece(8, 0), '\0');
+    EXPECT_EQ(board.get_piece(0, 8), '\0');
+}
+
 /* Error handling tests for FEN parsing */
 TEST_F(BoardTest, InvalidFENIncorrectSquaresInRank)
 {

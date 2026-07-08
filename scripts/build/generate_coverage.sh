@@ -28,8 +28,15 @@ mkdir -p "$COVERAGE_DIR" "$DEBUG_DIR"
 echo "📊 Generating coverage report..."
 
 # Run tests first
+mkdir -p onnx
+cp tests/dummy.onnx onnx/fenrir.onnx
+
 echo "🧪 Running tests..."
 bint/unit/tests
+# Run perft with split FEN to cover FEN reconstruction logic and depth > 1 to cover loop body
+bin/perft 2 rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+# Run perft without arguments to cover usage logic
+bin/perft || true
 
 # Generate coverage data
 # Configuration is loaded from .lcovrc (disables checksums for gcov 15.x compatibility)

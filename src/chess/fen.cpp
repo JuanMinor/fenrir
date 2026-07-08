@@ -75,7 +75,7 @@ namespace fenrir
 	void Fen::validate_chess_rules(const std::string &placement_string) const
 	{
 		std::unordered_map<char, uint8_t> piece_counts = {
-			{'K', 0}, {'k', 0}, {'Q', 0}, {'q', 0}, {'R', 0}, {'r', 0}, {'B', 0}, {'b', 0}, {'N', 0}, {'n', 0}, {'P', 0}, {'p', 0}};
+			{'K', static_cast<uint8_t>(0)}, {'k', static_cast<uint8_t>(0)}, {'Q', static_cast<uint8_t>(0)}, {'q', static_cast<uint8_t>(0)}, {'R', static_cast<uint8_t>(0)}, {'r', static_cast<uint8_t>(0)}, {'B', static_cast<uint8_t>(0)}, {'b', static_cast<uint8_t>(0)}, {'N', static_cast<uint8_t>(0)}, {'n', static_cast<uint8_t>(0)}, {'P', static_cast<uint8_t>(0)}, {'p', static_cast<uint8_t>(0)}};
 
 		for (char c : placement_string)
 		{
