@@ -6,10 +6,11 @@ namespace fenrir
 {
 	namespace
 	{
-		uint32_t move_index(const Move &m)
+		uint32_t alphazero_move_index(const Move &m)
 		{
-			int from_sq = m.get_from_square();
-			int to_sq = m.get_to_square();
+			// Explicitly cast to int for coordinates calculation
+			int from_sq = static_cast<int>(m.get_from_square());
+			int to_sq = static_cast<int>(m.get_to_square());
 
 			int from_file = from_sq % 8;
 			int from_rank = from_sq / 8;
@@ -20,7 +21,8 @@ namespace fenrir
 			int dy = to_rank - from_rank;
 
 			int channel = 0;
-			char promo = std::tolower(static_cast<unsigned char>(m.get_promotion_piece()));
+
+			char promo = static_cast<char>(std::tolower(static_cast<unsigned char>(m.get_promotion_piece())));
 
 			// 1. Handle Underpromotions (Knight, Bishop, Rook)
 			if (m.is_promotion() && promo != 'q' && promo != '\0')
@@ -37,7 +39,6 @@ namespace fenrir
 			// 2. Handle Knight Moves
 			else if (std::abs(dx) * std::abs(dy) == 2)
 			{
-				// Map the 8 possible knight offsets to indices 0-7
 				std::pair<int, int> knight_lookups[8] = {
 					{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
 				for (int i = 0; i < 8; ++i)
@@ -72,7 +73,7 @@ namespace fenrir
 				channel = (dir_idx * 7) + (distance - 1);
 			}
 
-			return (from_sq * 73) + channel;
+			return static_cast<uint32_t>((from_sq * 73) + channel);
 		}
 	}
 
