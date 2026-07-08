@@ -13,6 +13,8 @@ echo "Creating directories..."
 mkdir -p data/selfplay
 mkdir -p logs
 
+export LD_LIBRARY_PATH=$PWD/build/_deps/onnxruntime-src/lib:$LD_LIBRARY_PATH
+
 echo "Starting 8 Fenrir instances across 8 GPUs..."
 
 for GPU in {0..7}; do
