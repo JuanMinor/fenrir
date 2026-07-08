@@ -26,10 +26,10 @@ class AlphaZeroNet(nn.Module):
 
         self.res_blocks = nn.ModuleList([ResBlock(channels) for _ in range(num_blocks)])
 
-        # Policy Head
+        # Policy Head: Expanded to 4672 for AlphaZero 73-plane spatial move encoding
         self.policy_conv = nn.Conv2d(channels, 32, kernel_size=1, bias=False)
         self.policy_bn = nn.BatchNorm2d(32)
-        self.policy_fc = nn.Linear(32 * 8 * 8, 4096)
+        self.policy_fc = nn.Linear(32 * 8 * 8, 4672)
 
         # Value Head
         self.value_conv = nn.Conv2d(channels, 3, kernel_size=1, bias=False)
