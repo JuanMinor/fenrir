@@ -7,8 +7,8 @@
 
 namespace fenrir
 {
-    SelfPlay::SelfPlay(int simulations_per_move, int num_games, const std::string& start_fen_arg)
-        : simulations(simulations_per_move), max_games(num_games), start_fen(start_fen_arg)
+    SelfPlay::SelfPlay(int gpu_id, int simulations_per_move, int num_games, const std::string& start_fen_arg)
+        : gpu_id_(gpu_id), simulations(simulations_per_move), max_games(num_games), start_fen(start_fen_arg)
     {
     }
 
@@ -19,41 +19,31 @@ namespace fenrir
         return dir;
     }
 
-    void SelfPlay::save_game_json(const std::vector<PositionData>& game_data, double white_result, int game_id)
-    {
-        std::string filename = get_output_dir() + "game_" + std::to_string(game_id) + ".jsonl";
-        std::ofstream out(filename);
-
-        for (const auto& pos : game_data)
-        {
-            double result = (pos.color_to_move == 0) ? white_result : (1.0 - white_result);
-            out << "{\"fen\":\"" << pos.fen << "\",\"result\":" << result << ",\"policy\":{";
-            
-            bool first = true;
-            for (const auto& p : pos.policy)
-            {
-                if (!first) out << ",";
-                out << "\"" << p.first << "\":" << p.second;
-                first = false;
-            }
-            out << "}}\n";
-        }
-    }
-
     void SelfPlay::run()
     {
-        std::cout << "Starting Self-Play Pipeline...\n";
+        std::cout << "Starting Self-Play Pipeline on GPU " << gpu_id_ << "...\n";
         std::cout << "Simulations per move: " << simulations << "\n";
         std::cout << "Games: " << max_games << "\n";
         std::cout << "Output Directory: " << get_output_dir() << "\n\n";
 
-        auto evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx");
+        auto evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx", gpu_id_);
         auto search = std::make_unique<MCTSSearch>(evaluator.get(), 16);
 
         std::mt19937 rng(std::random_device{}());
 
+        int games_in_batch = 0;
+        std::string temp_filename;
+        std::ofstream batch_out;
+
         for (int i = 1; i <= max_games; ++i)
         {
+            if (games_in_batch == 0) {
+                auto now = std::chrono::system_clock::now().time_since_epoch();
+                int timestamp = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(now).count() % 100000000);
+                temp_filename = get_output_dir() + "temp_gpu" + std::to_string(gpu_id_) + "_" + std::to_string(timestamp) + ".jsonl";
+                batch_out.open(temp_filename);
+            }
+
             Engine engine(start_fen);
             std::vector<PositionData> game_data;
             int moves_played = 0;
@@ -72,7 +62,7 @@ namespace fenrir
                 pd.fen = engine.get_fen();
                 pd.color_to_move = engine.get_board_view().get_color();
                 for (const auto& p : raw_policy) {
-                    pd.policy.push_back({p.first.to_uci_notation(), p.second});
+                    pd.policy.emplace_back(p.first.to_uci_notation(), p.second);
                 }
                 game_data.push_back(pd);
 
@@ -103,10 +93,29 @@ namespace fenrir
                 }
             }
 
-            std::cout << "Game " << i << " finished in " << moves_played << " moves. Result: " << white_result << "\n";
-            auto now = std::chrono::system_clock::now().time_since_epoch();
-            int unique_id = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(now).count() % 100000);
-            save_game_json(game_data, white_result, unique_id);
+            std::cout << "GPU " << gpu_id_ << " Game " << i << " finished in " << moves_played << " moves. Result: " << white_result << "\n";
+            
+            for (const auto& pos : game_data) {
+                double res = (pos.color_to_move == 0) ? white_result : (1.0 - white_result);
+                batch_out << "{\"fen\":\"" << pos.fen << "\",\"result\":" << res << ",\"policy\":{";
+                bool first = true;
+                for (const auto& p : pos.policy) {
+                    if (!first) batch_out << ",";
+                    batch_out << "\"" << p.first << "\":" << p.second;
+                    first = false;
+                }
+                batch_out << "}}\n";
+            }
+
+            games_in_batch++;
+            if (games_in_batch >= 50 || i == max_games) {
+                batch_out.close();
+                std::string ready_filename = temp_filename;
+                size_t pos = ready_filename.find("temp_");
+                if (pos != std::string::npos) ready_filename.replace(pos, 5, "READY_");
+                std::filesystem::rename(temp_filename, ready_filename);
+                games_in_batch = 0;
+            }
         }
     }
 }

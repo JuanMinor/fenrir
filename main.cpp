@@ -13,15 +13,18 @@ int main(int argc, char *argv[])
         {
             int games = 1000;
             int simulations = 800;
+            int gpu_id = 0;
             
             for (int i = 2; i < argc; ++i) {
                 if (std::strcmp(argv[i], "--games") == 0 && i + 1 < argc) {
                     games = std::stoi(argv[++i]);
                 } else if (std::strcmp(argv[i], "--simulations") == 0 && i + 1 < argc) {
                     simulations = std::stoi(argv[++i]);
+                } else if (std::strcmp(argv[i], "--gpu-id") == 0 && i + 1 < argc) {
+                    gpu_id = std::stoi(argv[++i]);
                 }
             }
-            fenrir::SelfPlay sp(simulations, games);
+            fenrir::SelfPlay sp(gpu_id, simulations, games);
             sp.run();
         }
         else

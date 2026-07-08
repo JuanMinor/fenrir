@@ -10,8 +10,8 @@
 
 namespace fenrir
 {
-    NNEvaluator::NNEvaluator(const std::string& path, size_t b_size)
-        : model_path(path), batch_size(b_size), stop_worker(false)
+    NNEvaluator::NNEvaluator(const std::string& path, int gpu_id, size_t b_size)
+        : model_path(path), batch_size(b_size), gpu_id_(gpu_id), stop_worker(false)
     {
         env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "Fenrir_NN");
         last_model_load_time = std::filesystem::file_time_type::min();
@@ -125,6 +125,14 @@ namespace fenrir
                 } catch (...) { // LCOV_EXCL_LINE
                     std::cerr << "Warning: Could not enable DirectML. Falling back to CPU.\n"; // LCOV_EXCL_LINE
                 } // LCOV_EXCL_LINE
+#else
+                try {
+                    OrtCUDAProviderOptions cuda_options;
+                    cuda_options.device_id = gpu_id_;
+                    session_options.AppendExecutionProvider_CUDA(cuda_options);
+                } catch (...) {
+                    std::cerr << "Warning: Could not enable CUDA for GPU " << gpu_id_ << ". Falling back to CPU.\n";
+                }
 #endif
                 
                 // CRITICAL: We must destroy the old session before freeing/overwriting the old buffer!

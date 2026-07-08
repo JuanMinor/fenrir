@@ -413,7 +413,7 @@ TEST_F(EngineTest, GenerateAllMoves_AfterMove)
 TEST_F(EngineTest, EngineVersion)
 {
 	const char* ver = fenrir::Engine::version();
-	EXPECT_STREQ(ver, "0.3.0");
+	EXPECT_STREQ(ver, "0.3.2");
 }
 
 TEST_F(EngineTest, IsDraw_Stalemate)

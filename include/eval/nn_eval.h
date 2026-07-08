@@ -29,7 +29,7 @@ namespace fenrir
 
     class NNEvaluator {
     public:
-        NNEvaluator(const std::string& model_path, size_t batch_size = 256);
+        NNEvaluator(const std::string& model_path, int gpu_id = 0, size_t batch_size = 256);
         ~NNEvaluator();
 
         // Threads call this to queue a board state for evaluation.
@@ -45,6 +45,7 @@ namespace fenrir
 
         std::string model_path;
         size_t batch_size;
+        int gpu_id_;
 
         struct EvalRequest {
             std::vector<float> features;
