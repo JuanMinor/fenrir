@@ -57,19 +57,27 @@ namespace fenrir
 				int step_y = (dy == 0) ? 0 : (dy > 0 ? 1 : -1);
 				int distance = std::max(std::abs(dx), std::abs(dy));
 
-				std::pair<int, int> dirs[8] = {
-					{0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1} // N, NE, E, SE, S, SW, W, NW
-				};
-
 				int dir_idx = 0;
-				for (int i = 0; i < 8; ++i)
-				{
-					if (step_x == dirs[i].first && step_y == dirs[i].second)
-					{
-						dir_idx = i;
-						break;
-					}
-				}
+
+				// Match the exact directional sequence of Python's list:
+				// [(0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1), (-1,0), (-1,1)]
+				if (step_x == 0 && step_y == 1)
+					dir_idx = 0; // N
+				else if (step_x == 1 && step_y == 1)
+					dir_idx = 1; // NE
+				else if (step_x == 1 && step_y == 0)
+					dir_idx = 2; // E
+				else if (step_x == 1 && step_y == -1)
+					dir_idx = 3; // SE
+				else if (step_x == 0 && step_y == -1)
+					dir_idx = 4; // S
+				else if (step_x == -1 && step_y == -1)
+					dir_idx = 5; // SW
+				else if (step_x == -1 && step_y == 0)
+					dir_idx = 6; // W
+				else if (step_x == -1 && step_y == 1)
+					dir_idx = 7; // NW
+
 				channel = (dir_idx * 7) + (distance - 1);
 			}
 
