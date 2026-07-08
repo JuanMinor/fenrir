@@ -19,7 +19,7 @@ for GPU in {0..7}; do
     echo "Launching Fenrir on GPU $GPU..."
     # We run 1 instance per GPU. Each instance runs 16 threads internally via MCTS.
     # Total threads: 8 * 16 = 128 (Perfect for a 96 vCPU system with Hyperthreading)
-    ./build/bin/fenrir --selfplay --gpu-id $GPU --simulations 800 --games 100000 > logs/gpu${GPU}.log 2>&1 &
+    ./bin/fenrir --selfplay --gpu-id $GPU --simulations 1600 --games 30000000 > logs/gpu${GPU}.log 2>&1 &
 done
 
 echo "All 8 instances have been launched in the background!"
