@@ -14,6 +14,7 @@ mkdir -p data/selfplay
 mkdir -p logs
 
 export LD_LIBRARY_PATH=$PWD/build/_deps/onnxruntime-src/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH
 
 echo "Starting 8 Fenrir instances across 8 GPUs..."
 
