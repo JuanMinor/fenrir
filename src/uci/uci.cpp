@@ -7,7 +7,7 @@ namespace fenrir
     UCI::UCI()
     {
         engine = std::make_unique<Engine>();
-        evaluator = std::make_unique<NNEvaluator>("dummy_model_path.onnx");
+        evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx");
         search = std::make_unique<MCTSSearch>(evaluator.get(), 16);
     }
 
