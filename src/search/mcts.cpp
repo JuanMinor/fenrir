@@ -6,7 +6,7 @@ namespace fenrir
 {
 	namespace
 	{
-		uint32_t alphazero_move_index(const Move &m)
+		uint32_t move_index(const Move &m)
 		{
 			// Explicitly cast to int for coordinates calculation
 			int from_sq = static_cast<int>(m.get_from_square());
