@@ -21,7 +21,7 @@ echo "Starting 48 Fenrir instances across 8 GPUs (6 instances per GPU to maximiz
 for GPU in {0..7}; do
     for INSTANCE in {1..6}; do
         echo "Launching Fenrir instance $INSTANCE on GPU $GPU..."
-        ./bin/fenrir --selfplay --gpu-id $GPU --simulations 1600 --games 30000000 > logs/gpu${GPU}_inst${INSTANCE}.log 2>&1 &
+        env CUDA_VISIBLE_DEVICES=$GPU ./bin/fenrir --selfplay --gpu-id 0 --simulations 1600 --games 30000000 > logs/gpu${GPU}_inst${INSTANCE}.log 2>&1 &
     done
 done
 
