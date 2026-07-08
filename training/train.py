@@ -12,26 +12,42 @@ from model import AlphaZeroNet
 def uci_to_index(uci_move, turn='w'):
     uci_move = uci_move.strip()
 
-    # 1. Catch and translate standard python-chess SAN castling text
+    # 1. Catch and translate literal algebraic castling strings
     if uci_move == "O-O":
         uci_move = "e1g1" if turn == 'w' else "e8g8"
     elif uci_move == "O-O-O":
         uci_move = "e1c1" if turn == 'w' else "e8c8"
 
-    # Absolute safety catch for any other malformed short strings
+    # 2. Clean out any PGN capture markers (like 'x') or en passant markers that mess up indexing
+    uci_move = uci_move.replace("x", "").replace("e.p.", "")
+
+    # Absolute safety catch for malformed strings
     if len(uci_move) < 4:
         return 0
 
-    from_file = ord(uci_move[0]) - ord('a')
-    from_rank = int(uci_move[1]) - 1
-    to_file = ord(uci_move[2]) - ord('a')
-    to_rank = int(uci_move[3]) - 1
+    try:
+        from_file = ord(uci_move[0]) - ord('a')
+        from_rank = int(uci_move[1]) - 1
+        to_file = ord(uci_move[2]) - ord('a')
+        to_rank = int(uci_move[3]) - 1
+    except (ValueError, IndexError):
+        return 0 # Catch-all for any unparseable notation formats
+
+    # Ensure coordinates are within standard board boundaries
+    if not (0 <= from_file < 8 and 0 <= from_rank < 8 and 0 <= to_file < 8 and 0 <= to_rank < 8):
+        return 0
 
     from_sq = from_rank * 8 + from_file
     dx = to_file - from_file
     dy = to_rank - from_rank
 
+    # 3. Determine promotions cleanly
     promo = uci_move[4].lower() if len(uci_move) > 4 else None
+
+    # Explicitly check that the character is a legitimate chess piece token
+    if promo not in ['n', 'b', 'r', 'q']:
+        promo = None
+
     channel = 0
 
     # 1. Underpromotions (Knight, Bishop, Rook)
@@ -43,16 +59,28 @@ def uci_to_index(uci_move, turn='w'):
     # 2. Knight moves
     elif abs(dx) * abs(dy) == 2:
         knight_lookups = [(1,2), (2,1), (2,-1), (1,-2), (-1,-2), (-2,-1), (-2,1), (-1,2)]
-        channel = 56 + knight_lookups.index((dx, dy))
+        try:
+            channel = 56 + knight_lookups.index((dx, dy))
+        except ValueError:
+            channel = 0
 
-    # 3. Queen-like moves (Straight, Diagonal, Queen Promotions)
+    # 3. Regular Moves (Queen moves / King moves / Pawn steps / Queen Promotions)
     else:
         step_x = 0 if dx == 0 else (1 if dx > 0 else -1)
         step_y = 0 if dy == 0 else (1 if dy > 0 else -1)
         distance = max(abs(dx), abs(dy))
 
-        dirs = [(0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1), (-1,0), (-1,1)]
-        dir_idx = dirs.index((step_x, step_y))
+        # Explicit map matching the exact directional sequence of your C++ if/else chain
+        if   step_x ==  0 and step_y ==  1: dir_idx = 0 # N
+        elif step_x ==  1 and step_y ==  1: dir_idx = 1 # NE
+        elif step_x ==  1 and step_y ==  0: dir_idx = 2 # E
+        elif step_x ==  1 and step_y == -1: dir_idx = 3 # SE
+        elif step_x ==  0 and step_y == -1: dir_idx = 4 # S
+        elif step_x == -1 and step_y == -1: dir_idx = 5 # SW
+        elif step_x == -1 and step_y ==  0: dir_idx = 6 # W
+        elif step_x == -1 and step_y ==  1: dir_idx = 7 # NW
+        else: dir_idx = 0
+
         channel = (dir_idx * 7) + (distance - 1)
 
     return (from_sq * 73) + channel
