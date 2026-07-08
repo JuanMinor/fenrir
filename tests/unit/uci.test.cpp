@@ -40,3 +40,22 @@ TEST(UCITest, LoopCommandsUnknownGo) {
     std::cin.rdbuf(cinbuf);
     std::cout.rdbuf(coutbuf);
 }
+
+TEST(UCITest, LoopCommandsTimeManagement) {
+    std::istringstream in("position startpos\ngo movetime 10\ngo wtime 30000 btime 30000\ngo wtime 100 btime 100\nquit\n");
+    std::ostringstream out;
+    std::streambuf* cinbuf = std::cin.rdbuf();
+    std::streambuf* coutbuf = std::cout.rdbuf();
+    std::cin.rdbuf(in.rdbuf());
+    std::cout.rdbuf(out.rdbuf());
+    
+    UCI uci;
+    uci.loop();
+    
+    std::cin.rdbuf(cinbuf);
+    std::cout.rdbuf(coutbuf);
+    
+    std::string output = out.str();
+    EXPECT_TRUE(output.find("bestmove") != std::string::npos);
+}
+
