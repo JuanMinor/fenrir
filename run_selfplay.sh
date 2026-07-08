@@ -16,7 +16,7 @@ mkdir -p logs
 export LD_LIBRARY_PATH=$PWD/build/_deps/onnxruntime-src/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH
 
-echo "Starting 48 Fenrir instances across 8 GPUs (6 instances per GPU to maximize utilization)..."
+echo "Starting 96 Fenrir instances across 8 GPUs (12 instances per GPU to maximize utilization)..."
 
 for GPU in {0..7}; do
     for INSTANCE in {1..12}; do
