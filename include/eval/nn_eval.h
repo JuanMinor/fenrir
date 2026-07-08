@@ -23,13 +23,13 @@
 namespace fenrir
 {
     struct NNResult {
-        double value; 
+        double value;
         std::vector<double> policy; // Flat policy array, sized for maximum possible moves (e.g. 4096 or mapped to legal moves)
     };
 
     class NNEvaluator {
     public:
-        NNEvaluator(const std::string& model_path, int gpu_id = 0, size_t batch_size = 256);
+        NNEvaluator(const std::string& model_path, int gpu_id = 0, size_t batch_size = 16);
         ~NNEvaluator();
 
         // Threads call this to queue a board state for evaluation.

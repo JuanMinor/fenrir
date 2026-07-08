@@ -26,7 +26,7 @@ namespace fenrir
         std::cout << "Games: " << max_games << "\n";
         std::cout << "Output Directory: " << get_output_dir() << "\n\n";
 
-        auto evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx", gpu_id_, 256);
+        auto evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx", gpu_id_, 1);
         auto search = std::make_unique<MCTSSearch>(evaluator.get(), 256);
 
         std::mt19937 rng(std::random_device{}());
@@ -47,15 +47,15 @@ namespace fenrir
             Engine engine(start_fen);
             std::vector<PositionData> game_data;
             int moves_played = 0;
-            
+
             std::cout << "Game " << i << " started...\n";
 
             while (!engine.is_checkmate() && !engine.is_stalemate() && !engine.is_draw() && moves_played < 200)
             {
-                bool apply_noise = (moves_played < 30); 
-                
+                bool apply_noise = (moves_played < 30);
+
                 auto [best_move, raw_policy] = search->find_best_move_with_policy(engine, simulations, apply_noise);
-                
+
                 if (raw_policy.empty()) break;
 
                 PositionData pd;
@@ -73,7 +73,7 @@ namespace fenrir
                         weights.push_back(p.second);
                     }
                     std::discrete_distribution<size_t> dist(weights.begin(), weights.end());
-                    chosen_move = raw_policy[dist(rng)].first; 
+                    chosen_move = raw_policy[dist(rng)].first;
                 }
 
                 engine.make_move(chosen_move);
@@ -94,7 +94,7 @@ namespace fenrir
             }
 
             std::cout << "GPU " << gpu_id_ << " Game " << i << " finished in " << moves_played << " moves. Result: " << white_result << "\n";
-            
+
             for (const auto& pos : game_data) {
                 double res = (pos.color_to_move == 0) ? white_result : (1.0 - white_result);
                 batch_out << "{\"fen\":\"" << pos.fen << "\",\"result\":" << res << ",\"policy\":{";
