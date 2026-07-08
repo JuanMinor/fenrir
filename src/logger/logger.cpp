@@ -76,7 +76,7 @@ namespace logger
 		}
 		catch (const std::exception &e)
 		{
-			/* Fallback: no-op */
+			(void)e; /* Fallback: no-op */
 		}
 	}
 
