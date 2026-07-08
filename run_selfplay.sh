@@ -16,15 +16,15 @@ mkdir -p logs
 export LD_LIBRARY_PATH=$PWD/build/_deps/onnxruntime-src/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH
 
-echo "Starting 8 Fenrir instances across 8 GPUs..."
+echo "Starting 24 Fenrir instances across 8 GPUs (3 instances per GPU to maximize utilization)..."
 
 for GPU in {0..7}; do
-    echo "Launching Fenrir on GPU $GPU..."
-    # We run 1 instance per GPU. Each instance runs 16 threads internally via MCTS.
-    # Total threads: 8 * 16 = 128 (Perfect for a 96 vCPU system with Hyperthreading)
-    ./bin/fenrir --selfplay --gpu-id $GPU --simulations 1600 --games 30000000 > logs/gpu${GPU}.log 2>&1 &
+    for INSTANCE in {1..3}; do
+        echo "Launching Fenrir instance $INSTANCE on GPU $GPU..."
+        ./bin/fenrir --selfplay --gpu-id $GPU --simulations 1600 --games 30000000 > logs/gpu${GPU}_inst${INSTANCE}.log 2>&1 &
+    done
 done
 
-echo "All 8 instances have been launched in the background!"
-echo "To monitor progress, run: tail -f logs/gpu0.log"
+echo "All 24 instances have been launched in the background!"
+echo "To monitor progress, run: tail -f logs/gpu0_inst1.log"
 echo "To stop them, run: pkill fenrir"
