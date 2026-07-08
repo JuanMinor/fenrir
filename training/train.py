@@ -36,9 +36,11 @@ class ChessDataset(Dataset):
                                 continue
                             try:
                                 data = json.loads(line)
+                                import chess
+                                chess.Board(data['fen']) # Validate FEN structure
                                 self.buffer.append(data)
-                            except json.JSONDecodeError:
-                                pass # Skip partially flushed lines
+                            except (json.JSONDecodeError, ValueError):
+                                pass # Skip partially flushed lines or corrupted FENs
                     os.remove(filepath)
                     new_files_count += 1
                 except Exception as e:
