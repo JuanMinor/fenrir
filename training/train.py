@@ -26,7 +26,7 @@ class ChessDataset(Dataset):
             return 0
         
         for filename in os.listdir(self.data_dir):
-            if filename.endswith(".jsonl"):
+            if filename.startswith("READY_") and filename.endswith(".jsonl"):
                 filepath = os.path.join(self.data_dir, filename)
                 try:
                     with open(filepath, 'r') as f:
@@ -121,12 +121,12 @@ def train():
     
     while True:
         new_files = dataset.update()
-        if len(dataset) < 32 or new_files == 0:
+        if len(dataset) < 4096 or new_files == 0:
             print(f"Waiting for new data... Buffer size: {len(dataset)}. New files: {new_files}")
             time.sleep(1)
             continue
             
-        dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+        dataloader = DataLoader(dataset, batch_size=4096, shuffle=True)
         
         model.train()
         total_loss = 0
