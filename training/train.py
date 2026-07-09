@@ -123,8 +123,10 @@ class ChessDataset(Dataset):
                         pass
 
         # Keep only the latest 100,000 samples (replay buffer)
+       # Keep only the latest 100,000 samples (replay buffer)
         if len(self.samples) > 100000:
             self.samples = self.samples[-100000:]
+            self.buffer = self.samples  # FIXED: Keep the reference pointer synchronized!
 
         return new_files_count
 

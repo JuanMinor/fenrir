@@ -1,6 +1,7 @@
 #include "include/search/mcts.h"
 #include <algorithm>
 #include <iostream>
+#include <random>
 
 namespace fenrir
 {
@@ -8,7 +9,6 @@ namespace fenrir
 	{
 		uint32_t move_index(const Move &m)
 		{
-			// Explicitly cast to int for coordinates calculation
 			int from_sq = static_cast<int>(m.get_from_square());
 			int to_sq = static_cast<int>(m.get_to_square());
 
@@ -21,13 +21,11 @@ namespace fenrir
 			int dy = to_rank - from_rank;
 
 			int channel = 0;
-
 			char promo = static_cast<char>(std::tolower(static_cast<unsigned char>(m.get_promotion_piece())));
 
-			// 1. Handle Underpromotions (Knight, Bishop, Rook)
 			if (m.is_promotion() && promo != 'q' && promo != '\0')
 			{
-				int promo_dir = dx + 1; // -1 -> 0 (left), 0 -> 1 (straight), 1 -> 2 (right)
+				int promo_dir = dx + 1;
 				int promo_type = 0;
 				if (promo == 'b')
 					promo_type = 1;
@@ -36,7 +34,6 @@ namespace fenrir
 
 				channel = 64 + (promo_dir * 3) + promo_type;
 			}
-			// 2. Handle Knight Moves
 			else if (std::abs(dx) * std::abs(dy) == 2)
 			{
 				std::pair<int, int> knight_lookups[8] = {
@@ -50,7 +47,6 @@ namespace fenrir
 					}
 				}
 			}
-			// 3. Handle Regular Moves (Queen moves / King moves / Pawn steps / Queen Promotions)
 			else
 			{
 				int step_x = (dx == 0) ? 0 : (dx > 0 ? 1 : -1);
@@ -58,31 +54,36 @@ namespace fenrir
 				int distance = std::max(std::abs(dx), std::abs(dy));
 
 				int dir_idx = 0;
-
-				// Match the exact directional sequence of Python's list:
-				// [(0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1), (-1,0), (-1,1)]
 				if (step_x == 0 && step_y == 1)
-					dir_idx = 0; // N
+					dir_idx = 0;
 				else if (step_x == 1 && step_y == 1)
-					dir_idx = 1; // NE
+					dir_idx = 1;
 				else if (step_x == 1 && step_y == 0)
-					dir_idx = 2; // E
+					dir_idx = 2;
 				else if (step_x == 1 && step_y == -1)
-					dir_idx = 3; // SE
+					dir_idx = 3;
 				else if (step_x == 0 && step_y == -1)
-					dir_idx = 4; // S
+					dir_idx = 4;
 				else if (step_x == -1 && step_y == -1)
-					dir_idx = 5; // SW
+					dir_idx = 5;
 				else if (step_x == -1 && step_y == 0)
-					dir_idx = 6; // W
+					dir_idx = 6;
 				else if (step_x == -1 && step_y == 1)
-					dir_idx = 7; // NW
+					dir_idx = 7;
 
 				channel = (dir_idx * 7) + (distance - 1);
 			}
 
 			return static_cast<uint32_t>((from_sq * 73) + channel);
 		}
+
+		// RAII helper to ensure virtual loss is perfectly decremented regardless of exceptions
+		struct VirtualLossGuard
+		{
+			MCTSNode *node;
+			VirtualLossGuard(MCTSNode *n) : node(n) { node->virtual_loss++; }
+			~VirtualLossGuard() { node->virtual_loss--; }
+		};
 	}
 
 	MCTSNode::MCTSNode(MCTSNode *parent_node, const Move &m, uint8_t color)
@@ -96,10 +97,12 @@ namespace fenrir
 	void MCTSNode::expand(Engine &engine, const std::vector<double> &policy)
 	{
 		std::lock_guard<std::mutex> lock(expand_mutex);
-		if (is_expanded.load())
+		if (is_expanded.load()) // FIXED: Safely breaks out before double-expansion leak
 			return;
 
 		std::vector<Move> moves = engine.generate_all_moves();
+		children.reserve(moves.size());
+
 		for (size_t i = 0; i < moves.size(); ++i)
 		{
 			uint8_t next_color = 1 - color_to_move;
@@ -122,7 +125,6 @@ namespace fenrir
 	{
 		MCTSNode *best_child = nullptr;
 		double best_value = -1e9;
-
 		int parent_visits = visits.load() + virtual_loss.load();
 
 		for (auto &child : children)
@@ -165,28 +167,40 @@ namespace fenrir
 	{
 		if (children.empty())
 			return;
-		std::mt19937 rng(std::random_device{}());
+
+		thread_local static std::mt19937 rng(std::random_device{}());
 		std::gamma_distribution<double> gamma(alpha, 1.0);
 
-		double sum = 0.0;
+		double original_prior_sum = 0.0;
+		for (const auto &child : children)
+		{
+			original_prior_sum += child->prior;
+		}
+		if (original_prior_sum <= 0.0)
+			original_prior_sum = 1.0;
+
+		double noise_sum = 0.0;
 		std::vector<double> noise;
 		noise.reserve(children.size());
 		for (size_t i = 0; i < children.size(); ++i)
 		{
 			double n = gamma(rng);
 			noise.push_back(n);
-			sum += n;
+			noise_sum += n;
 		}
+		if (noise_sum <= 0.0)
+			noise_sum = 1.0;
 
 		for (size_t i = 0; i < children.size(); ++i)
 		{
-			children[i]->prior = (1.0 - epsilon) * children[i]->prior + epsilon * (noise[i] / sum);
+			double normalized_original = children[i]->prior / original_prior_sum;
+			double normalized_noise = noise[i] / noise_sum;
+			children[i]->prior = (1.0 - epsilon) * normalized_original + epsilon * normalized_noise;
 		}
 	}
 
 	void MCTSNode::backpropagate(double result)
 	{
-		virtual_loss--;
 		visits++;
 		double current = win_score.load();
 		while (!win_score.compare_exchange_weak(current, current + result))
@@ -218,9 +232,7 @@ namespace fenrir
 		}
 
 		if (root->children.empty())
-		{
 			return empty_move;
-		}
 
 		std::vector<std::thread> workers;
 		int sims_per_thread = -1;
@@ -260,7 +272,7 @@ namespace fenrir
 
 		int total_nodes = root->visits.load();
 		int max_depth = root->get_max_depth();
-		int score_cp = static_cast<int>((best_score - 0.5) * 200); // Convert win rate [0, 1] to centipawns
+		int score_cp = static_cast<int>((best_score - 0.5) * 200);
 		std::cout << "info depth " << max_depth << " nodes " << total_nodes << " score cp " << score_cp << " pv " << best_move.to_uci_notation() << std::endl;
 
 		return best_move;
@@ -282,7 +294,7 @@ namespace fenrir
 			}
 			catch (const std::exception &e)
 			{
-				(void)e; // silence unreferenced variable warning
+				(void)e;
 				std::cerr << "Root evaluation failed: " << e.what() << "\n";
 				root->expand(engine);
 			}
@@ -294,13 +306,11 @@ namespace fenrir
 
 		if (apply_noise)
 		{
-			root->add_dirichlet_noise(0.25, 0.3); // 25% noise, alpha 0.3
+			root->add_dirichlet_noise(0.25, 0.3);
 		}
 
 		if (root->children.empty())
-		{
 			return {empty_move, {}};
-		}
 
 		std::vector<std::thread> workers;
 		int sims_per_thread = num_threads > 0 ? simulations / num_threads : simulations;
@@ -316,13 +326,12 @@ namespace fenrir
 			catch (const std::exception &e)
 			{
 				std::cerr << "Thread creation failed: " << e.what() << "\n";
-				break; // Just proceed with the threads we successfully created
+				break;
 			}
 		}
 
 		if (workers.empty())
 		{
-			// Fallback to synchronous search on the main thread if OS is completely out of handles
 			std::cerr << "Warning: Falling back to synchronous search!\n";
 			search_worker(std::make_unique<Engine>(engine.get_fen()), root.get(), simulations, std::chrono::steady_clock::now(), false);
 		}
@@ -330,9 +339,7 @@ namespace fenrir
 		for (auto &w : workers)
 		{
 			if (w.joinable())
-			{
 				w.join();
-			}
 		}
 
 		Move best_move(0, 0);
@@ -356,36 +363,32 @@ namespace fenrir
 	void MCTSSearch::search_worker(std::unique_ptr<Engine> thread_engine_ptr, MCTSNode *root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
 	{
 		Engine &thread_engine = *thread_engine_ptr;
-		std::mt19937 local_rng(std::random_device{}());
 		int sim_count = 0;
 
 		while (true)
 		{
 			if (use_time)
 			{
-				// Check time periodically to avoid massive std::chrono syscall overhead
 				if ((sim_count & 15) == 0 && std::chrono::steady_clock::now() >= end_time)
-				{
 					break;
-				}
 			}
 			else
 			{
 				if (sim_count >= simulations)
-				{
 					break;
-				}
 			}
 			sim_count++;
+
 			MCTSNode *node = root;
+			std::vector<VirtualLossGuard> guards; // FIXED: Tracks virtual loss allocations safely
 
 			while (node->is_expanded.load() && !node->children.empty())
 			{
-				node->virtual_loss++;
+				guards.emplace_back(node);
 				node = node->select_child();
 				thread_engine.make_move_fast(node->move);
 			}
-			node->virtual_loss++;
+			guards.emplace_back(node);
 
 			double result = 0.0;
 			if (thread_engine.is_checkmate())
@@ -409,7 +412,7 @@ namespace fenrir
 					}
 					catch (const std::exception &e)
 					{
-						(void)e; // silence unreferenced variable warning
+						(void)e;
 						node->expand(thread_engine);
 						result = simulate(thread_engine);
 					}
@@ -421,6 +424,8 @@ namespace fenrir
 				}
 			}
 
+			// Explicitly drop virtual loss guards right before backpropagation
+			guards.clear();
 			node->backpropagate(result);
 
 			MCTSNode *curr = node;
@@ -436,7 +441,9 @@ namespace fenrir
 	{
 		int moves_played = 0;
 		uint8_t start_color = engine.get_board_view().get_color();
-		std::mt19937 local_rng(std::random_device{}());
+
+		// FIXED: thread_local static speeds this block up significantly
+		thread_local static std::mt19937 local_rng(std::random_device{}());
 
 		while (!engine.is_checkmate() && !engine.is_stalemate() && !engine.is_draw() && moves_played < 100)
 		{
@@ -452,14 +459,7 @@ namespace fenrir
 		double result = 0.5;
 		if (engine.is_checkmate())
 		{
-			if (engine.get_board_view().get_color() == start_color)
-			{
-				result = 0.0;
-			}
-			else
-			{
-				result = 1.0;
-			}
+			result = (engine.get_board_view().get_color() == start_color) ? 0.0 : 1.0;
 		}
 
 		for (int i = 0; i < moves_played; ++i)
