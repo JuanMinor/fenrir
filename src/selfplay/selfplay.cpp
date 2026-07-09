@@ -66,10 +66,54 @@ namespace fenrir
 				if (raw_policy.empty())
 					break;
 
+				// Create a fast lookup set of absolute legal moves for the current board state
+				std::vector<Move> legal_moves = engine.generate_all_moves();
+				if (legal_moves.empty())
+					break;
+
+				// Filter raw_policy to ensure only strictly legal choices can be recorded or played
+				std::vector<std::pair<Move, double>> legal_policy;
+				double legal_sum = 0.0;
+
+				for (const auto &p : raw_policy)
+				{
+					bool is_legal = false;
+					for (const auto &lm : legal_moves)
+					{
+						if (p.first.get_from_square() == lm.get_from_square() &&
+							p.first.get_to_square() == lm.get_to_square())
+						{
+							is_legal = true;
+							break;
+						}
+					}
+					if (is_legal)
+					{
+						legal_policy.push_back(p);
+						legal_sum += p.second;
+					}
+				}
+
+				// If filtering wiped the vector due to noise mismatch, fallback safely to strict legal generation
+				if (legal_policy.empty())
+				{
+					for (const auto &lm : legal_moves)
+					{
+						legal_policy.push_back({lm, 1.0 / legal_moves.size()});
+					}
+					legal_sum = 1.0;
+				}
+
+				// Renormalize the legal policy distribution
+				for (auto &p : legal_policy)
+				{
+					p.second /= (legal_sum > 0.0 ? legal_sum : 1.0);
+				}
+
 				PositionData pd;
 				pd.fen = engine.get_fen();
 				pd.color_to_move = engine.get_board_view().get_color();
-				for (const auto &p : raw_policy)
+				for (const auto &p : legal_policy)
 				{
 					pd.policy.emplace_back(p.first.to_uci_notation(), p.second);
 				}
@@ -79,12 +123,12 @@ namespace fenrir
 				if (moves_played < 30)
 				{
 					std::vector<double> weights;
-					for (const auto &p : raw_policy)
+					for (const auto &p : legal_policy)
 					{
 						weights.push_back(p.second);
 					}
 					std::discrete_distribution<size_t> dist(weights.begin(), weights.end());
-					chosen_move = raw_policy[dist(rng)].first;
+					chosen_move = legal_policy[dist(rng)].first;
 				}
 
 				engine.make_move(chosen_move);
