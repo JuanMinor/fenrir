@@ -99,7 +99,7 @@ namespace fenrir
 				{
 					for (const auto &lm : legal_moves)
 					{
-						legal_policy.push_back({lm, 1.0 / legal_moves.size()});
+						legal_policy.push_back({lm, 1.0 / static_cast<double>(legal_moves.size())});
 					}
 					legal_sum = 1.0;
 				}
@@ -119,8 +119,9 @@ namespace fenrir
 				}
 				game_data.push_back(pd);
 
+				// Fallback safely to a known legal choice if best_move returns uninitialized or blank data
 				Move chosen_move = best_move;
-				if (moves_played < 30)
+				if (chosen_move.get_from_square() == chosen_move.get_to_square() || moves_played < 30)
 				{
 					std::vector<double> weights;
 					for (const auto &p : legal_policy)
