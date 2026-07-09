@@ -385,7 +385,15 @@ namespace fenrir
 			while (node->is_expanded.load() && !node->children.empty())
 			{
 				guards.emplace_back(node);
-				node = node->select_child();
+				MCTSNode *next_node = node->select_child();
+
+				// If PUCT scores fall below the floor and return a null selection, stop trailing down
+				if (!next_node)
+				{
+					break;
+				}
+
+				node = next_node;
 				thread_engine.make_move_fast(node->move);
 			}
 			guards.emplace_back(node);
