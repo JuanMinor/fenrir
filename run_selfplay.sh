@@ -28,3 +28,5 @@ done
 echo "All 96 instances have been launched in the background!"
 echo "To monitor progress, run: tail -f logs/gpu0_inst1.log"
 echo "To stop them, run: pkill fenrir"
+
+env CUDA_VISIBLE_DEVICES=0 ./bin/fenrir --selfplay --gpu-id 0 --simulations 1000 --games 1

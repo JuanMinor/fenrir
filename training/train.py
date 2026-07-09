@@ -176,8 +176,6 @@ class ChessDataset(Dataset):
 
         for move, prob in sample['policy'].items():
             idx = uci_to_index(move, turn_color)
-            if idx == 0:
-                print(f"DEBUG: Move '{move}' failed parsing and defaulted to index 0!")
             policy[idx] = prob
 
         value = torch.tensor([sample['result']], dtype=torch.float32)
