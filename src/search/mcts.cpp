@@ -97,7 +97,7 @@ namespace fenrir
     void MCTSNode::expand(Engine &engine, const std::vector<double> &policy)
     {
         std::lock_guard<std::mutex> lock(expand_mutex);
-        if (is_expanded.load()) // FIXED: Safely breaks out before double-expansion leak
+        if (is_expanded.load())
             return;
 
         std::vector<Move> moves = engine.generate_all_moves();
@@ -168,7 +168,7 @@ namespace fenrir
         if (children.empty())
             return;
 
-        thread_local static std::mt19937 rng(std::random_device{}());
+        std::mt19937 rng(std::random_device{}());
         std::gamma_distribution<double> gamma(alpha, 1.0);
 
         double original_prior_sum = 0.0;
@@ -380,14 +380,13 @@ namespace fenrir
             sim_count++;
 
             MCTSNode *node = root;
-            std::vector<VirtualLossGuard> guards; // FIXED: Tracks virtual loss allocations safely
+            std::vector<VirtualLossGuard> guards;
 
             while (node->is_expanded.load() && !node->children.empty())
             {
                 guards.emplace_back(node);
                 MCTSNode *next_node = node->select_child();
 
-                // If PUCT scores fall below the floor and return a null selection, stop trailing down
                 if (!next_node)
                 {
                     break;
@@ -432,7 +431,6 @@ namespace fenrir
                 }
             }
 
-            // Explicitly drop virtual loss guards right before backpropagation
             guards.clear();
             node->backpropagate(result);
 
@@ -450,8 +448,7 @@ namespace fenrir
         int moves_played = 0;
         uint8_t start_color = engine.get_board_view().get_color();
 
-        // FIXED: thread_local static speeds this block up significantly
-        thread_local static std::mt19937 local_rng(std::random_device{}());
+        std::mt19937 local_rng(std::random_device{}());
 
         while (!engine.is_checkmate() && !engine.is_stalemate() && !engine.is_draw() && moves_played < 100)
         {
