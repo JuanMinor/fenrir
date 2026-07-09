@@ -164,8 +164,8 @@ class ChessDataset(Dataset):
         tensor = self.fen_to_tensor(sample['fen'])
 
         # Set output tensor structure to AlphaZero standard 4,672
-        # policy = torch.zeros(4672, dtype=torch.float32)
-        policy_loss = F.cross_entropy(pred_policies, policies)
+        policy = torch.zeros(4672, dtype=torch.float32)
+        # policy_loss = F.cross_entropy(pred_policies, policies)
 
         # Safely extract the current active turn from the FEN string to guide the castling parser
         fen_parts = sample['fen'].split(' ')
@@ -240,7 +240,8 @@ def train():
 
             pred_policies, pred_values = model(tensors)
 
-            policy_loss = -torch.sum(policies * F.log_softmax(pred_policies, dim=1), dim=1).mean()
+            # policy_loss = -torch.sum(policies * F.log_softmax(pred_policies, dim=1), dim=1).mean()
+            policy_loss = F.cross_entropy(pred_policies, policies)
             value_loss = F.mse_loss(pred_values, values)
 
             loss = policy_loss + value_loss
