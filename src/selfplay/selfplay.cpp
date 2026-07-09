@@ -3,6 +3,7 @@
 #include <fstream>
 #include <filesystem>
 #include <random>
+#include <unistd.h>
 #include <chrono>
 
 namespace fenrir
@@ -41,7 +42,12 @@ namespace fenrir
 			{
 				auto now = std::chrono::system_clock::now().time_since_epoch();
 				int timestamp = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(now).count() % 100000000);
-				temp_filename = get_output_dir() + "temp_gpu" + std::to_string(gpu_id_) + "_" + std::to_string(timestamp) + ".jsonl";
+
+				// Get the unique process ID of this specific running engine instance
+				int pid = static_cast<int>(getpid());
+
+				// FIXED: Appended the unique PID into the filename string
+				temp_filename = get_output_dir() + "temp_gpu" + std::to_string(gpu_id_) + "_pid" + std::to_string(pid) + "_" + std::to_string(timestamp) + ".jsonl";
 				batch_out.open(temp_filename);
 			}
 
