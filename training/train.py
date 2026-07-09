@@ -170,8 +170,14 @@ class ChessDataset(Dataset):
         fen_parts = sample['fen'].split(' ')
         turn_color = fen_parts[1] if len(fen_parts) > 1 else 'w'
 
+        # for move, prob in sample['policy'].items():
+        #     policy[uci_to_index(move, turn_color)] = prob
+
         for move, prob in sample['policy'].items():
-            policy[uci_to_index(move, turn_color)] = prob
+            idx = uci_to_index(move, turn_color)
+            if idx == 0:
+                print(f"DEBUG: Move '{move}' failed parsing and defaulted to index 0!")
+            policy[idx] = prob
 
         value = torch.tensor([sample['result']], dtype=torch.float32)
         # Normalize result from [0, 1] to [-1, 1] for tanh
