@@ -164,7 +164,8 @@ class ChessDataset(Dataset):
         tensor = self.fen_to_tensor(sample['fen'])
 
         # Set output tensor structure to AlphaZero standard 4,672
-        policy = torch.zeros(4672, dtype=torch.float32)
+        # policy = torch.zeros(4672, dtype=torch.float32)
+        policy_loss = F.cross_entropy(pred_policies, policies)
 
         # Safely extract the current active turn from the FEN string to guide the castling parser
         fen_parts = sample['fen'].split(' ')
