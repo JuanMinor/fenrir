@@ -526,15 +526,16 @@ namespace fenrir
 				item.is_terminal = false;
 				item.terminal_result = 0.0;
 
-				if (thread_engine.is_checkmate())
+				// Single combined terminal check. get_terminal_state() tests
+				// 50-move and repetition first (no move generation), then calls
+				// generate_all_moves() exactly once for checkmate/stalemate. The
+				// old pattern of is_stalemate() + is_draw() called generate_all_moves()
+				// twice for every normal position — 512 redundant calls per cycle.
+				auto ts = thread_engine.get_terminal_state();
+				if (ts.is_terminal)
 				{
 					item.is_terminal = true;
-					item.terminal_result = 0.0;
-				}
-				else if (thread_engine.is_stalemate() || thread_engine.is_draw())
-				{
-					item.is_terminal = true;
-					item.terminal_result = 0.5;
+					item.terminal_result = ts.score;
 				}
 				else if (evaluator)
 				{

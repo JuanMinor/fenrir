@@ -281,6 +281,68 @@ namespace fenrir
 		return false;
 	}
 
+	Engine::TerminalState Engine::get_terminal_state()
+	{
+		// --- Cheap checks first (no move generation required) ---
+
+		// 1. 50-move rule: half-move clock is maintained by apply_move/undo_move.
+		if (board.get_half_move_clock() >= 100)
+			return {true, 0.5};
+
+		// 2. Three-fold repetition: walk the undo stack (same logic as is_draw()).
+		{
+			UndoState current_state;
+			for (int i = 0; i < 12; ++i)
+				current_state.bitboards[i] = board.get_bitboard(i);
+			current_state.castling_rights   = board.get_castling_rights_mask();
+			current_state.en_passant_square = board.get_en_passant_square();
+			current_state.color             = board.get_color();
+
+			int repetitions = 1;
+			int limit       = board.get_half_move_clock();
+			int stack_size  = static_cast<int>(undo_stack.size());
+			int lookback    = (limit < stack_size) ? limit : stack_size;
+
+			for (int i = 0; i < lookback; ++i)
+			{
+				const UndoState &past = undo_stack[static_cast<size_t>(stack_size - 1 - i)];
+				bool match = true;
+				for (int j = 0; j < 12; ++j)
+				{
+					if (past.bitboards[j] != current_state.bitboards[j])
+					{
+						match = false;
+						break;
+					}
+				}
+				if (match &&
+				    past.castling_rights   == current_state.castling_rights &&
+				    past.en_passant_square == current_state.en_passant_square &&
+				    past.color             == current_state.color)
+				{
+					if (++repetitions >= 3)
+						return {true, 0.5};
+				}
+			}
+		}
+
+		// --- Single generate_all_moves() call covers both checkmate and stalemate ---
+		// Previously the pipeline called is_stalemate() followed by is_draw() (which
+		// calls is_stalemate() again internally), resulting in two generate_all_moves()
+		// calls per leaf for every normal position. This collapses both into one.
+		auto all_moves = generate_all_moves();
+		if (all_moves.empty())
+		{
+			uint8_t active_color = board.get_color();
+			if (board.is_in_check(active_color))
+				return {true, 0.0}; // checkmate: side to move has lost
+			else
+				return {true, 0.5}; // stalemate: draw
+		}
+
+		return {false, 0.5}; // not a terminal position
+	}
+
 	void Engine::print_board(void) const
 	{
 		board.print();
