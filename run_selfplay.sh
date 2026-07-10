@@ -16,15 +16,15 @@ mkdir -p logs
 export LD_LIBRARY_PATH=$PWD/build/_deps/onnxruntime-src/lib:$LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH
 
-echo "Starting 96 Fenrir instances across 8 GPUs (12 instances per GPU to maximize utilization)..."
+echo "Starting 40 Fenrir instances across 8 GPUs (5 instances per GPU to maximize utilization)..."
 
 for GPU in {0..7}; do
-    for INSTANCE in {1..12}; do
+    for INSTANCE in {1..5}; do
         echo "Launching Fenrir instance $INSTANCE on GPU $GPU..."
-        env CUDA_VISIBLE_DEVICES=$GPU ./bin/fenrir --selfplay --gpu-id 0 --simulations 1000 --games 500000 > logs/gpu${GPU}_inst${INSTANCE}.log 2>&1 &
+        env CUDA_VISIBLE_DEVICES=$GPU ./bin/fenrir --selfplay --gpu-id 0 --simulations 50000 --games 500000 > logs/gpu${GPU}_inst${INSTANCE}.log 2>&1 &
     done
 done
 
-echo "All 96 instances have been launched in the background!"
+echo "All 40 instances have been launched in the background!"
 echo "To monitor progress, run: tail -f logs/gpu0_inst1.log"
 echo "To stop them, run: pkill fenrir"

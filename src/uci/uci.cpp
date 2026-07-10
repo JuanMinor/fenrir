@@ -56,7 +56,7 @@ namespace fenrir
         std::istringstream is(command);
         std::string token;
         is >> token; // consume "position"
-        
+
         is >> token;
         if (token == "startpos")
         {
@@ -78,7 +78,7 @@ namespace fenrir
         while (is >> token)
         {
             if (token == "moves") continue;
-            
+
             std::vector<Move> legal_moves = engine->generate_all_moves();
             for (const auto& move : legal_moves)
             {
@@ -93,13 +93,13 @@ namespace fenrir
 
     void UCI::parse_go(const std::string& command)
     {
-        int simulations = -1; 
+        int simulations = -1;
         int move_time = -1;
         int wtime = -1, btime = -1;
         std::istringstream is(command);
         std::string token;
         is >> token; // consume "go"
-        
+
         while (is >> token)
         {
             if (token == "nodes") is >> simulations;
@@ -119,6 +119,14 @@ namespace fenrir
         } else if (simulations != -1) {
             allocated_time_ms = -1; // flag to use node limit instead of time
         }
+
+		if (simulations == -1 && allocated_time_ms != -1)
+		{
+			int estimated_nps = 25000;
+			simulations = static_cast<int>((allocated_time_ms / 1000.0) * estimated_nps);
+			if (simulations < 1200)
+				simulations = 1200;
+		}
 
         Move best_move = search->find_best_move(*engine, allocated_time_ms, simulations);
         std::cout << "bestmove " << best_move.to_uci_notation() << std::endl;
