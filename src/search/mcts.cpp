@@ -110,7 +110,52 @@ namespace fenrir
 
 			if (policy.empty())
 			{
-				children.back()->prior = 1.0 / static_cast<double>(moves.size());
+				// No NN policy: score moves with MVV-LVA (Most Valuable Victim,
+				// Least Valuable Aggressor) so the tree explores tactical lines
+				// before quiet moves. Piece values in centipawns (standard scale):
+				//   P=100  N=320  B=330  R=500  Q=900  K=20000
+				// MVV-LVA score = victim_value - aggressor_value / 10
+				// (dividing aggressor by 10 keeps victim ranking dominant while
+				// still preferring a cheaper attacker when victims are equal).
+				auto piece_value = [](char pc) -> double {
+					switch (std::tolower(static_cast<unsigned char>(pc)))
+					{
+					case 'p': return 100.0;
+					case 'n': return 320.0;
+					case 'b': return 330.0;
+					case 'r': return 500.0;
+					case 'q': return 900.0;
+					case 'k': return 20000.0;
+					default:  return 0.0;
+					}
+				};
+
+				double base = 1.0;
+				const MoveType mt = moves[i].get_move_type();
+
+				if (mt == MoveType::CAPTURE)
+				{
+					uint8_t to_sq   = moves[i].get_to_square();
+					uint8_t from_sq = moves[i].get_from_square();
+					char victim   = engine.get_board_view().get_piece(to_sq / 8, to_sq % 8);
+					char attacker = engine.get_board_view().get_piece(from_sq / 8, from_sq % 8);
+					base = 1.0 + piece_value(victim) - piece_value(attacker) / 10.0;
+					// Clamp to a small positive floor so captures never score below quiet moves.
+					if (base < 1.0) base = 1.0;
+				}
+				else if (mt == MoveType::EN_PASSANT)
+				{
+					// Pawn takes pawn: victim=100, attacker=100 → 100 - 10 = 90 + 1 = 91
+					base = 1.0 + 100.0 - 100.0 / 10.0;
+				}
+				else if (mt == MoveType::PROMOTION)
+				{
+					// Score by the value of the piece we promote to.
+					base = 1.0 + piece_value(moves[i].get_promotion_piece()) / 100.0;
+				}
+				// MoveType::NORMAL / CASTLE: base stays 1.0
+
+				children.back()->prior = base;
 			}
 			else
 			{
@@ -118,6 +163,18 @@ namespace fenrir
 				children.back()->prior = (idx < policy.size()) ? policy[idx] : 0.0;
 			}
 		}
+
+		// Normalize heuristic priors to sum to 1.0 (only needed when no NN policy).
+		if (policy.empty() && !children.empty())
+		{
+			double sum = 0.0;
+			for (const auto &child : children)
+				sum += child->prior;
+			if (sum > 0.0)
+				for (auto &child : children)
+					child->prior /= sum;
+		}
+
 		is_expanded.store(true);
 	}
 
@@ -125,7 +182,9 @@ namespace fenrir
 	{
 		MCTSNode *best_child = nullptr;
 		double best_value = -1e9;
-		int parent_visits = visits.load() + virtual_loss.load();
+		// Interior nodes no longer carry virtual loss (we apply VL only to leaves),
+		// so parent_visits is simply the backpropagated visit count.
+		int parent_visits = visits.load();
 
 		for (auto &child : children)
 		{
@@ -141,28 +200,37 @@ namespace fenrir
 
 	double MCTSNode::puct_value(int total_visits) const
 	{
-		int v = visits.load() + virtual_loss.load();
+		const int real_visits = visits.load();
+		const int vl          = virtual_loss.load();
 
-		// 1. If unvisited, inherit parent's neutral baseline, don't reward it with a fake 0.0 draw
+		// v is used as the denominator of both Q and U.
+		// - Normal node (real_visits > 0): use real visits for Q, real+VL for U.
+		//   VL is always 0 for interior nodes now; this matters only for leaf nodes
+		//   that are currently being evaluated by another walk in the same pipeline.
+		// - In-flight leaf (real_visits == 0, vl > 0): the node is queued for NN
+		//   evaluation but has no backpropagated result yet. Setting v = vl makes
+		//   the U term = c * prior * √N / (1 + vl), which shrinks each time another
+		//   walk lands here, naturally pushing subsequent walks to siblings without
+		//   requiring them to re-evaluate the same position redundantly.
+		// - Unvisited, untouched leaf (real_visits == 0, vl == 0): v = 0, U is
+		//   maximised (pure exploration), which is the standard MCTS behaviour.
+		int v = (real_visits > 0) ? (real_visits + vl) : vl;
+
 		double q = 0.0;
-		if (v > 0)
+		if (real_visits > 0)
 		{
-			q = win_score.load() / v;
-		}
-		else if (parent)
-		{
-			// Fallback or tiny penalty to prevent massive horizontal unvisited node tracking
-			q = 0.0;
+			// Q is always computed from real backpropagated results only, never
+			// diluted by VL. VL only affects the exploration (U) denominator.
+			q = win_score.load() / real_visits;
 		}
 
-		// 2. Standard AlphaZero CPUCT dynamic exploration constant
-		// At 1.414, it might widen too fast. True AlphaZero scales c dynamically:
+		// Standard AlphaZero dynamic CPUCT constant.
 		double c_init = 1.25;
 		double c_base = 19652.0;
 		double c = std::log((1.0 + total_visits + c_base) / c_base) + c_init;
 
-		// 3. Calculate regular upper confidence bound component
-		double u = c * prior * std::sqrt(total_visits) / (1 + v);
+		// U shrinks as v grows, whether from real visits or in-flight VL.
+		double u = c * prior * std::sqrt(static_cast<double>(total_visits)) / (1 + v);
 
 		return q + u;
 	}
@@ -174,7 +242,9 @@ namespace fenrir
 		int max_d = 0;
 		for (const auto &child : children)
 		{
-			if (child->visits.load() > 0)
+			// Count nodes that have been visited OR were selected (virtual loss > 0)
+			// to avoid underreporting depth when nodes are in-flight.
+			if (child->visits.load() > 0 || child->virtual_loss.load() > 0)
 			{
 				max_d = std::max(max_d, child->get_max_depth());
 			}
@@ -384,7 +454,10 @@ namespace fenrir
 		Engine &thread_engine = *thread_engine_ptr;
 		int sim_count = 0;
 
-		const size_t local_pipeline_target = 64;
+		// 16 threads x 32 items = 512 concurrent eval requests, which exactly
+		// matches NNEvaluator::batch_size. The GPU stays fully saturated without
+		// the tree exploding sideways on every cycle.
+		const size_t local_pipeline_target = 32;
 
 		struct PipelineItem
 		{
@@ -393,6 +466,11 @@ namespace fenrir
 			std::future<NNResult> eval_future;
 			bool is_terminal;
 			double terminal_result;
+			// Moves from root to this leaf node (in order). Used in the second
+			// loop to re-walk thread_engine to the leaf position cheaply, avoiding
+			// the need to construct a new Engine (which parses FEN, inits attack
+			// tables, and emits a log line) for every single pipeline item.
+			std::vector<Move> path_moves;
 		};
 
 		while (true)
@@ -416,18 +494,30 @@ namespace fenrir
 				sim_count++;
 				MCTSNode *node = root;
 				std::vector<VirtualLossGuard> guards;
+				// Record moves made during descent so the second loop can
+				// cheaply re-walk thread_engine to the leaf without constructing
+				// a new Engine object.
+				std::vector<Move> path;
 
 				while (node->is_expanded.load() && !node->children.empty())
 				{
-					guards.emplace_back(node);
+					// Do NOT apply virtual loss to interior nodes. Stamping every
+					// node on the path with VL++ causes PUCT to treat the whole
+					// path as "in use" and reroutes all subsequent walks to new
+					// branches — forcing horizontal growth. Interior nodes stay
+					// clean so future walks can follow the same best line.
 					MCTSNode *next_node = node->select_child();
 
 					if (!next_node)
 						break;
 
 					node = next_node;
+					path.push_back(node->move);
 					thread_engine.make_move_fast(node->move);
 				}
+				// Only the leaf gets a virtual loss. This marks it as "in evaluation"
+				// so other walks divert to its siblings, but the path leading to it
+				// remains attractive for the next selection.
 				guards.emplace_back(node);
 
 				PipelineItem item;
@@ -448,10 +538,14 @@ namespace fenrir
 				}
 				else if (evaluator)
 				{
+					// Store the path so the second loop can re-walk to this leaf.
+					item.path_moves = path;
 					item.eval_future = evaluator->request_evaluation(thread_engine.get_board_view());
 				}
 				else
 				{
+					// No evaluator: engine is still at the leaf here, so expand and
+					// simulate are both correct at this point in the first loop.
 					item.is_terminal = true;
 					node->expand(thread_engine);
 					item.terminal_result = simulate(thread_engine);
@@ -481,16 +575,29 @@ namespace fenrir
 				}
 				else
 				{
+					// Re-walk thread_engine to the leaf position using the recorded
+					// path. This replaces the old Engine(leaf_fen) construction which
+					// called FEN parsing, init_attack_tables(), and logger::INFO()
+					// for every single item — 512 expensive Engine objects per cycle.
+					// Now it's just make_move_fast × depth, which is near-zero cost.
 					try
 					{
 						NNResult res = item.eval_future.get();
+						for (const auto &m : item.path_moves)
+							thread_engine.make_move_fast(m);
 						item.node->expand(thread_engine, res.policy);
+						for (size_t i = 0; i < item.path_moves.size(); ++i)
+							thread_engine.undo_move();
 						final_result = res.value;
 					}
 					catch (...)
 					{
+						for (const auto &m : item.path_moves)
+							thread_engine.make_move_fast(m);
 						item.node->expand(thread_engine);
 						final_result = simulate(thread_engine);
+						for (size_t i = 0; i < item.path_moves.size(); ++i)
+							thread_engine.undo_move();
 					}
 				}
 
