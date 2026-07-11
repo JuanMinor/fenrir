@@ -15,6 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#pragma once
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -22,120 +23,120 @@
 namespace hardware
 {
 
-	long BYTES_PER_GB = 1024ULL * 1024ULL * 1024ULL;
+    long BYTES_PER_GB = 1024ULL * 1024ULL * 1024ULL;
 
-	enum class CpuType
-	{
-		AMD,
-		INTEL
-	};
+    enum class CpuType
+    {
+        AMD,
+        INTEL
+    };
 
-	enum class GpuType
-	{
-		NVIDIA,
-		AMD
-	};
+    enum class GpuType
+    {
+        NVIDIA,
+        AMD
+    };
 
-	enum class OperatingSystemType
-	{
-		WINDOWS,
-		LINUX,
-		MACOS
-	};
+    enum class OperatingSystemType
+    {
+        WINDOWS,
+        LINUX,
+        MACOS
+    };
 
-	class Cpu
-	{
-		CpuType cpu_type;
-		uint32_t logical_cores;
-		std::string model_name;
-		uint32_t physical_cores;
+    class Cpu
+    {
+        CpuType cpu_type;
+        uint32_t logical_cores;
+        std::string model_name;
+        uint32_t physical_cores;
 
-		void setCpuType(const std::string &model_name);
+        void setCpuType(const std::string &model_name);
 
-	public:
-		Cpu(uint32_t logical_cores, const std::string &model_name, uint32_t physical_cores);
-		~Cpu();
+    public:
+        Cpu(uint32_t logical_cores, const std::string &model_name, uint32_t physical_cores);
+        ~Cpu();
 
-		CpuType get_cpu_type() const;
-		uint32_t get_logical_cores() const;
-		std::string get_model_name() const;
-		uint32_t get_physical_cores() const;
-	};
+        CpuType get_cpu_type() const;
+        uint32_t get_logical_cores() const;
+        std::string get_model_name() const;
+        uint32_t get_physical_cores() const;
+    };
 
-	class Gpu
-	{
-		int device_id;
-		GpuType gpu_type;
-		std::string model_name;
-		uint64_t total_memory_in_bytes;
-		uint64_t vram_size_in_bytes;
+    class Gpu
+    {
+        int device_id;
+        GpuType gpu_type;
+        std::string model_name;
+        uint64_t total_memory_in_bytes;
+        uint64_t vram_size_in_bytes;
 
-		bool is_amd_gpu;
-		bool is_nvidia_gpu;
+        bool is_amd_gpu;
+        bool is_nvidia_gpu;
 
-		void setGpuType(const std::string &model_name);
+        void setGpuType(const std::string &model_name);
 
-	public:
-		Gpu(int device_id, const std::string &model_name, uint64_t total_memory_in_bytes, uint64_t vram_size_in_bytes);
-		~Gpu();
+    public:
+        Gpu(int device_id, const std::string &model_name, uint64_t total_memory_in_bytes, uint64_t vram_size_in_bytes);
+        ~Gpu();
 
-		int get_device_id() const;
-		GpuType get_gpu_type() const;
-		std::string get_model_name() const;
-		uint64_t get_total_memory_in_bytes() const;
-		uint64_t get_vram_size_in_bytes() const;
+        int get_device_id() const;
+        GpuType get_gpu_type() const;
+        std::string get_model_name() const;
+        uint64_t get_total_memory_in_bytes() const;
+        uint64_t get_vram_size_in_bytes() const;
 
-		bool get_is_amd_gpu() const;
-		bool get_is_nvidia_gpu() const;
-	};
+        bool get_is_amd_gpu() const;
+        bool get_is_nvidia_gpu() const;
+    };
 
-	class Ram
-	{
-		uint64_t total_size_in_bytes;
+    class Ram
+    {
+        uint64_t total_size_in_bytes;
 
-	public:
-		Ram(uint64_t total_size_in_bytes);
-		~Ram();
+    public:
+        Ram(uint64_t total_size_in_bytes);
+        ~Ram();
 
-		uint64_t get_total_size_in_bytes() const;
-	};
+        uint64_t get_total_size_in_bytes() const;
+    };
 
-	class OperatingSystem
-	{
-		std::string name;
-		OperatingSystemType os_type;
+    class OperatingSystem
+    {
+        std::string name;
+        OperatingSystemType os_type;
 
-		bool is_64_bit;
-		bool is_windows;
+        bool is_64_bit;
+        bool is_windows;
 
-	public:
-		OperatingSystem(const std::string &name);
-		~OperatingSystem();
+    public:
+        OperatingSystem(const std::string &name);
+        ~OperatingSystem();
 
-		std::string get_name() const;
-		OperatingSystemType get_os_type() const;
+        std::string get_name() const;
+        OperatingSystemType get_os_type() const;
 
-		bool get_is_64_bit() const;
-		bool get_is_windows() const;
-	};
+        bool get_is_64_bit() const;
+        bool get_is_windows() const;
+    };
 
-	class HostInfo
-	{
-		std::vector<Cpu> cpus;
-		std::vector<Gpu> gpus;
-		Ram ram;
-		OperatingSystem os;
+    class HostInfo
+    {
+        std::vector<Cpu> cpus;
+        std::vector<Gpu> gpus;
+        Ram ram;
+        OperatingSystem os;
 
-	public:
-		HostInfo(const std::vector<Cpu> &cpus, const std::vector<Gpu> &gpus, const Ram &ram, const OperatingSystem &os);
-		~HostInfo();
+    public:
+        HostInfo(const std::vector<Cpu> &cpus, const std::vector<Gpu> &gpus, const Ram &ram, const OperatingSystem &os);
+        ~HostInfo();
 
-		std::vector<Cpu> get_cpus() const;
-		std::vector<Gpu> get_gpus() const;
-		Ram get_ram() const;
-		OperatingSystem get_os() const;
-	};
+        std::vector<Cpu> get_cpus() const;
+        std::vector<Gpu> get_gpus() const;
+        Ram get_ram() const;
+        OperatingSystem get_os() const;
+    };
 
-	uint32_t convert_bytes_to_gb(uint64_t bytes);
-	HostInfo detect_host_info();
+    uint32_t convert_bytes_to_gb(uint64_t bytes);
+    HostInfo detect_host_info();
 }

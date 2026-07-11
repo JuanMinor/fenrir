@@ -1,17 +1,17 @@
 {
-	"name": "Fenrir",
-	"build": {
-		"dockerfile": "Dockerfile"
-	},
-	"customizations": {
-		"vscode": {
-			"settings": {
-				"terminal.integrated.defaultProfile.linux": "zsh",
-				"http.systemCertificatesNode": true
-			}
-		}
-	},
-	"mounts": [
-		"source=${env:HOME}/.ssh,target=/home/atom/.ssh,type=bind,readonly"
-	]
+    "name": "Fenrir",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh",
+                "http.systemCertificatesNode": true
+            }
+        }
+    },
+    "mounts": [
+        "source=${env:HOME}/.ssh,target=/home/atom/.ssh,type=bind,readonly"
+    ]
 }

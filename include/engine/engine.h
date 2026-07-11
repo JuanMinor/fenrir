@@ -27,45 +27,45 @@
 namespace fenrir
 {
 
-	class FENRIR_API Engine final
-	{
-		static constexpr const char *DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-		std::string fen;
-		Board board;
+    class FENRIR_API Engine final
+    {
+        static constexpr const char *DEFAULT_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+        std::string fen;
+        Board board;
 
-		std::vector<UndoState> undo_stack;
+        std::vector<UndoState> undo_stack;
 
-	public:
-		Engine(const std::string &fen_string = DEFAULT_FEN);
-		~Engine();
+    public:
+        Engine(const std::string &fen_string = DEFAULT_FEN);
+        ~Engine();
 
-		static const char *version();
+        static const char *version();
 
-		std::vector<Move> generate_moves(const std::string &algebraic_address);
-		std::vector<Move> generate_all_moves();
-		std::string get_fen(void);
-		void make_move(const Move &move);
-		void make_move_fast(const Move &move);
-		void undo_move();
+        std::vector<Move> generate_moves(const std::string &algebraic_address);
+        std::vector<Move> generate_all_moves();
+        std::string get_fen(void);
+        void make_move(const Move &move);
+        void make_move_fast(const Move &move);
+        void undo_move();
 
-		bool is_checkmate();
-		bool is_stalemate();
-		bool is_draw();
+        bool is_checkmate();
+        bool is_stalemate();
+        bool is_draw();
 
-		// Combined terminal-state query. Checks all conditions (50-move, repetition,
-		// checkmate, stalemate) with a single generate_all_moves() call instead of
-		// the two separate calls that happen when is_stalemate() + is_draw() are
-		// invoked independently.
-		struct TerminalState
-		{
-			bool is_terminal;
-			double score; // 0.0 = loss for side to move, 0.5 = draw
-		};
-		TerminalState get_terminal_state();
+        // Combined terminal-state query. Checks all conditions (50-move, repetition,
+        // checkmate, stalemate) with a single generate_all_moves() call instead of
+        // the two separate calls that happen when is_stalemate() + is_draw() are
+        // invoked independently.
+        struct TerminalState
+        {
+            bool is_terminal;
+            double score; // 0.0 = loss for side to move, 0.5 = draw
+        };
+        TerminalState get_terminal_state();
 
-		void print_board(void) const;
-		void reset();
+        void print_board(void) const;
+        void reset();
 
-		const AbstractBoard &get_board_view() const;
-	};
+        const AbstractBoard &get_board_view() const;
+    };
 }

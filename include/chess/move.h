@@ -23,42 +23,42 @@
 
 namespace fenrir
 {
-	class Move
-	{
-		uint8_t from_square;
-		uint8_t to_square;
-		MoveType move_type;
-		char promotion_piece;
-		std::unique_ptr<std::pair<std::string, std::string>> invalid_squares;
+    class Move
+    {
+        uint8_t from_square;
+        uint8_t to_square;
+        MoveType move_type;
+        char promotion_piece;
+        std::unique_ptr<std::pair<std::string, std::string>> invalid_squares;
 
-	public:
-		Move(const std::string &from, const std::string &to, char promotion = '\0');
-		Move(uint8_t from, uint8_t to, char promotion = '\0');
-		Move(const std::string &from, const std::string &to, MoveType type, char promotion = '\0');
-		Move(uint8_t from, uint8_t to, MoveType type, char promotion = '\0');
+    public:
+        Move(const std::string &from, const std::string &to, char promotion = '\0');
+        Move(uint8_t from, uint8_t to, char promotion = '\0');
+        Move(const std::string &from, const std::string &to, MoveType type, char promotion = '\0');
+        Move(uint8_t from, uint8_t to, MoveType type, char promotion = '\0');
 
-		Move(const Move& other);
-		Move& operator=(const Move& other);
-		Move(Move&& other) noexcept = default;
-		Move& operator=(Move&& other) noexcept = default;
+        Move(const Move &other);
+        Move &operator=(const Move &other);
+        Move(Move &&other) noexcept = default;
+        Move &operator=(Move &&other) noexcept = default;
 
-		~Move();
+        ~Move();
 
-		/* Getters */
-		std::string get_from() const;
-		std::string get_to() const;
-		uint8_t get_from_square() const;
-		uint8_t get_to_square() const;
-		MoveType get_move_type() const;
-		char get_promotion_piece() const;
+        /* Getters */
+        std::string get_from() const;
+        std::string get_to() const;
+        uint8_t get_from_square() const;
+        uint8_t get_to_square() const;
+        MoveType get_move_type() const;
+        char get_promotion_piece() const;
 
-		/* Utility methods */
-		bool is_capture() const;
-		bool is_promotion() const;
-		bool is_castling() const;
-		std::string to_algebraic_notation() const;
-		std::string to_string() const;
-		std::string to_uci_notation() const;
-	};
+        /* Utility methods */
+        bool is_capture() const;
+        bool is_promotion() const;
+        bool is_castling() const;
+        std::string to_algebraic_notation() const;
+        std::string to_string() const;
+        std::string to_uci_notation() const;
+    };
 
 }

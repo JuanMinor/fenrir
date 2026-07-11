@@ -23,14 +23,14 @@
 
 namespace chrono
 {
-	class Chrono
-	{
-	public:
-		Chrono();
-		~Chrono();
+    class Chrono
+    {
+    public:
+        Chrono();
+        ~Chrono();
 
-		tm *get_local_time(time_t *timer) const noexcept(true);
-		time_t get_raw_time(void) const noexcept(true);
-		std::string get_time_with_format(const char *format) const;
-	};
+        tm *get_local_time(time_t *timer) const noexcept(true);
+        time_t get_raw_time(void) const noexcept(true);
+        std::string get_time_with_format(const char *format) const;
+    };
 }

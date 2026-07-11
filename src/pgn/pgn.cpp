@@ -19,83 +19,83 @@
 
 namespace io
 {
-	Pgn::Pgn()
-	{
-		logger::INFO("Portable Game Notation (PGN) initialized");
-	}
+    Pgn::Pgn()
+    {
+        logger::INFO("Portable Game Notation (PGN) initialized");
+    }
 
-	Pgn::~Pgn() {}
+    Pgn::~Pgn() {}
 
-	Pgn &Pgn::get_instance()
-	{
-		static Pgn instance;
-		return instance;
-	}
+    Pgn &Pgn::get_instance()
+    {
+        static Pgn instance;
+        return instance;
+    }
 
-	void Pgn::clear_stream_flags(std::ostream &os) const
-	{
-		os.seekp(std::ios_base::beg);
-		os.clear();
-	}
+    void Pgn::clear_stream_flags(std::ostream &os) const
+    {
+        os.seekp(std::ios_base::beg);
+        os.clear();
+    }
 
-	void Pgn::set_metadata(std::ostream &os) const
-	{
-		auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
-		this->clear_stream_flags(os);
-		os << "[Event \"User vs. Fenrir\"]\n"
-		   << "[Site \"Remote server - atom\"]\n"
-		   << "[Date \"" << date << "\"]\n"
-		   << "[Round \"1\"]\n"
-		   << "[White \"User\"]\n"
-		   << "[Black \"Fenrir\"]\n"
-		   << "[Result \"-\"]\n\n";
-	}
+    void Pgn::set_metadata(std::ostream &os) const
+    {
+        auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
+        this->clear_stream_flags(os);
+        os << "[Event \"User vs. Fenrir\"]\n"
+           << "[Site \"Remote server - atom\"]\n"
+           << "[Date \"" << date << "\"]\n"
+           << "[Round \"1\"]\n"
+           << "[White \"User\"]\n"
+           << "[Black \"Fenrir\"]\n"
+           << "[Result \"-\"]\n\n";
+    }
 
-	void Pgn::record(const std::string &move) const
-	{
-		std::lock_guard<std::mutex> lock(pgn_mutex);
-		std::ofstream file(PGN_FILE_STORE, std::ios_base::app);
-		if (!file)
-		{
-			logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
-			return;
-		}
-		file << move << '\n';
-	}
+    void Pgn::record(const std::string &move) const
+    {
+        std::lock_guard<std::mutex> lock(pgn_mutex);
+        std::ofstream file(PGN_FILE_STORE, std::ios_base::app);
+        if (!file)
+        {
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
+            return;
+        }
+        file << move << '\n';
+    }
 
-	void Pgn::create(void) const
-	{
-		std::lock_guard<std::mutex> lock(pgn_mutex);
-		std::ifstream storeFile(PGN_FILE_STORE);
-		std::ofstream pgnFile(PGN_FILE);
+    void Pgn::create(void) const
+    {
+        std::lock_guard<std::mutex> lock(pgn_mutex);
+        std::ifstream storeFile(PGN_FILE_STORE);
+        std::ofstream pgnFile(PGN_FILE);
 
-		if (!pgnFile)
-		{
-			logger::ERROR("Cannot open file: '" + std::string(PGN_FILE) + "'");
-			return;
-		}
-		if (!storeFile)
-		{
-			logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
-			return;
-		}
+        if (!pgnFile)
+        {
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE) + "'");
+            return;
+        }
+        if (!storeFile)
+        {
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
+            return;
+        }
 
-		this->set_metadata(pgnFile);
+        this->set_metadata(pgnFile);
 
-		std::string whiteMove, blackMove;
-		unsigned long long move_count = 1;
-		while (std::getline(storeFile, whiteMove))
-		{
-			pgnFile << move_count << ". " << whiteMove;
-			if (std::getline(storeFile, blackMove))
-			{
-				pgnFile << " " << blackMove << " ";
-			}
-			else
-			{
-				pgnFile << " ";
-			}
-			move_count++;
-		}
-	}
+        std::string whiteMove, blackMove;
+        unsigned long long move_count = 1;
+        while (std::getline(storeFile, whiteMove))
+        {
+            pgnFile << move_count << ". " << whiteMove;
+            if (std::getline(storeFile, blackMove))
+            {
+                pgnFile << " " << blackMove << " ";
+            }
+            else
+            {
+                pgnFile << " ";
+            }
+            move_count++;
+        }
+    }
 }

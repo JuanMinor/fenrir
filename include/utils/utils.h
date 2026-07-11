@@ -26,12 +26,11 @@
 
 namespace utils
 {
-	bool are_chess_piece_count_rules_valid(const std::unordered_map<char, uint8_t> &piece_counts);
-	std::string get_algebraic_notation(uint8_t rank, uint8_t file);
-	void log_throw_error(const std::string &error, bool throw_error, const char *file, int lineno);
-	void parse_algebraic_notation(const std::string &algebraic_notation, uint8_t &rank, uint8_t &file);
+    bool are_chess_piece_count_rules_valid(const std::unordered_map<char, uint8_t> &piece_counts);
+    std::string get_algebraic_notation(uint8_t rank, uint8_t file);
+    void log_throw_error(const std::string &error, bool throw_error, const char *file, int lineno);
+    void parse_algebraic_notation(const std::string &algebraic_notation, uint8_t &rank, uint8_t &file);
 
 /* Macros */
 #define LOG_THROW_ERROR(ERROR, THROW) utils::log_throw_error(ERROR, THROW, __FILE__, __LINE__)
 }
-

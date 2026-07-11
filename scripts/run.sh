@@ -18,14 +18,14 @@ PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 
 # Function to clean and build the project
 build_project() {
-	echo "Cleaning and building the project..."
-	(cd "$PROJECT_ROOT" && rm -rf build && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel)
+    echo "Cleaning and building the project..."
+    (cd "$PROJECT_ROOT" && rm -rf build && cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel)
 }
 
 # Function to run the Fenrir engine with the default FEN string
 run_engine() {
-	echo "Running the Fenrir engine..."
-	(cd "$PROJECT_ROOT" && LD_LIBRARY_PATH=bin/lib ./bin/mainh)
+    echo "Running the Fenrir engine..."
+    (cd "$PROJECT_ROOT" && LD_LIBRARY_PATH=bin/lib ./bin/mainh)
 }
 
 # Main execution

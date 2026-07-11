@@ -27,28 +27,28 @@
 
 namespace io
 {
-	class Pgn
-	{
-	private:
-		mutable std::mutex pgn_mutex;
-		Pgn();
+    class Pgn
+    {
+    private:
+        mutable std::mutex pgn_mutex;
+        Pgn();
 
-		void clear_stream_flags(std::ostream &os) const;
-		void set_metadata(std::ostream &os) const;
+        void clear_stream_flags(std::ostream &os) const;
+        void set_metadata(std::ostream &os) const;
 
-	public:
-		static Pgn &get_instance();
+    public:
+        static Pgn &get_instance();
 
-		Pgn(const Pgn &) = delete;
-		Pgn &operator=(const Pgn &) = delete;
-		Pgn(Pgn &&) = delete;
-		Pgn &operator=(Pgn &&) = delete;
+        Pgn(const Pgn &) = delete;
+        Pgn &operator=(const Pgn &) = delete;
+        Pgn(Pgn &&) = delete;
+        Pgn &operator=(Pgn &&) = delete;
 
-		~Pgn();
+        ~Pgn();
 
-		void record(const std::string &move) const;
-		void create(void) const;
-	};
+        void record(const std::string &move) const;
+        void create(void) const;
+    };
 
 #define PGN Pgn::get_instance()
 #define PGN_RECORD(MOVE) PGN.record(MOVE);

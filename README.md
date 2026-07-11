@@ -228,47 +228,47 @@ cmake --build build --target coverage
    #include "include/chess/move.h"
 
    int main() {
-	   try {
-		   // Initialize the chess engine
-		   fenrir::Engine engine;
+       try {
+           // Initialize the chess engine
+           fenrir::Engine engine;
 
-		   // Display the initial board
-		   std::cout << "Initial position:" << std::endl;
-		   engine.print_board();
+           // Display the initial board
+           std::cout << "Initial position:" << std::endl;
+           engine.print_board();
 
-		   // Demonstrate movement for different piece types using Move class
-		   engine.make_move(fenrir::Move("e2", "e4"));  // White pawn to e4
-		   engine.make_move(fenrir::Move("e7", "e5"));  // Black pawn to e5
-		   engine.make_move(fenrir::Move("g1", "f3"));  // White knight to f3
-		   engine.make_move(fenrir::Move("b8", "c6"));  // Black knight to c6
-		   engine.make_move(fenrir::Move("f1", "c4"));  // White bishop to c4
+           // Demonstrate movement for different piece types using Move class
+           engine.make_move(fenrir::Move("e2", "e4"));  // White pawn to e4
+           engine.make_move(fenrir::Move("e7", "e5"));  // Black pawn to e5
+           engine.make_move(fenrir::Move("g1", "f3"));  // White knight to f3
+           engine.make_move(fenrir::Move("b8", "c6"));  // Black knight to c6
+           engine.make_move(fenrir::Move("f1", "c4"));  // White bishop to c4
 
-		   std::cout << "\nAfter multiple piece movements:" << std::endl;
-		   engine.print_board();
+           std::cout << "\nAfter multiple piece movements:" << std::endl;
+           engine.print_board();
 
-		   // Generate legal moves for different piece types (returns vector<Move>)
-		   const std::vector<fenrir::Move> knight_moves = engine.generate_moves("f3");
-		   std::cout << "\nLegal moves for white knight on f3:" << std::endl;
-		   for (const auto& move : knight_moves) {
-			   std::cout << move.get_from() << " -> " << move.get_to() << std::endl;
-		   }
+           // Generate legal moves for different piece types (returns vector<Move>)
+           const std::vector<fenrir::Move> knight_moves = engine.generate_moves("f3");
+           std::cout << "\nLegal moves for white knight on f3:" << std::endl;
+           for (const auto& move : knight_moves) {
+               std::cout << move.get_from() << " -> " << move.get_to() << std::endl;
+           }
 
-		   const std::vector<fenrir::Move> bishop_moves = engine.generate_moves("c4");
-		   std::cout << "\nLegal moves for white bishop on c4:" << std::endl;
-		   for (const auto& move : bishop_moves) {
-			   std::cout << move.get_from() << " -> " << move.get_to() << std::endl;
-		   }
+           const std::vector<fenrir::Move> bishop_moves = engine.generate_moves("c4");
+           std::cout << "\nLegal moves for white bishop on c4:" << std::endl;
+           for (const auto& move : bishop_moves) {
+               std::cout << move.get_from() << " -> " << move.get_to() << std::endl;
+           }
 
-		   // Reset to starting position
-		   engine.reset();
-		   std::cout << "\nBoard reset to starting position." << std::endl;
+           // Reset to starting position
+           engine.reset();
+           std::cout << "\nBoard reset to starting position." << std::endl;
 
-	   } catch (const std::exception& e) {
-		   std::cerr << "Error: " << e.what() << std::endl;
-		   return 1;
-	   }
+       } catch (const std::exception& e) {
+           std::cerr << "Error: " << e.what() << std::endl;
+           return 1;
+       }
 
-	   return 0;
+       return 0;
    }
    ```
 
@@ -313,10 +313,10 @@ LIBS = -L$(FENRIR_DIR)/bin/lib -lfenrir
 RPATH = -Wl,-rpath,$(FENRIR_DIR)/bin/lib
 
 my_chess_app: my_chess_app.cpp
-	g++ $(INCLUDES) $< $(LIBS) $(RPATH) -o $@
+    g++ $(INCLUDES) $< $(LIBS) $(RPATH) -o $@
 
 clean:
-	rm -f my_chess_app
+    rm -f my_chess_app
 
 .PHONY: clean
 ```

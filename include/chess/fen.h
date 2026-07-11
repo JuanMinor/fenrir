@@ -28,41 +28,41 @@
 
 namespace fenrir
 {
-	class Fen
-	{
-	private:
-		std::string placement;
-		std::string castling;
-		std::string en_passant;
-		uint8_t color;
-		uint32_t half_move_clock;
-		uint32_t full_moves;
+    class Fen
+    {
+    private:
+        std::string placement;
+        std::string castling;
+        std::string en_passant;
+        uint8_t color;
+        uint32_t half_move_clock;
+        uint32_t full_moves;
 
-		void split_string(const std::string &fen_string, const std::string &delimiters, std::vector<std::string> &tokens) const;
-		void validate_chess_rules(const std::string &placement_string) const;
-		void validate_placement(const std::string &placement_string) const;
-		void validate_pawn_placement(const std::vector<std::string> &ranks) const;
-		void validate_king_safety(const std::vector<std::string> &ranks) const;
+        void split_string(const std::string &fen_string, const std::string &delimiters, std::vector<std::string> &tokens) const;
+        void validate_chess_rules(const std::string &placement_string) const;
+        void validate_placement(const std::string &placement_string) const;
+        void validate_pawn_placement(const std::vector<std::string> &ranks) const;
+        void validate_king_safety(const std::vector<std::string> &ranks) const;
 
-	public:
-		Fen(const std::string &fen_string);
+    public:
+        Fen(const std::string &fen_string);
 
-		~Fen();
+        ~Fen();
 
-		std::string get_placement(void) const;
-		std::string get_castling(void) const;
-		std::string get_en_passant(void) const;
-		uint8_t get_color(void) const;
-		uint32_t get_half_move_clock(void) const;
-		uint32_t get_full_moves(void) const;
+        std::string get_placement(void) const;
+        std::string get_castling(void) const;
+        std::string get_en_passant(void) const;
+        uint8_t get_color(void) const;
+        uint32_t get_half_move_clock(void) const;
+        uint32_t get_full_moves(void) const;
 
-		void set_placement(const std::string &placement_string);
-		void set_castling(const std::string &castling_rights);
-		void set_en_passant(const std::string &en_passant_square);
-		void set_color(uint8_t color_value);
-		void set_half_move_clock(uint32_t half_move_clock_value);
-		void set_full_moves(uint32_t full_moves_value);
+        void set_placement(const std::string &placement_string);
+        void set_castling(const std::string &castling_rights);
+        void set_en_passant(const std::string &en_passant_square);
+        void set_color(uint8_t color_value);
+        void set_half_move_clock(uint32_t half_move_clock_value);
+        void set_full_moves(uint32_t full_moves_value);
 
-		std::string generate_fen(void) const;
-	};
+        std::string generate_fen(void) const;
+    };
 }

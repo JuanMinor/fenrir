@@ -22,15 +22,15 @@
 
 namespace color
 {
-	class Modifier
-	{
-	private:
-		Color color;
+    class Modifier
+    {
+    private:
+        Color color;
 
-	public:
-		Modifier(Color color_value);
-		~Modifier();
+    public:
+        Modifier(Color color_value);
+        ~Modifier();
 
-		friend std::ostream &operator<<(std::ostream &os, const Modifier &modifier);
-	};
+        friend std::ostream &operator<<(std::ostream &os, const Modifier &modifier);
+    };
 }
