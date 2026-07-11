@@ -212,7 +212,8 @@ namespace hardware
 				pAdapter->GetDesc(&desc);
 
 				std::wstring ws(desc.Description);
-				std::string name(ws.begin(), ws.end());
+				std::string name(ws.length(), ' ');
+				std::transform(ws.begin(), ws.end(), name.begin(), [](wchar_t c) { return static_cast<char>(c); });
 
 				// Filter out Microsoft Basic Render Driver software adapter
 				if (name.find("Basic Render Driver") == std::string::npos)
