@@ -335,7 +335,7 @@ int main()
 	std::cout << "  64-bit: " << (info.get_os().get_is_64_bit() ? "Yes" : "No") << "\n\n";
 
 	std::cout << "[RAM]\n";
-	std::cout << "  Total Memory: " << info.get_ram().convert_bytes_to_gb(info.get_ram().get_total_size_in_bytes()) << " GB\n\n";
+	std::cout << "  Total Memory: " << hardware::convert_bytes_to_gb(info.get_ram().get_total_size_in_bytes()) << " GB\n\n";
 
 	std::cout << "[CPU]\n";
 	for (const auto &cpu : info.get_cpus())
@@ -357,7 +357,7 @@ int main()
 		{
 			std::cout << "  Device ID: " << gpu.get_device_id() << "\n";
 			std::cout << "  Model: " << gpu.get_model_name() << "\n";
-			std::cout << "  VRAM (GB): " << info.get_ram().convert_bytes_to_gb(gpu.get_vram_size_in_bytes()) << "\n\n";
+			std::cout << "  VRAM (GB): " << hardware::convert_bytes_to_gb(gpu.get_vram_size_in_bytes()) << "\n\n";
 		}
 	}
 
