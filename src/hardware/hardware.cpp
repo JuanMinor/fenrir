@@ -118,7 +118,7 @@ namespace hardware
 	OperatingSystem HostInfo::get_os() const { return os; }
 
 	/* Scope */
-	uint32_t convert_bytes_to_gb(uint64_t bytes) { return static_cast<uint32_t>(bytes / BYTES_PER_GB); }
+	uint32_t convert_bytes_to_gb(uint64_t bytes) { return static_cast<uint32_t>(bytes / BYTES_PER_GB) + 1; }
 	HostInfo detect_host_info()
 	{
 		uint32_t logical_cores = std::thread::hardware_concurrency();
@@ -213,7 +213,8 @@ namespace hardware
 
 				std::wstring ws(desc.Description);
 				std::string name(ws.length(), ' ');
-				std::transform(ws.begin(), ws.end(), name.begin(), [](wchar_t c) { return static_cast<char>(c); });
+				std::transform(ws.begin(), ws.end(), name.begin(), [](wchar_t c)
+							   { return static_cast<char>(c); });
 
 				// Filter out Microsoft Basic Render Driver software adapter
 				if (name.find("Basic Render Driver") == std::string::npos)
