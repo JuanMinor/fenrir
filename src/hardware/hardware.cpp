@@ -26,7 +26,7 @@ namespace hardware
 	void Cpu::setCpuType(const std::string &model)
 	{
 		std::string lower_model = model;
-		std::transform(lower_model.begin(), lower_model.end(), lower_model.begin(), ::tolower);
+		std::transform(lower_model.begin(), lower_model.end(), lower_model.begin(), [](unsigned char c) { return static_cast<char>(::tolower(c)); });
 		if (lower_model.find("amd") != std::string::npos || lower_model.find("ryzen") != std::string::npos || lower_model.find("epyc") != std::string::npos)
 		{
 			cpu_type = CpuType::AMD;
@@ -54,7 +54,7 @@ namespace hardware
 	void Gpu::setGpuType(const std::string &model)
 	{
 		std::string lower_model = model;
-		std::transform(lower_model.begin(), lower_model.end(), lower_model.begin(), ::tolower);
+		std::transform(lower_model.begin(), lower_model.end(), lower_model.begin(), [](unsigned char c) { return static_cast<char>(::tolower(c)); });
 		is_amd_gpu = false;
 		is_nvidia_gpu = false;
 
@@ -129,22 +129,6 @@ namespace hardware
 	uint64_t Ram::get_used_size_in_bytes() const
 	{
 		return total_size_in_bytes - free_size_in_bytes;
-	}
-
-	// Internal setter workaround since Ram constructors are default
-	void set_ram_data(Ram &ram, uint64_t total, uint64_t free)
-	{
-		// Use a reinterpret_cast hack or similar? No, let's just make a struct for detection and copy, but we can't easily access private members without friendship.
-		// Since we didn't add setters, we have to bypass it in this file.
-		uint64_t *p_free = reinterpret_cast<uint64_t *>(&ram);
-		uint32_t *p_speed = reinterpret_cast<uint32_t *>(p_free + 1);
-		uint64_t *p_total = reinterpret_cast<uint64_t *>(p_speed + 1); // padding aware
-
-		// Actually, standard memory layout for:
-		// uint64_t free
-		// uint32_t speed
-		// uint64_t total
-		// Better hack: memcpy or just redefine layout locally.
 	}
 
 	// ---------------- OperatingSystem ----------------
