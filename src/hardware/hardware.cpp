@@ -16,37 +16,36 @@
 
 namespace hardware
 {
-	// ---------------- Cpu ----------------
-	Cpu::Cpu(uint32_t cache_size, uint32_t clock_speed, uint32_t logical_cores, const std::string &model_name, uint32_t physical_cores)
-		: cache_size(cache_size), clock_speed(clock_speed), logical_cores(logical_cores), model_name(model_name), physical_cores(physical_cores)
+	/* CPU */
+	Cpu::Cpu(uint32_t logical_cores, const std::string &model_name, uint32_t physical_cores)
+		: logical_cores(logical_cores), model_name(model_name), physical_cores(physical_cores)
 	{
 		setCpuType(model_name);
 	}
+	Cpu::~Cpu() = default;
 
 	void Cpu::setCpuType(const std::string &model)
 	{
 		std::string lower_model = model;
-		std::transform(lower_model.begin(), lower_model.end(), lower_model.begin(), [](unsigned char c) { return static_cast<char>(::tolower(c)); });
+		std::transform(lower_model.begin(), lower_model.end(), lower_model.begin(), [](unsigned char c)
+					   { return static_cast<char>(::tolower(c)); });
+
 		if (lower_model.find("amd") != std::string::npos || lower_model.find("ryzen") != std::string::npos || lower_model.find("epyc") != std::string::npos)
 		{
 			cpu_type = CpuType::AMD;
+			return;
 		}
-		else
-		{
-			cpu_type = CpuType::INTEL;
-		}
+		cpu_type = CpuType::INTEL;
 	}
 
-	uint32_t Cpu::get_cache_size() const { return cache_size; }
-	uint32_t Cpu::get_clock_speed() const { return clock_speed; }
 	CpuType Cpu::get_cpu_type() const { return cpu_type; }
 	uint32_t Cpu::get_logical_cores() const { return logical_cores; }
 	std::string Cpu::get_model_name() const { return model_name; }
 	uint32_t Cpu::get_physical_cores() const { return physical_cores; }
 
-	// ---------------- Gpu ----------------
-	Gpu::Gpu(const std::string &bus_location, const std::string &driver_version, const std::string &model_name, uint64_t total_memory_in_bytes, uint64_t vram_size_in_bytes)
-		: bus_location(bus_location), driver_version(driver_version), model_name(model_name), total_memory_in_bytes(total_memory_in_bytes), vram_size_in_bytes(vram_size_in_bytes)
+	/* GPU */
+	Gpu::Gpu(int device_id, const std::string &model_name, uint64_t total_memory_in_bytes, uint64_t vram_size_in_bytes)
+		: device_id(device_id), model_name(model_name), total_memory_in_bytes(total_memory_in_bytes), vram_size_in_bytes(vram_size_in_bytes)
 	{
 		setGpuType(model_name);
 	}
@@ -54,7 +53,9 @@ namespace hardware
 	void Gpu::setGpuType(const std::string &model)
 	{
 		std::string lower_model = model;
-		std::transform(lower_model.begin(), lower_model.end(), lower_model.begin(), [](unsigned char c) { return static_cast<char>(::tolower(c)); });
+		std::transform(lower_model.begin(), lower_model.end(), lower_model.begin(), [](unsigned char c)
+					   { return static_cast<char>(::tolower(c)); });
+
 		is_amd_gpu = false;
 		is_nvidia_gpu = false;
 
@@ -62,136 +63,68 @@ namespace hardware
 		{
 			gpu_type = GpuType::AMD;
 			is_amd_gpu = true;
+			return;
 		}
-		else
-		{
-			gpu_type = GpuType::NVIDIA;
-			is_nvidia_gpu = true;
-		}
-
-		// Basic capability flags
-		is_cuda_capable = is_nvidia_gpu;
-		is_opencl_capable = true; // both modern AMD and NVIDIA support OpenCL
-#ifdef _WIN32
-		is_directx_capable = true;
-		is_vulkan_capable = true;
-		is_metal_capable = false;
-#elif defined(__APPLE__)
-		is_directx_capable = false;
-		is_vulkan_capable = false;
-		is_metal_capable = true;
-#else
-		is_directx_capable = false;
-		is_vulkan_capable = true;
-		is_metal_capable = false;
-#endif
+		gpu_type = GpuType::NVIDIA;
+		is_nvidia_gpu = true;
 	}
+	Gpu::~Gpu() = default;
 
-	std::string Gpu::get_bus_location() const { return bus_location; }
-	std::string Gpu::get_driver_version() const { return driver_version; }
+	int Gpu::get_device_id() const { return device_id; }
 	GpuType Gpu::get_gpu_type() const { return gpu_type; }
 	std::string Gpu::get_model_name() const { return model_name; }
 	uint64_t Gpu::get_total_memory_in_bytes() const { return total_memory_in_bytes; }
 	uint64_t Gpu::get_vram_size_in_bytes() const { return vram_size_in_bytes; }
-
 	bool Gpu::get_is_amd_gpu() const { return is_amd_gpu; }
-	bool Gpu::get_is_cuda_capable() const { return is_cuda_capable; }
-	bool Gpu::get_is_directx_capable() const { return is_directx_capable; }
-	bool Gpu::get_is_metal_capable() const { return is_metal_capable; }
 	bool Gpu::get_is_nvidia_gpu() const { return is_nvidia_gpu; }
-	bool Gpu::get_is_opencl_capable() const { return is_opencl_capable; }
-	bool Gpu::get_is_vulkan_capable() const { return is_vulkan_capable; }
 
-	// ---------------- Ram ----------------
-	Ram::Ram() : free_size_in_bytes(0), speed_in_mhz(0), total_size_in_bytes(0) {}
+	/* RAM */
+	Ram::Ram(uint64_t total_size_in_bytes) : total_size_in_bytes(total_size_in_bytes) {}
+	Ram::~Ram() = default;
 
-	uint32_t Ram::convert_bytes_to_gb(uint64_t bytes) const
-	{
-		return static_cast<uint32_t>(bytes / (1024ULL * 1024ULL * 1024ULL));
-	}
-
-	uint32_t Ram::get_free_percentage() const
-	{
-		if (total_size_in_bytes == 0)
-			return 0;
-		return static_cast<uint32_t>((free_size_in_bytes * 100ULL) / total_size_in_bytes);
-	}
-
-	uint64_t Ram::get_free_size_in_bytes() const { return free_size_in_bytes; }
-	uint32_t Ram::get_speed_in_mhz() const { return speed_in_mhz; }
+	uint32_t Ram::convert_bytes_to_gb(uint64_t bytes) const { return static_cast<uint32_t>(bytes / BYTES_PER_GB); }
 	uint64_t Ram::get_total_size_in_bytes() const { return total_size_in_bytes; }
 
-	uint32_t Ram::get_used_percentage() const
+	/* OperatingSystem */
+	OperatingSystem::OperatingSystem(const std::string &name)
+		: name(name)
 	{
-		return 100 - get_free_percentage();
-	}
-
-	uint64_t Ram::get_used_size_in_bytes() const
-	{
-		return total_size_in_bytes - free_size_in_bytes;
-	}
-
-	// ---------------- OperatingSystem ----------------
-	OperatingSystem::OperatingSystem(const std::string &name, const std::string &version)
-		: name(name), version(version)
-	{
-		is_64_bit = sizeof(void *) == 8;
-
 #ifdef _WIN32
 		os_type = OperatingSystemType::WINDOWS;
-		is_windows = true;
-		is_posix_compliant = false;
-		is_unix = false;
 #elif defined(__APPLE__)
 		os_type = OperatingSystemType::MACOS;
-		is_windows = false;
-		is_posix_compliant = true;
-		is_unix = true;
 #else
 		os_type = OperatingSystemType::LINUX;
-		is_windows = false;
-		is_posix_compliant = true;
-		is_unix = true;
 #endif
 	}
+	OperatingSystem::~OperatingSystem() = default;
 
 	std::string OperatingSystem::get_name() const { return name; }
-	std::string OperatingSystem::get_version() const { return version; }
 	OperatingSystemType OperatingSystem::get_os_type() const { return os_type; }
 
-	bool OperatingSystem::get_is_64_bit() const { return is_64_bit; }
-	bool OperatingSystem::get_is_posix_compliant() const { return is_posix_compliant; }
-	bool OperatingSystem::get_is_unix() const { return is_unix; }
-	bool OperatingSystem::get_is_windows() const { return is_windows; }
+	bool OperatingSystem::get_is_64_bit() const { return sizeof(void *) == 8; }
+	bool OperatingSystem::get_is_windows() const { return os_type == OperatingSystemType::WINDOWS; }
 
-	// ---------------- HostInfo ----------------
+	/* Host */
 	HostInfo::HostInfo(const std::vector<Cpu> &cpus, const std::vector<Gpu> &gpus, const Ram &ram, const OperatingSystem &os)
 		: cpus(cpus), gpus(gpus), ram(ram), os(os) {}
+	HostInfo::~HostInfo() = default;
 
 	std::vector<Cpu> HostInfo::get_cpus() const { return cpus; }
 	std::vector<Gpu> HostInfo::get_gpus() const { return gpus; }
 	Ram HostInfo::get_ram() const { return ram; }
 	OperatingSystem HostInfo::get_os() const { return os; }
 
-	// Destructors
-	Cpu::~Cpu() = default;
-	Gpu::~Gpu() = default;
-	Ram::~Ram() = default;
-	OperatingSystem::~OperatingSystem() = default;
-	HostInfo::~HostInfo() = default;
-
 	// ---------------- Detect Function ----------------
 	HostInfo detect_host_info()
 	{
-		// CPU
 		uint32_t logical_cores = std::thread::hardware_concurrency();
 		if (logical_cores == 0)
 			logical_cores = 4;
-		uint32_t physical_cores = logical_cores / 2; // approximation without heavy API
+		uint32_t physical_cores = logical_cores / 2;
 
-		std::string cpu_model = "Generic CPU";
+		std::string cpu_model = "Not available";
 #ifdef _WIN32
-		// Very basic CPU detect on windows using env vars for model (approximation)
 		char *proc_id = nullptr;
 		size_t sz = 0;
 		if (_dupenv_s(&proc_id, &sz, "PROCESSOR_IDENTIFIER") == 0 && proc_id != nullptr)
@@ -221,40 +154,51 @@ namespace hardware
 		cpu_model = buffer;
 #endif
 
-		Cpu sys_cpu(0, 0, logical_cores, cpu_model, physical_cores);
+		Cpu sys_cpu(logical_cores, cpu_model, physical_cores);
 		std::vector<Cpu> cpus;
 		cpus.push_back(sys_cpu);
 
 		// RAM
-		// Since Ram has no setters and members are private, we construct a binary compatible struct
-		// Or better, just pass default for now since we can't cleanly set it without modifying the header.
-		// Wait, we CAN modify the header if we want, or just leave Ram as 0s in this basic stub.
-		// We'll leave Ram at 0 for now as it requires header modifications to be cleanly initialized.
-		Ram sys_ram;
+		uint64_t sys_total_ram = 16ULL * BYTES_PER_GB;
+#ifdef _WIN32
+		MEMORYSTATUSEX memInfo;
+		memInfo.dwLength = sizeof(MEMORYSTATUSEX);
+		if (GlobalMemoryStatusEx(&memInfo))
+		{
+			sys_total_ram = memInfo.ullTotalPhys;
+		}
+#elif defined(__linux__)
+		struct sysinfo memInfo;
+		if (sysinfo(&memInfo) == 0)
+		{
+			sys_total_ram = static_cast<uint64_t>(memInfo.totalram) * memInfo.mem_unit;
+		}
+#elif defined(__APPLE__)
+		uint64_t mem;
+		size_t len = sizeof(mem);
+		if (sysctlbyname("hw.memsize", &mem, &len, NULL, 0) == 0)
+		{
+			sys_total_ram = mem;
+		}
+#endif
+		Ram sys_ram(sys_total_ram);
 
 		// OS
 		std::string os_name = "Unknown";
-		std::string os_version = "Unknown";
 #ifdef _WIN32
 		os_name = "Windows";
 #elif defined(__linux__)
 		os_name = "Linux";
-		struct utsname buffer;
-		if (uname(&buffer) == 0)
-		{
-			os_version = buffer.release;
-		}
 #elif defined(__APPLE__)
 		os_name = "macOS";
 #endif
-		OperatingSystem sys_os(os_name, os_version);
+		OperatingSystem sys_os(os_name);
 
 		// GPU
-		// Proper GPU detection on Windows requires WMI/DXGI, on Linux requires NVML/lspci
-		// For this stub, we return an empty list or a generic one so it compiles and runs.
 		std::vector<Gpu> gpus;
-		// Gpu sys_gpu("00:00.0", "Generic", "Generic GPU", 8000000000ULL, 8000000000ULL);
-		// gpus.push_back(sys_gpu);
+		// By default return nothing to indicate no discrete hardware found by stub.
+		// Proper GPU detection on Windows requires WMI/DXGI, on Linux requires NVML/lspci
+		// A multi-GPU environment would loop and populate this list with device_id 0, 1, 2...
 
 		return HostInfo(cpus, gpus, sys_ram, sys_os);
 	}
@@ -270,8 +214,10 @@ int main()
 
 	std::cout << "[OS]\n";
 	std::cout << "  Name: " << info.get_os().get_name() << "\n";
-	std::cout << "  Version: " << info.get_os().get_version() << "\n";
 	std::cout << "  64-bit: " << (info.get_os().get_is_64_bit() ? "Yes" : "No") << "\n\n";
+
+	std::cout << "[RAM]\n";
+	std::cout << "  Total Memory: " << info.get_ram().convert_bytes_to_gb(info.get_ram().get_total_size_in_bytes()) << " GB\n\n";
 
 	std::cout << "[CPU]\n";
 	for (const auto &cpu : info.get_cpus())
@@ -285,14 +231,15 @@ int main()
 	std::cout << "[GPU]\n";
 	if (info.get_gpus().empty())
 	{
-		std::cout << "  No GPUs detected natively in this basic stub.\n";
+		std::cout << "  No GPUs detected natively in this basic stub. (Requires NVML/DXGI)\n";
 	}
 	else
 	{
 		for (const auto &gpu : info.get_gpus())
 		{
+			std::cout << "  Device ID: " << gpu.get_device_id() << "\n";
 			std::cout << "  Model: " << gpu.get_model_name() << "\n";
-			std::cout << "  VRAM (GB): " << (gpu.get_vram_size_in_bytes() / (1024 * 1024 * 1024)) << "\n";
+			std::cout << "  VRAM (GB): " << info.get_ram().convert_bytes_to_gb(gpu.get_vram_size_in_bytes()) << "\n\n";
 		}
 	}
 
