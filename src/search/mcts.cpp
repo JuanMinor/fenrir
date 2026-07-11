@@ -298,8 +298,8 @@ namespace fenrir
 			parent->backpropagate(1.0 - result);
 	}
 
-	MCTSSearch::MCTSSearch(NNEvaluator *eval, int threads)
-		: evaluator(eval), num_threads(threads) {}
+	MCTSSearch::MCTSSearch(NNEvaluator *eval, int threads, size_t pipeline_t)
+		: evaluator(eval), num_threads(threads), pipeline_target(pipeline_t) {}
 
 	MCTSSearch::~MCTSSearch() = default;
 
@@ -454,10 +454,8 @@ namespace fenrir
 		Engine &thread_engine = *thread_engine_ptr;
 		int sim_count = 0;
 
-		// 16 threads x 32 items = 512 concurrent eval requests, which exactly
-		// matches NNEvaluator::batch_size. The GPU stays fully saturated without
-		// the tree exploding sideways on every cycle.
-		const size_t local_pipeline_target = 32;
+		// The GPU stays fully saturated without the tree exploding sideways on every cycle.
+		const size_t local_pipeline_target = pipeline_target;
 
 		struct PipelineItem
 		{

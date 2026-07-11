@@ -8,7 +8,8 @@ namespace fenrir
     {
         engine = std::make_unique<Engine>();
         evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx");
-        search = std::make_unique<MCTSSearch>(evaluator.get(), 16);
+        auto hw = evaluator->get_hardware_profile();
+        search = std::make_unique<MCTSSearch>(evaluator.get(), hw.search_threads, hw.pipeline_target);
     }
 
     UCI::~UCI() = default;

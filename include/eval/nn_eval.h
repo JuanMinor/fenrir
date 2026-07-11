@@ -29,6 +29,16 @@ namespace fenrir
         std::vector<double> policy; // Flat policy array, sized for maximum possible moves (e.g. 4096 or mapped to legal moves)
     };
 
+    struct HardwareProfile
+    {
+        int logical_cores;
+        int search_threads;
+        size_t batch_size;
+        size_t pipeline_target;
+        int batch_timeout_ms;
+        int inference_latency_ms;
+    };
+
     class NNEvaluator
     {
     public:
@@ -41,14 +51,20 @@ namespace fenrir
         // Convert board to input tensor features (14 channels * 8 * 8 = 896 floats)
         static std::vector<float> board_to_tensor(const AbstractBoard &board);
 
+        HardwareProfile get_hardware_profile() const { return hw_profile; }
+
     private:
         void batch_worker_loop();
         void evaluate_batch(const std::vector<std::vector<float>> &batch_features, std::vector<std::promise<NNResult>> &promises);
         void try_reload_model();
+        void detect_hardware();
+        int measure_latency_ms();
 
         std::string model_path;
         size_t batch_size;
         int gpu_id_;
+        HardwareProfile hw_profile;
+        int batch_timeout_ms;
 
         struct EvalRequest
         {

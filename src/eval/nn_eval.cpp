@@ -11,13 +11,21 @@
 namespace fenrir
 {
     NNEvaluator::NNEvaluator(const std::string &path, int gpu_id, size_t b_size)
-        : model_path(path), batch_size(b_size), gpu_id_(gpu_id), stop_worker(false)
+        : model_path(path), gpu_id_(gpu_id), stop_worker(false)
     {
         env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "Fenrir_NN");
         last_model_load_time = std::filesystem::file_time_type::min();
         last_reload_check_time = std::chrono::steady_clock::now() - std::chrono::seconds(2);
 
         try_reload_model();
+        
+        detect_hardware();
+        int latency = measure_latency_ms();
+        hw_profile.inference_latency_ms = latency;
+        batch_timeout_ms = std::max(2, latency / 4); // dynamically assign timeout to 25% of inference latency, minimum 2ms.
+        
+        // Use user batch size parameter if provided and non-zero, else use our hw_profile recommendation
+        batch_size = (b_size > 0) ? b_size : hw_profile.batch_size;
 
         worker_thread = std::thread(&NNEvaluator::batch_worker_loop, this);
     }
@@ -178,7 +186,7 @@ namespace fenrir
             std::vector<EvalRequest> batch;
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
-                queue_cv.wait_for(lock, std::chrono::milliseconds(2), [this]
+                queue_cv.wait_for(lock, std::chrono::milliseconds(batch_timeout_ms), [this]
                                   { return stop_worker || request_queue.size() >= batch_size; });
 
                 if (stop_worker && request_queue.empty())
@@ -317,5 +325,42 @@ namespace fenrir
                 }
             }
         }
+    }
+    void NNEvaluator::detect_hardware()
+    {
+        int logical_cores = static_cast<int>(std::thread::hardware_concurrency());
+        if (logical_cores <= 0) logical_cores = 4; // fallback
+        
+        hw_profile.logical_cores = logical_cores;
+        
+        // Reserve 1 for OS, 1 for NN batch worker
+        hw_profile.search_threads = std::max(1, logical_cores - 2);
+        
+        // For pipeline target: enough items to saturate GPU
+        hw_profile.pipeline_target = 32; 
+        
+        // Dynamic batch size based on threads available
+        hw_profile.batch_size = static_cast<size_t>(hw_profile.search_threads) * hw_profile.pipeline_target;
+    }
+
+    int NNEvaluator::measure_latency_ms()
+    {
+        if (!session) return 4;
+        
+        // Create dummy batch of batch_size
+        std::vector<std::vector<float>> dummy_batch;
+        for (size_t i = 0; i < hw_profile.batch_size; ++i) {
+            dummy_batch.push_back(std::vector<float>(14 * 8 * 8, 0.0f));
+        }
+        std::vector<std::promise<NNResult>> dummy_promises(hw_profile.batch_size);
+        
+        auto start = std::chrono::steady_clock::now();
+        
+        try {
+            evaluate_batch(dummy_batch, dummy_promises);
+        } catch (...) {}
+        
+        auto end = std::chrono::steady_clock::now();
+        return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
     }
 }
