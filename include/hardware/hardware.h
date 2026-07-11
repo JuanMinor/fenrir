@@ -97,7 +97,6 @@ namespace hardware
 		Ram(uint64_t total_size_in_bytes);
 		~Ram();
 
-		uint32_t convert_bytes_to_gb(uint64_t bytes) const;
 		uint64_t get_total_size_in_bytes() const;
 	};
 
@@ -137,5 +136,6 @@ namespace hardware
 		OperatingSystem get_os() const;
 	};
 
+	uint32_t convert_bytes_to_gb(uint64_t bytes);
 	HostInfo detect_host_info();
 }

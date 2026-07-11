@@ -5,10 +5,13 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <dxgi.h>
+#pragma comment(lib, "dxgi.lib")
 #elif defined(__linux__)
 #include <sys/sysinfo.h>
 #include <sys/utsname.h>
 #include <fstream>
+#include <cstdio>
 #elif defined(__APPLE__)
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -82,7 +85,6 @@ namespace hardware
 	Ram::Ram(uint64_t total_size_in_bytes) : total_size_in_bytes(total_size_in_bytes) {}
 	Ram::~Ram() = default;
 
-	uint32_t Ram::convert_bytes_to_gb(uint64_t bytes) const { return static_cast<uint32_t>(bytes / BYTES_PER_GB); }
 	uint64_t Ram::get_total_size_in_bytes() const { return total_size_in_bytes; }
 
 	/* OperatingSystem */
@@ -115,7 +117,8 @@ namespace hardware
 	Ram HostInfo::get_ram() const { return ram; }
 	OperatingSystem HostInfo::get_os() const { return os; }
 
-	// ---------------- Detect Function ----------------
+	/* Scope */
+	uint32_t convert_bytes_to_gb(uint64_t bytes) { return static_cast<uint32_t>(bytes / BYTES_PER_GB); }
 	HostInfo detect_host_info()
 	{
 		uint32_t logical_cores = std::thread::hardware_concurrency();
@@ -196,9 +199,124 @@ namespace hardware
 
 		// GPU
 		std::vector<Gpu> gpus;
-		// By default return nothing to indicate no discrete hardware found by stub.
-		// Proper GPU detection on Windows requires WMI/DXGI, on Linux requires NVML/lspci
-		// A multi-GPU environment would loop and populate this list with device_id 0, 1, 2...
+#ifdef _WIN32
+		IDXGIFactory *pFactory = nullptr;
+		if (SUCCEEDED(CreateDXGIFactory(__uuidof(IDXGIFactory), (void **)&pFactory)))
+		{
+			IDXGIAdapter *pAdapter = nullptr;
+			UINT i = 0;
+			int device_id = 0;
+			while (pFactory->EnumAdapters(i, &pAdapter) != DXGI_ERROR_NOT_FOUND)
+			{
+				DXGI_ADAPTER_DESC desc;
+				pAdapter->GetDesc(&desc);
+
+				std::wstring ws(desc.Description);
+				std::string name(ws.begin(), ws.end());
+
+				// Filter out Microsoft Basic Render Driver software adapter
+				if (name.find("Basic Render Driver") == std::string::npos)
+				{
+					uint64_t vram = desc.DedicatedVideoMemory;
+					gpus.push_back(Gpu(device_id++, name, vram, vram));
+				}
+				pAdapter->Release();
+				i++;
+			}
+			pFactory->Release();
+		}
+#elif defined(__linux__)
+		FILE *pipe = popen("nvidia-smi --query-gpu=index,name,memory.total --format=csv,noheader 2>/dev/null", "r");
+		if (pipe)
+		{
+			char buffer[256];
+			while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+			{
+				std::string line = buffer;
+				size_t first_comma = line.find(',');
+				size_t second_comma = line.find(',', first_comma + 1);
+				if (first_comma != std::string::npos && second_comma != std::string::npos)
+				{
+					try
+					{
+						int id = std::stoi(line.substr(0, first_comma));
+						std::string name = line.substr(first_comma + 2, second_comma - first_comma - 2);
+						std::string vram_str = line.substr(second_comma + 2);
+						uint64_t vram_mb = std::stoull(vram_str); // stoull automatically stops at " MiB"
+						uint64_t vram_bytes = vram_mb * 1024ULL * 1024ULL;
+						gpus.push_back(Gpu(id, name, vram_bytes, vram_bytes));
+					}
+					catch (...)
+					{
+					}
+				}
+			}
+			pclose(pipe);
+		}
+
+		if (gpus.empty())
+		{
+			pipe = popen("rocm-smi --showproductname --showmeminfo vram --csv 2>/dev/null", "r");
+			if (pipe)
+			{
+				char buffer[256];
+				int device_id = 0;
+				while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+				{
+					std::string line = buffer;
+					if (line.find("card") == 0)
+					{
+						size_t first_comma = line.find(',');
+						size_t second_comma = line.find(',', first_comma + 1);
+						if (first_comma != std::string::npos && second_comma != std::string::npos)
+						{
+							try
+							{
+								std::string name = line.substr(first_comma + 1, second_comma - first_comma - 1);
+								std::string vram_str = line.substr(second_comma + 1);
+								uint64_t vram_bytes = std::stoull(vram_str);
+								gpus.push_back(Gpu(device_id++, name, vram_bytes, vram_bytes));
+							}
+							catch (...)
+							{
+							}
+						}
+					}
+				}
+				pclose(pipe);
+			}
+		}
+
+		if (gpus.empty())
+		{
+			pipe = popen("lspci 2>/dev/null", "r");
+			if (pipe)
+			{
+				char buffer[256];
+				int device_id = 0;
+				while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+				{
+					std::string lower_line = buffer;
+					std::transform(lower_line.begin(), lower_line.end(), lower_line.begin(), [](unsigned char c)
+								   { return static_cast<char>(::tolower(c)); });
+					if (lower_line.find("vga") != std::string::npos || lower_line.find("3d controller") != std::string::npos)
+					{
+						std::string name = "Generic Linux GPU";
+						std::string orig_line = buffer;
+						size_t colon = orig_line.find(": ");
+						if (colon != std::string::npos && colon + 2 < orig_line.length())
+						{
+							name = orig_line.substr(colon + 2);
+							name.erase(name.find_last_not_of(" \n\r\t") + 1);
+						}
+						uint64_t estimated_vram = 1024ULL * 1024ULL * 1024ULL;
+						gpus.push_back(Gpu(device_id++, name, estimated_vram, estimated_vram));
+					}
+				}
+				pclose(pipe);
+			}
+		}
+#endif
 
 		return HostInfo(cpus, gpus, sys_ram, sys_os);
 	}
