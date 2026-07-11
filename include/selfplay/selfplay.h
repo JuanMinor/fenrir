@@ -11,7 +11,7 @@ namespace fenrir
     class SelfPlay
     {
     public:
-        SelfPlay(int simulations_per_move, int num_games, const std::string& start_fen_arg = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+        SelfPlay(int gpu_id, int simulations_per_move, int num_games, const std::string& start_fen_arg = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
         void run();
 
     private:
@@ -21,10 +21,10 @@ namespace fenrir
             uint8_t color_to_move;
         };
 
-        void save_game_json(const std::vector<PositionData>& game_data, double white_result, int game_id);
         std::string get_output_dir();
         void apply_dirichlet_noise(MCTSNode* root);
 
+        int gpu_id_;
         int simulations;
         int max_games;
         std::string start_fen;
