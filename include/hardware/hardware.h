@@ -23,7 +23,7 @@
 namespace hardware
 {
 
-    long BYTES_PER_GB = 1024ULL * 1024ULL * 1024ULL;
+    constexpr uint64_t BYTES_PER_GB = 1024ULL * 1024ULL * 1024ULL;
 
     enum class CpuType
     {

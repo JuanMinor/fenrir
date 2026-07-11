@@ -458,6 +458,61 @@ namespace fenrir
         return {best_move, policy};
     }
 
+    int MCTSSearch::benchmark_search(Engine &engine, int time_limit_ms)
+    {
+        uint8_t root_color = engine.get_board_view().get_color();
+        Move empty_move(0, 0);
+        auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
+
+        if (evaluator)
+        {
+            try
+            {
+                auto future = evaluator->request_evaluation(engine.get_board_view());
+                NNResult res = future.get();
+                root->expand(engine, res.policy);
+            }
+            catch (...)
+            {
+                root->expand(engine);
+            }
+        }
+        else
+        {
+            root->expand(engine);
+        }
+
+        std::vector<std::thread> workers;
+        auto end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(std::max(1, time_limit_ms));
+
+        for (int i = 0; i < num_threads; ++i)
+        {
+            try
+            {
+                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), -1, end_time, true);
+            }
+            catch (...)
+            {
+                break;
+            }
+        }
+
+        if (workers.empty())
+        {
+            search_worker(std::make_unique<Engine>(engine.get_fen()), root.get(), -1, end_time, true);
+        }
+        else
+        {
+            for (auto &w : workers)
+            {
+                if (w.joinable())
+                    w.join();
+            }
+        }
+
+        return root->visits.load();
+    }
+
     void MCTSSearch::search_worker(std::unique_ptr<Engine> thread_engine_ptr, MCTSNode *root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
     {
         Engine &thread_engine = *thread_engine_ptr;

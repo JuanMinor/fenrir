@@ -1,4 +1,5 @@
 #include "include/uci/uci.h"
+#include "include/tuner/tuning_parameters.h"
 #include <iostream>
 #include <sstream>
 
@@ -7,9 +8,10 @@ namespace fenrir
     UCI::UCI()
     {
         engine = std::make_unique<Engine>();
-        evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx");
-        auto hw = evaluator->get_hardware_profile();
-        search = std::make_unique<MCTSSearch>(evaluator.get(), hw.search_threads, hw.pipeline_target);
+        
+        tuner::TuningParameters tuning(true);
+        evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx", tuning.get_gpu_id(0), tuning.get_batch_size());
+        search = std::make_unique<MCTSSearch>(evaluator.get(), tuning.get_search_threads(), tuning.get_pipeline_target());
     }
 
     UCI::~UCI() = default;

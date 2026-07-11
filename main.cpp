@@ -1,5 +1,8 @@
 #include "include/uci/uci.h"
 #include "include/selfplay/selfplay.h"
+#ifdef ENABLE_AUTOTUNE_FLAG
+#include "include/tuner/auto_tuner.h"
+#endif
 #include <iostream>
 #include <cstring>
 
@@ -27,6 +30,14 @@ int main(int argc, char *argv[])
             fenrir::SelfPlay sp(gpu_id, simulations, games);
             sp.run();
         }
+#ifdef ENABLE_AUTOTUNE_FLAG
+        else if (argc > 1 && std::strcmp(argv[1], "--auto-tune") == 0)
+        {
+            tuner::TuningParameters baseline(false);
+            tuner::AutoTuner auto_tuner(baseline);
+            auto_tuner.run();
+        }
+#endif
         else
         {
             fenrir::UCI uci_loop;

@@ -88,5 +88,9 @@ dkms.conf
 __pycache__/
 .venv/
 
+# Neural network weights
 *.onnx
 *.pth
+
+# Configuration
+*.cfg

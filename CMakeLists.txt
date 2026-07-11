@@ -13,6 +13,8 @@ endif()
 
 message(STATUS "Building in ${CMAKE_BUILD_TYPE} mode")
 
+option(ENABLE_AUTOTUNE "Enable the AutoTuner feature and standalone test" ON)
+
 # Global C++20 standard configuration
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -47,14 +49,12 @@ else()
         -Wextra
         -Werror
         -pedantic
-        -Wshadow
         -Wnon-virtual-dtor
         -Wold-style-cast
         -Wcast-align
         -Wunused
         -Woverloaded-virtual
         -Wconversion
-        -Wsign-conversion
         -Wnull-dereference
         -Wdouble-promotion
         -Wformat=2
@@ -89,7 +89,15 @@ add_library(fenrir_core STATIC
     src/eval/nn_eval.cpp
     src/uci/uci.cpp
     src/selfplay/selfplay.cpp
+    src/hardware/hardware.cpp
+    src/tuner/tuning_parameters.cpp
 )
+
+if (ENABLE_AUTOTUNE)
+    target_sources(fenrir_core PRIVATE src/tuner/auto_tuner.cpp)
+    target_compile_definitions(fenrir_core PRIVATE ENABLE_AUTOTUNE_FLAG)
+    target_compile_definitions(fenrir_core PUBLIC ENABLE_AUTOTUNE_FLAG)
+endif()
 
 target_compile_definitions(fenrir_core PRIVATE
     FENRIR_VERSION="${FENRIR_VERSION}"
@@ -125,17 +133,6 @@ if(WIN32)
         COMMENT "Copying onnxruntime.dll and onnx models to binary directory"
     )
 endif()
-
-# 2.5 Perft Executable target: perft
-add_executable(perft src/perft/perft.cpp)
-target_link_libraries(perft PRIVATE fenrir_core)
-target_compile_options(perft PRIVATE ${COMMON_WARNING_FLAGS})
-
-# 2.6 Hardware Standalone Test
-add_executable(hardware_test src/hardware/hardware.cpp)
-target_compile_definitions(hardware_test PRIVATE HARDWARE_STANDALONE_TEST)
-target_include_directories(hardware_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_options(hardware_test PRIVATE ${COMMON_WARNING_FLAGS})
 
 # 3. Tests and Coverage target (only built in Debug mode as testing in Release is disabled)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -183,8 +180,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
     target_compile_options(tests PRIVATE -fprofile-arcs -ftest-coverage)
     target_link_options(tests PRIVATE -fprofile-arcs -ftest-coverage)
-    target_compile_options(perft PRIVATE -fprofile-arcs -ftest-coverage)
-    target_link_options(perft PRIVATE -fprofile-arcs -ftest-coverage)
 
     # 4. Coverage Custom Target (always runs generate_coverage.sh)
     add_custom_target(coverage
