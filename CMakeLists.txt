@@ -131,6 +131,12 @@ add_executable(perft src/perft/perft.cpp)
 target_link_libraries(perft PRIVATE fenrir_core)
 target_compile_options(perft PRIVATE ${COMMON_WARNING_FLAGS})
 
+# 2.6 Hardware Standalone Test
+add_executable(hardware_test src/hardware/hardware.cpp)
+target_compile_definitions(hardware_test PRIVATE HARDWARE_STANDALONE_TEST)
+target_include_directories(hardware_test PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_options(hardware_test PRIVATE ${COMMON_WARNING_FLAGS})
+
 # 3. Tests and Coverage target (only built in Debug mode as testing in Release is disabled)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     find_package(GTest REQUIRED)
