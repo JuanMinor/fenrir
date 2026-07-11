@@ -54,7 +54,7 @@ namespace hardware
 
 	public:
 		Cpu(uint32_t cache_size, uint32_t clock_speed, uint32_t logical_cores, const std::string &model_name, uint32_t physical_cores);
-		~Cpu() = default;
+		~Cpu();
 
 		uint32_t get_cache_size() const;
 		uint32_t get_clock_speed() const;
@@ -85,7 +85,7 @@ namespace hardware
 
 	public:
 		Gpu(const std::string &bus_location, const std::string &driver_version, const std::string &model_name, uint64_t total_memory_in_bytes, uint64_t vram_size_in_bytes);
-		~Gpu() = default;
+		~Gpu();
 
 		std::string get_bus_location() const;
 		std::string get_driver_version() const;
@@ -111,7 +111,7 @@ namespace hardware
 
 	public:
 		Ram();
-		~Ram() = default;
+		~Ram();
 
 		uint32_t convert_bytes_to_gb(uint64_t bytes) const;
 		uint32_t get_free_percentage() const;
