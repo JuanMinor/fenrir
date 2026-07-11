@@ -64,6 +64,11 @@ endif()
 # Output directories mirroring the original Make layout
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+foreach(config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+    string(TOUPPER ${config} config_upper)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${config_upper} ${CMAKE_CURRENT_SOURCE_DIR}/bin)
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${config_upper} ${CMAKE_CURRENT_SOURCE_DIR}/bin/lib)
+endforeach()
 
 # Mode-specific compilation flags (only for GCC/Clang)
 if(NOT MSVC)
