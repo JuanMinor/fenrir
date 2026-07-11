@@ -173,6 +173,13 @@ namespace hardware
 	Ram HostInfo::get_ram() const { return ram; }
 	OperatingSystem HostInfo::get_os() const { return os; }
 
+	// Destructors
+	Cpu::~Cpu() = default;
+	Gpu::~Gpu() = default;
+	Ram::~Ram() = default;
+	OperatingSystem::~OperatingSystem() = default;
+	HostInfo::~HostInfo() = default;
+
 	// ---------------- Detect Function ----------------
 	HostInfo detect_host_info()
 	{
