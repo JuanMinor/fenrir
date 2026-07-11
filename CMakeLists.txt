@@ -139,8 +139,9 @@ if(WIN32)
     )
 endif()
 
-# 3. Tests and Coverage target (only built in Debug mode as testing in Release is disabled)
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+# 3. Tests and Coverage target
+option(ENABLE_TESTING "Enable unit tests and coverage targets" OFF)
+if(ENABLE_TESTING)
     find_package(GTest REQUIRED)
     find_package(Threads REQUIRED)
 
