@@ -44,7 +44,7 @@ namespace fenrir
     class MCTSSearch
     {
     public:
-        MCTSSearch(NNEvaluator* evaluator = nullptr, int threads = 16);
+        MCTSSearch(NNEvaluator* evaluator = nullptr, int threads = 16, size_t pipeline_target = 32);
         ~MCTSSearch();
 
         Move find_best_move(Engine& engine, int time_limit_ms, int max_simulations = -1);
@@ -56,5 +56,6 @@ namespace fenrir
         
         NNEvaluator* evaluator;
         int num_threads;
+        size_t pipeline_target;
     };
 }

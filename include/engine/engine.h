@@ -52,6 +52,17 @@ namespace fenrir
 		bool is_stalemate();
 		bool is_draw();
 
+		// Combined terminal-state query. Checks all conditions (50-move, repetition,
+		// checkmate, stalemate) with a single generate_all_moves() call instead of
+		// the two separate calls that happen when is_stalemate() + is_draw() are
+		// invoked independently.
+		struct TerminalState
+		{
+			bool is_terminal;
+			double score; // 0.0 = loss for side to move, 0.5 = draw
+		};
+		TerminalState get_terminal_state();
+
 		void print_board(void) const;
 		void reset();
 

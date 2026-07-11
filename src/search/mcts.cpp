@@ -1,375 +1,640 @@
 #include "include/search/mcts.h"
 #include <algorithm>
 #include <iostream>
+#include <random>
 
 namespace fenrir
 {
-    namespace
-    {
-        uint32_t crc32(const std::string& str) {
-            uint32_t crc = 0xFFFFFFFF;
-            for (char c : str) {
-                crc ^= static_cast<uint8_t>(c);
-                for (int i = 0; i < 8; i++) {
-                    crc = (crc >> 1) ^ ((crc & 1) ? 0xEDB88320 : 0);
-                }
-            }
-            return ~crc;
-        }
-    }
+	namespace
+	{
+		uint32_t move_index(const Move &m)
+		{
+			int from_sq = static_cast<int>(m.get_from_square());
+			int to_sq = static_cast<int>(m.get_to_square());
 
-    MCTSNode::MCTSNode(MCTSNode* parent_node, const Move& m, uint8_t color)
-        : parent(parent_node), move(m), color_to_move(color), 
-          visits(0), win_score(0.0), virtual_loss(0), prior(0.0), is_expanded(false)
-    {
-    }
+			int from_file = from_sq % 8;
+			int from_rank = from_sq / 8;
+			int to_file = to_sq % 8;
+			int to_rank = to_sq / 8;
 
-    MCTSNode::~MCTSNode() = default;
+			int dx = to_file - from_file;
+			int dy = to_rank - from_rank;
 
-    void MCTSNode::expand(Engine& engine, const std::vector<double>& policy)
-    {
-        std::lock_guard<std::mutex> lock(expand_mutex);
-        if (is_expanded.load()) return;
+			int channel = 0;
+			char promo = static_cast<char>(std::tolower(static_cast<unsigned char>(m.get_promotion_piece())));
 
-        std::vector<Move> moves = engine.generate_all_moves();
-        for (size_t i = 0; i < moves.size(); ++i)
-        {
-            uint8_t next_color = 1 - color_to_move; 
-            children.push_back(std::make_unique<MCTSNode>(this, moves[i], next_color));
-            
-            if (policy.empty())
-            {
-                children.back()->prior = 1.0 / static_cast<double>(moves.size());
-            }
-            else
-            {
-                uint32_t idx = crc32(moves[i].to_uci_notation()) % 4096;
-                children.back()->prior = (idx < policy.size()) ? policy[idx] : 0.0;
-            }
-        }
-        is_expanded.store(true);
-    }
+			if (m.is_promotion() && promo != 'q' && promo != '\0')
+			{
+				int promo_dir = dx + 1;
+				int promo_type = 0;
+				if (promo == 'b')
+					promo_type = 1;
+				else if (promo == 'r')
+					promo_type = 2;
 
-    MCTSNode* MCTSNode::select_child()
-    {
-        MCTSNode* best_child = nullptr;
-        double best_value = -1e9;
-        
-        int parent_visits = visits.load() + virtual_loss.load();
+				channel = 64 + (promo_dir * 3) + promo_type;
+			}
+			else if (std::abs(dx) * std::abs(dy) == 2)
+			{
+				std::pair<int, int> knight_lookups[8] = {
+					{1, 2}, {2, 1}, {2, -1}, {1, -2}, {-1, -2}, {-2, -1}, {-2, 1}, {-1, 2}};
+				for (int i = 0; i < 8; ++i)
+				{
+					if (dx == knight_lookups[i].first && dy == knight_lookups[i].second)
+					{
+						channel = 56 + i;
+						break;
+					}
+				}
+			}
+			else
+			{
+				int step_x = (dx == 0) ? 0 : (dx > 0 ? 1 : -1);
+				int step_y = (dy == 0) ? 0 : (dy > 0 ? 1 : -1);
+				int distance = std::max(std::abs(dx), std::abs(dy));
 
-        for (auto& child : children)
-        {
-            double puct = child->puct_value(parent_visits);
-            if (puct > best_value)
-            {
-                best_value = puct;
-                best_child = child.get();
-            }
-        }
-        return best_child;
-    }
+				int dir_idx = 0;
+				if (step_x == 0 && step_y == 1)
+					dir_idx = 0;
+				else if (step_x == 1 && step_y == 1)
+					dir_idx = 1;
+				else if (step_x == 1 && step_y == 0)
+					dir_idx = 2;
+				else if (step_x == 1 && step_y == -1)
+					dir_idx = 3;
+				else if (step_x == 0 && step_y == -1)
+					dir_idx = 4;
+				else if (step_x == -1 && step_y == -1)
+					dir_idx = 5;
+				else if (step_x == -1 && step_y == 0)
+					dir_idx = 6;
+				else if (step_x == -1 && step_y == 1)
+					dir_idx = 7;
 
-    double MCTSNode::puct_value(int total_visits) const
-    {
-        int v = visits.load() + virtual_loss.load();
-        double q = (v == 0) ? 0.0 : (1.0 - (win_score.load() / v));
-        double c = 1.414;
-        double u = c * prior * std::sqrt(total_visits) / (1 + v);
-        return q + u;
-    }
+				channel = (dir_idx * 7) + (distance - 1);
+			}
 
-    int MCTSNode::get_max_depth() const
-    {
-        if (!is_expanded.load() || children.empty()) return 0;
-        int max_d = 0;
-        for (const auto& child : children)
-        {
-            if (child->visits.load() > 0) {
-                max_d = std::max(max_d, child->get_max_depth());
-            }
-        }
-        return 1 + max_d;
-    }
+			return static_cast<uint32_t>((from_sq * 73) + channel);
+		}
 
-    void MCTSNode::add_dirichlet_noise(double epsilon, double alpha)
-    {
-        if (children.empty()) return;
-        std::mt19937 rng(std::random_device{}());
-        std::gamma_distribution<double> gamma(alpha, 1.0);
+		// RAII helper to ensure virtual loss is perfectly decremented regardless of exceptions
+		struct VirtualLossGuard
+		{
+			MCTSNode *node;
+			VirtualLossGuard(MCTSNode *n) : node(n) { node->virtual_loss++; }
+			~VirtualLossGuard() { node->virtual_loss--; }
+		};
+	}
 
-        double sum = 0.0;
-        std::vector<double> noise;
-        noise.reserve(children.size());
-        for (size_t i = 0; i < children.size(); ++i) {
-            double n = gamma(rng);
-            noise.push_back(n);
-            sum += n;
-        }
+	MCTSNode::MCTSNode(MCTSNode *parent_node, const Move &m, uint8_t color)
+		: parent(parent_node), move(m), color_to_move(color),
+		  visits(0), win_score(0.0), virtual_loss(0), prior(0.0), is_expanded(false)
+	{
+	}
 
-        for (size_t i = 0; i < children.size(); ++i) {
-            children[i]->prior = (1.0 - epsilon) * children[i]->prior + epsilon * (noise[i] / sum);
-        }
-    }
+	MCTSNode::~MCTSNode() = default;
 
-    void MCTSNode::backpropagate(double result)
-    {
-        virtual_loss--;
-        visits++;
-        double current = win_score.load();
-        while (!win_score.compare_exchange_weak(current, current + result));
-        if (parent) parent->backpropagate(1.0 - result);
-    }
+	void MCTSNode::expand(Engine &engine, const std::vector<double> &policy)
+	{
+		std::lock_guard<std::mutex> lock(expand_mutex);
+		if (is_expanded.load())
+			return;
 
-    MCTSSearch::MCTSSearch(NNEvaluator* eval, int threads) 
-        : evaluator(eval), num_threads(threads) {}
+		std::vector<Move> moves = engine.generate_all_moves();
+		children.reserve(moves.size());
 
-    MCTSSearch::~MCTSSearch() = default;
+		for (size_t i = 0; i < moves.size(); ++i)
+		{
+			uint8_t next_color = 1 - color_to_move;
+			children.push_back(std::make_unique<MCTSNode>(this, moves[i], next_color));
 
-    Move MCTSSearch::find_best_move(Engine& engine, int time_limit_ms, int max_simulations)
-    {
-        uint8_t root_color = engine.get_board_view().get_color();
-        Move empty_move(0, 0); 
-        auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
-        
-        if (evaluator)
-        {
-            auto future = evaluator->request_evaluation(engine.get_board_view());
-            NNResult res = future.get();
-            root->expand(engine, res.policy);
-        }
-        else
-        {
-            root->expand(engine);
-        }
+			if (policy.empty())
+			{
+				// No NN policy: score moves with MVV-LVA (Most Valuable Victim,
+				// Least Valuable Aggressor) so the tree explores tactical lines
+				// before quiet moves. Piece values in centipawns (standard scale):
+				//   P=100  N=320  B=330  R=500  Q=900  K=20000
+				// MVV-LVA score = victim_value - aggressor_value / 10
+				// (dividing aggressor by 10 keeps victim ranking dominant while
+				// still preferring a cheaper attacker when victims are equal).
+				auto piece_value = [](char pc) -> double {
+					switch (std::tolower(static_cast<unsigned char>(pc)))
+					{
+					case 'p': return 100.0;
+					case 'n': return 320.0;
+					case 'b': return 330.0;
+					case 'r': return 500.0;
+					case 'q': return 900.0;
+					case 'k': return 20000.0;
+					default:  return 0.0;
+					}
+				};
 
-        if (root->children.empty()) {
-            return empty_move;
-        }
+				double base = 1.0;
+				const MoveType mt = moves[i].get_move_type();
 
-        std::vector<std::thread> workers;
-        int sims_per_thread = -1;
-        bool use_time = (time_limit_ms > 0);
-        
-        if (!use_time) {
-            sims_per_thread = num_threads > 0 ? max_simulations / num_threads : max_simulations;
-            if (sims_per_thread <= 0) sims_per_thread = 1;
-        }
+				if (mt == MoveType::CAPTURE)
+				{
+					uint8_t to_sq   = moves[i].get_to_square();
+					uint8_t from_sq = moves[i].get_from_square();
+					char victim   = engine.get_board_view().get_piece(to_sq / 8, to_sq % 8);
+					char attacker = engine.get_board_view().get_piece(from_sq / 8, from_sq % 8);
+					base = 1.0 + piece_value(victim) - piece_value(attacker) / 10.0;
+					// Clamp to a small positive floor so captures never score below quiet moves.
+					if (base < 1.0) base = 1.0;
+				}
+				else if (mt == MoveType::EN_PASSANT)
+				{
+					// Pawn takes pawn: victim=100, attacker=100 → 100 - 10 = 90 + 1 = 91
+					base = 1.0 + 100.0 - 100.0 / 10.0;
+				}
+				else if (mt == MoveType::PROMOTION)
+				{
+					// Score by the value of the piece we promote to.
+					base = 1.0 + piece_value(moves[i].get_promotion_piece()) / 100.0;
+				}
+				// MoveType::NORMAL / CASTLE: base stays 1.0
 
-        auto end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(std::max(1, time_limit_ms));
+				children.back()->prior = base;
+			}
+			else
+			{
+				uint32_t idx = move_index(moves[i]);
+				children.back()->prior = (idx < policy.size()) ? policy[idx] : 0.0;
+			}
+		}
 
-        for (int i = 0; i < num_threads; ++i)
-        {
-            workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread, end_time, use_time);
-        }
+		// Normalize heuristic priors to sum to 1.0 (only needed when no NN policy).
+		if (policy.empty() && !children.empty())
+		{
+			double sum = 0.0;
+			for (const auto &child : children)
+				sum += child->prior;
+			if (sum > 0.0)
+				for (auto &child : children)
+					child->prior /= sum;
+		}
 
-        for (auto& w : workers)
-        {
-            w.join();
-        }
+		is_expanded.store(true);
+	}
 
-        Move best_move(0, 0);
-        int max_visits = -1;
-        double best_score = 0.5;
-        for (auto& child : root->children)
-        {
-            if (child->visits.load() > max_visits)
-            {
-                max_visits = child->visits.load();
-                best_move = child->move;
-                best_score = child->win_score.load() / std::max(1, child->visits.load());
-            }
-        }
+	MCTSNode *MCTSNode::select_child()
+	{
+		MCTSNode *best_child = nullptr;
+		double best_value = -1e9;
+		// Interior nodes no longer carry virtual loss (we apply VL only to leaves),
+		// so parent_visits is simply the backpropagated visit count.
+		int parent_visits = visits.load();
 
-        int total_nodes = root->visits.load();
-        int max_depth = root->get_max_depth();
-        int score_cp = static_cast<int>((best_score - 0.5) * 200); // Convert win rate [0, 1] to centipawns
-        std::cout << "info depth " << max_depth << " nodes " << total_nodes << " score cp " << score_cp << " pv " << best_move.to_uci_notation() << std::endl;
+		for (auto &child : children)
+		{
+			double puct = child->puct_value(parent_visits);
+			if (puct > best_value)
+			{
+				best_value = puct;
+				best_child = child.get();
+			}
+		}
+		return best_child;
+	}
 
-        return best_move;
-    }
+	double MCTSNode::puct_value(int total_visits) const
+	{
+		const int real_visits = visits.load();
+		const int vl          = virtual_loss.load();
 
-    std::pair<Move, std::vector<std::pair<Move, double>>> MCTSSearch::find_best_move_with_policy(Engine& engine, int simulations, bool apply_noise)
-    {
-        uint8_t root_color = engine.get_board_view().get_color();
-        Move empty_move(0, 0); 
-        auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
-        
-        if (evaluator)
-        {
-            try {
-                auto future = evaluator->request_evaluation(engine.get_board_view());
-                NNResult res = future.get();
-                root->expand(engine, res.policy);
-            } catch (const std::exception& e) {
-                (void)e; // silence unreferenced variable warning
-                std::cerr << "Root evaluation failed: " << e.what() << "\n";
-                root->expand(engine);
-            }
-        }
-        else
-        {
-            root->expand(engine);
-        }
+		// v is used as the denominator of both Q and U.
+		// - Normal node (real_visits > 0): use real visits for Q, real+VL for U.
+		//   VL is always 0 for interior nodes now; this matters only for leaf nodes
+		//   that are currently being evaluated by another walk in the same pipeline.
+		// - In-flight leaf (real_visits == 0, vl > 0): the node is queued for NN
+		//   evaluation but has no backpropagated result yet. Setting v = vl makes
+		//   the U term = c * prior * √N / (1 + vl), which shrinks each time another
+		//   walk lands here, naturally pushing subsequent walks to siblings without
+		//   requiring them to re-evaluate the same position redundantly.
+		// - Unvisited, untouched leaf (real_visits == 0, vl == 0): v = 0, U is
+		//   maximised (pure exploration), which is the standard MCTS behaviour.
+		int v = (real_visits > 0) ? (real_visits + vl) : vl;
 
-        if (apply_noise) {
-            root->add_dirichlet_noise(0.25, 0.3); // 25% noise, alpha 0.3
-        }
+		double q = 0.0;
+		if (real_visits > 0)
+		{
+			// Q is always computed from real backpropagated results only, never
+			// diluted by VL. VL only affects the exploration (U) denominator.
+			q = win_score.load() / real_visits;
+		}
 
-        if (root->children.empty()) {
-            return {empty_move, {}};
-        }
+		// Standard AlphaZero dynamic CPUCT constant.
+		double c_init = 1.25;
+		double c_base = 19652.0;
+		double c = std::log((1.0 + total_visits + c_base) / c_base) + c_init;
 
-        std::vector<std::thread> workers;
-        int sims_per_thread = num_threads > 0 ? simulations / num_threads : simulations;
-        if (sims_per_thread == 0) sims_per_thread = 1;
+		// U shrinks as v grows, whether from real visits or in-flight VL.
+		double u = c * prior * std::sqrt(static_cast<double>(total_visits)) / (1 + v);
 
-        for (int i = 0; i < num_threads; ++i)
-        {
-            try {
-                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread, std::chrono::steady_clock::now(), false);
-            } catch (const std::exception& e) {
-                std::cerr << "Thread creation failed: " << e.what() << "\n";
-                break; // Just proceed with the threads we successfully created
-            }
-        }
+		return q + u;
+	}
 
-        if (workers.empty())
-        {
-            // Fallback to synchronous search on the main thread if OS is completely out of handles
-            std::cerr << "Warning: Falling back to synchronous search!\n";
-            search_worker(std::make_unique<Engine>(engine.get_fen()), root.get(), simulations, std::chrono::steady_clock::now(), false);
-        }
+	int MCTSNode::get_max_depth() const
+	{
+		if (!is_expanded.load() || children.empty())
+			return 0;
+		int max_d = 0;
+		for (const auto &child : children)
+		{
+			// Count nodes that have been visited OR were selected (virtual loss > 0)
+			// to avoid underreporting depth when nodes are in-flight.
+			if (child->visits.load() > 0 || child->virtual_loss.load() > 0)
+			{
+				max_d = std::max(max_d, child->get_max_depth());
+			}
+		}
+		return 1 + max_d;
+	}
 
-        for (auto& w : workers)
-        {
-            if (w.joinable()) {
-                w.join();
-            }
-        }
+	void MCTSNode::add_dirichlet_noise(double epsilon, double alpha)
+	{
+		if (children.empty())
+			return;
 
-        Move best_move(0, 0);
-        int max_visits = -1;
-        std::vector<std::pair<Move, double>> policy;
-        double total_visits = root->visits.load();
-        
-        for (auto& child : root->children)
-        {
-            int v = child->visits.load();
-            policy.push_back({child->move, static_cast<double>(v) / std::max(1.0, total_visits)});
-            if (v > max_visits)
-            {
-                max_visits = v;
-                best_move = child->move;
-            }
-        }
-        return {best_move, policy};
-    }
+		std::mt19937 rng(std::random_device{}());
+		std::gamma_distribution<double> gamma(alpha, 1.0);
 
-    void MCTSSearch::search_worker(std::unique_ptr<Engine> thread_engine_ptr, MCTSNode* root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
-    {
-        Engine& thread_engine = *thread_engine_ptr;
-        std::mt19937 local_rng(std::random_device{}());
-        int sim_count = 0;
+		double original_prior_sum = 0.0;
+		for (const auto &child : children)
+		{
+			original_prior_sum += child->prior;
+		}
+		if (original_prior_sum <= 0.0)
+			original_prior_sum = 1.0;
 
-        while (true)
-        {
-            if (use_time) {
-                // Check time periodically to avoid massive std::chrono syscall overhead
-                if ((sim_count & 15) == 0 && std::chrono::steady_clock::now() >= end_time) {
-                    break;
-                }
-            } else {
-                if (sim_count >= simulations) {
-                    break;
-                }
-            }
-            sim_count++;
-            MCTSNode* node = root;
-            
-            while (node->is_expanded.load() && !node->children.empty())
-            {
-                node->virtual_loss++;
-                node = node->select_child();
-                thread_engine.make_move_fast(node->move);
-            }
-            node->virtual_loss++; 
+		double noise_sum = 0.0;
+		std::vector<double> noise;
+		noise.reserve(children.size());
+		for (size_t i = 0; i < children.size(); ++i)
+		{
+			double n = gamma(rng);
+			noise.push_back(n);
+			noise_sum += n;
+		}
+		if (noise_sum <= 0.0)
+			noise_sum = 1.0;
 
-            double result = 0.0;
-            if (thread_engine.is_checkmate())
-            {
-                result = 0.0;
-            }
-            else if (thread_engine.is_stalemate() || thread_engine.is_draw())
-            {
-                result = 0.5;
-            }
-            else
-            {
-                if (evaluator)
-                {
-                    try {
-                        auto future = evaluator->request_evaluation(thread_engine.get_board_view());
-                        NNResult res = future.get();
-                        node->expand(thread_engine, res.policy);
-                        result = res.value; 
-                    } catch (const std::exception& e) {
-                        (void)e; // silence unreferenced variable warning
-                        node->expand(thread_engine);
-                        result = simulate(thread_engine);
-                    }
-                }
-                else
-                {
-                    node->expand(thread_engine);
-                    result = simulate(thread_engine);
-                }
-            }
+		for (size_t i = 0; i < children.size(); ++i)
+		{
+			double normalized_original = children[i]->prior / original_prior_sum;
+			double normalized_noise = noise[i] / noise_sum;
+			children[i]->prior = (1.0 - epsilon) * normalized_original + epsilon * normalized_noise;
+		}
+	}
 
-            node->backpropagate(result);
+	void MCTSNode::backpropagate(double result)
+	{
+		visits++;
+		double current = win_score.load();
+		while (!win_score.compare_exchange_weak(current, current + result))
+			;
+		if (parent)
+			parent->backpropagate(1.0 - result);
+	}
 
-            MCTSNode* curr = node;
-            while (curr != root)
-            {
-                thread_engine.undo_move();
-                curr = curr->parent;
-            }
-        }
-    }
+	MCTSSearch::MCTSSearch(NNEvaluator *eval, int threads, size_t pipeline_t)
+		: evaluator(eval), num_threads(threads), pipeline_target(pipeline_t) {}
 
-    double MCTSSearch::simulate(Engine& engine)
-    {
-        int moves_played = 0;
-        uint8_t start_color = engine.get_board_view().get_color();
-        std::mt19937 local_rng(std::random_device{}());
+	MCTSSearch::~MCTSSearch() = default;
 
-        while (!engine.is_checkmate() && !engine.is_stalemate() && !engine.is_draw() && moves_played < 100)
-        {
-            std::vector<Move> legal_moves = engine.generate_all_moves();
-            if (legal_moves.empty()) break;
+	Move MCTSSearch::find_best_move(Engine &engine, int time_limit_ms, int max_simulations)
+	{
+		uint8_t root_color = engine.get_board_view().get_color();
+		Move empty_move(0, 0);
+		auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
 
-            std::uniform_int_distribution<size_t> dist(0, legal_moves.size() - 1);
-            engine.make_move_fast(legal_moves[dist(local_rng)]);
-            moves_played++;
-        }
+		if (evaluator)
+		{
+			auto future = evaluator->request_evaluation(engine.get_board_view());
+			NNResult res = future.get();
+			root->expand(engine, res.policy);
+		}
+		else
+		{
+			root->expand(engine);
+		}
 
-        double result = 0.5;
-        if (engine.is_checkmate())
-        {
-            if (engine.get_board_view().get_color() == start_color)
-            {
-                result = 0.0;
-            }
-            else
-            {
-                result = 1.0;
-            }
-        }
-        
-        for (int i = 0; i < moves_played; ++i)
-        {
-            engine.undo_move();
-        }
+		if (root->children.empty())
+			return empty_move;
 
-        return result;
-    }
+		std::vector<std::thread> workers;
+		int sims_per_thread = -1;
+		bool use_time = (time_limit_ms > 0);
+
+		if (!use_time)
+		{
+			sims_per_thread = num_threads > 0 ? max_simulations / num_threads : max_simulations;
+			if (sims_per_thread <= 0)
+				sims_per_thread = 1;
+		}
+
+		auto end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(std::max(1, time_limit_ms));
+
+		for (int i = 0; i < num_threads; ++i)
+		{
+			workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread, end_time, use_time);
+		}
+
+		for (auto &w : workers)
+		{
+			w.join();
+		}
+
+		Move best_move(0, 0);
+		int max_visits = -1;
+		double best_score = 0.5;
+		for (auto &child : root->children)
+		{
+			if (child->visits.load() > max_visits)
+			{
+				max_visits = child->visits.load();
+				best_move = child->move;
+				best_score = child->win_score.load() / std::max(1, child->visits.load());
+			}
+		}
+
+		int total_nodes = root->visits.load();
+		int max_depth = root->get_max_depth();
+		int score_cp = static_cast<int>((best_score - 0.5) * 200);
+		std::cout << "info depth " << max_depth << " nodes " << total_nodes << " score cp " << score_cp << " pv " << best_move.to_uci_notation() << std::endl;
+
+		return best_move;
+	}
+
+	std::pair<Move, std::vector<std::pair<Move, double>>> MCTSSearch::find_best_move_with_policy(Engine &engine, int simulations, bool apply_noise)
+	{
+		uint8_t root_color = engine.get_board_view().get_color();
+		Move empty_move(0, 0);
+		auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
+
+		if (evaluator)
+		{
+			try
+			{
+				auto future = evaluator->request_evaluation(engine.get_board_view());
+				NNResult res = future.get();
+				root->expand(engine, res.policy);
+			}
+			catch (const std::exception &e)
+			{
+				(void)e;
+				std::cerr << "Root evaluation failed: " << e.what() << "\n";
+				root->expand(engine);
+			}
+		}
+		else
+		{
+			root->expand(engine);
+		}
+
+		if (apply_noise)
+		{
+			root->add_dirichlet_noise(0.25, 0.3);
+		}
+
+		if (root->children.empty())
+			return {empty_move, {}};
+
+		std::vector<std::thread> workers;
+		int sims_per_thread = num_threads > 0 ? simulations / num_threads : simulations;
+		if (sims_per_thread == 0)
+			sims_per_thread = 1;
+
+		for (int i = 0; i < num_threads; ++i)
+		{
+			try
+			{
+				workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread, std::chrono::steady_clock::now(), false);
+			}
+			catch (const std::exception &e)
+			{
+				std::cerr << "Thread creation failed: " << e.what() << "\n";
+				break;
+			}
+		}
+
+		if (workers.empty())
+		{
+			std::cerr << "Warning: Falling back to synchronous search!\n";
+			search_worker(std::make_unique<Engine>(engine.get_fen()), root.get(), simulations, std::chrono::steady_clock::now(), false);
+		}
+
+		for (auto &w : workers)
+		{
+			if (w.joinable())
+				w.join();
+		}
+
+		Move best_move(0, 0);
+		int max_visits = -1;
+		std::vector<std::pair<Move, double>> policy;
+		double total_visits = root->visits.load();
+
+		for (auto &child : root->children)
+		{
+			int v = child->visits.load();
+			policy.push_back({child->move, static_cast<double>(v) / std::max(1.0, total_visits)});
+			if (v > max_visits)
+			{
+				max_visits = v;
+				best_move = child->move;
+			}
+		}
+		return {best_move, policy};
+	}
+
+	void MCTSSearch::search_worker(std::unique_ptr<Engine> thread_engine_ptr, MCTSNode *root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
+	{
+		Engine &thread_engine = *thread_engine_ptr;
+		int sim_count = 0;
+
+		// The GPU stays fully saturated without the tree exploding sideways on every cycle.
+		const size_t local_pipeline_target = pipeline_target;
+
+		struct PipelineItem
+		{
+			MCTSNode *node;
+			std::vector<VirtualLossGuard> path_guards;
+			std::future<NNResult> eval_future;
+			bool is_terminal;
+			double terminal_result;
+			// Moves from root to this leaf node (in order). Used in the second
+			// loop to re-walk thread_engine to the leaf position cheaply, avoiding
+			// the need to construct a new Engine (which parses FEN, inits attack
+			// tables, and emits a log line) for every single pipeline item.
+			std::vector<Move> path_moves;
+		};
+
+		while (true)
+		{
+			if (use_time)
+			{
+				if ((sim_count & 15) == 0 && std::chrono::steady_clock::now() >= end_time)
+					break;
+			}
+			else
+			{
+				if (sim_count >= simulations)
+					break;
+			}
+
+			std::vector<PipelineItem> pipeline;
+			pipeline.reserve(local_pipeline_target);
+
+			for (size_t p = 0; p < local_pipeline_target; ++p)
+			{
+				sim_count++;
+				MCTSNode *node = root;
+				std::vector<VirtualLossGuard> guards;
+				// Record moves made during descent so the second loop can
+				// cheaply re-walk thread_engine to the leaf without constructing
+				// a new Engine object.
+				std::vector<Move> path;
+
+				while (node->is_expanded.load() && !node->children.empty())
+				{
+					// Do NOT apply virtual loss to interior nodes. Stamping every
+					// node on the path with VL++ causes PUCT to treat the whole
+					// path as "in use" and reroutes all subsequent walks to new
+					// branches — forcing horizontal growth. Interior nodes stay
+					// clean so future walks can follow the same best line.
+					MCTSNode *next_node = node->select_child();
+
+					if (!next_node)
+						break;
+
+					node = next_node;
+					path.push_back(node->move);
+					thread_engine.make_move_fast(node->move);
+				}
+				// Only the leaf gets a virtual loss. This marks it as "in evaluation"
+				// so other walks divert to its siblings, but the path leading to it
+				// remains attractive for the next selection.
+				guards.emplace_back(node);
+
+				PipelineItem item;
+				item.node = node;
+				item.path_guards = std::move(guards);
+				item.is_terminal = false;
+				item.terminal_result = 0.0;
+
+				// Single combined terminal check. get_terminal_state() tests
+				// 50-move and repetition first (no move generation), then calls
+				// generate_all_moves() exactly once for checkmate/stalemate. The
+				// old pattern of is_stalemate() + is_draw() called generate_all_moves()
+				// twice for every normal position — 512 redundant calls per cycle.
+				auto ts = thread_engine.get_terminal_state();
+				if (ts.is_terminal)
+				{
+					item.is_terminal = true;
+					item.terminal_result = ts.score;
+				}
+				else if (evaluator)
+				{
+					// Store the path so the second loop can re-walk to this leaf.
+					item.path_moves = path;
+					item.eval_future = evaluator->request_evaluation(thread_engine.get_board_view());
+				}
+				else
+				{
+					// No evaluator: engine is still at the leaf here, so expand and
+					// simulate are both correct at this point in the first loop.
+					item.is_terminal = true;
+					node->expand(thread_engine);
+					item.terminal_result = simulate(thread_engine);
+				}
+
+				pipeline.push_back(std::move(item));
+
+				MCTSNode *curr = node;
+				while (curr != root)
+				{
+					thread_engine.undo_move();
+					curr = curr->parent;
+				}
+			}
+
+			for (auto &item : pipeline)
+			{
+				double final_result = 0.0;
+
+				if (item.is_terminal)
+				{
+					final_result = item.terminal_result;
+					if (!item.node->is_expanded.load())
+					{
+						// Handled terminal or rollout states
+					}
+				}
+				else
+				{
+					// Re-walk thread_engine to the leaf position using the recorded
+					// path. This replaces the old Engine(leaf_fen) construction which
+					// called FEN parsing, init_attack_tables(), and logger::INFO()
+					// for every single item — 512 expensive Engine objects per cycle.
+					// Now it's just make_move_fast × depth, which is near-zero cost.
+					try
+					{
+						NNResult res = item.eval_future.get();
+						for (const auto &m : item.path_moves)
+							thread_engine.make_move_fast(m);
+						item.node->expand(thread_engine, res.policy);
+						for (size_t i = 0; i < item.path_moves.size(); ++i)
+							thread_engine.undo_move();
+						final_result = res.value;
+					}
+					catch (...)
+					{
+						for (const auto &m : item.path_moves)
+							thread_engine.make_move_fast(m);
+						item.node->expand(thread_engine);
+						final_result = simulate(thread_engine);
+						for (size_t i = 0; i < item.path_moves.size(); ++i)
+							thread_engine.undo_move();
+					}
+				}
+
+				item.path_guards.clear();
+				item.node->backpropagate(final_result);
+			}
+		}
+	}
+
+	double MCTSSearch::simulate(Engine &engine)
+	{
+		int moves_played = 0;
+		uint8_t start_color = engine.get_board_view().get_color();
+
+		std::mt19937 local_rng(std::random_device{}());
+
+		while (!engine.is_checkmate() && !engine.is_stalemate() && !engine.is_draw() && moves_played < 100)
+		{
+			std::vector<Move> legal_moves = engine.generate_all_moves();
+			if (legal_moves.empty())
+				break;
+
+			std::uniform_int_distribution<size_t> dist(0, legal_moves.size() - 1);
+			engine.make_move_fast(legal_moves[dist(local_rng)]);
+			moves_played++;
+		}
+
+		double result = 0.5;
+		if (engine.is_checkmate())
+		{
+			result = (engine.get_board_view().get_color() == start_color) ? 0.0 : 1.0;
+		}
+
+		for (int i = 0; i < moves_played; ++i)
+		{
+			engine.undo_move();
+		}
+
+		return result;
+	}
 }

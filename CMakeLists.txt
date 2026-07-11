@@ -20,11 +20,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # ONNX Runtime Integration
 include(FetchContent)
-set(ONNXRUNTIME_VERSION "1.18.0")
+set(ONNXRUNTIME_VERSION "1.20.1")
 if(WIN32)
     set(ONNXRUNTIME_URL "https://www.nuget.org/api/v2/package/Microsoft.ML.OnnxRuntime.DirectML/${ONNXRUNTIME_VERSION}")
 else()
-    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-linux-x64-${ONNXRUNTIME_VERSION}.tgz")
+    set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-linux-x64-gpu-${ONNXRUNTIME_VERSION}.tgz")
 endif()
 
 FetchContent_Declare(

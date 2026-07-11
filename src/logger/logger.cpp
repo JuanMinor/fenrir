@@ -30,14 +30,18 @@ namespace logger
 	{
 		namespace fs = std::filesystem;
 
-		if (fs::exists(LOG_FILE) && fs::file_size(LOG_FILE) > MAX_LOG_SIZE)
-		{
-			std::string backup_file = std::string(LOG_FILE) + ".1";
-			if (fs::exists(backup_file))
+		try {
+			if (fs::exists(LOG_FILE) && fs::file_size(LOG_FILE) > MAX_LOG_SIZE)
 			{
-				fs::remove(backup_file);
+				std::string backup_file = std::string(LOG_FILE) + ".1";
+				if (fs::exists(backup_file))
+				{
+					fs::remove(backup_file);
+				}
+				fs::rename(LOG_FILE, backup_file);
 			}
-			fs::rename(LOG_FILE, backup_file);
+		} catch (...) {
+			// Silently ignore cross-process file rotation collisions
 		}
 	}
 
