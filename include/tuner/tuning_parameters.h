@@ -44,6 +44,8 @@ namespace tuner
         ~TuningParameters();
 
         inline uint16_t get_batch_size() const { return batch_size; }
+        inline uint8_t get_gpu_count() const { return gpu_count; }
+        inline std::optional<hardware::HostInfo> get_host_info() const { return host_info; }
         inline uint16_t get_pipeline_target() const { return pipeline_target; }
         inline uint8_t get_search_threads() const { return search_threads; }
 

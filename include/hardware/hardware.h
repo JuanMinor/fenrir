@@ -129,6 +129,7 @@ namespace hardware
 
     public:
         HostInfo(const std::vector<Cpu> &cpus, const std::vector<Gpu> &gpus, const Ram &ram, const OperatingSystem &os);
+        HostInfo();
         ~HostInfo();
 
         std::vector<Cpu> get_cpus() const;
