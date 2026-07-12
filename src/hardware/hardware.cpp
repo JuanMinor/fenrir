@@ -127,6 +127,7 @@ namespace hardware
     /* Host */
     HostInfo::HostInfo(const std::vector<Cpu> &cpus, const std::vector<Gpu> &gpus, const Ram &ram, const OperatingSystem &os)
         : cpus(cpus), gpus(gpus), ram(ram), os(os) {}
+    HostInfo::HostInfo() : ram(0), os("Unknown") {}
     HostInfo::~HostInfo() = default;
 
     std::vector<Cpu> HostInfo::get_cpus() const { return cpus; }
