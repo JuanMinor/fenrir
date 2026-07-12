@@ -49,7 +49,7 @@ namespace tuner
         {
             host_info = baseline_tuning_parameters.get_host_info().value();
         }
-        catch (const std::bad_optional_access &e)
+        catch (const std::bad_optional_access &)
         {
             return;
         }
