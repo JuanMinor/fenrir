@@ -144,7 +144,7 @@ namespace tuner
                 }
                 keep_scaling = false;
             }
-            catch (const std::exception &e)
+            catch (const std::exception &)
             {
                 keep_scaling = false;
             }
