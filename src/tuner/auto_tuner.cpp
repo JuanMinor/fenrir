@@ -187,7 +187,7 @@ namespace tuner
                     best_pipeline_target = current_pipeline_target;
                 }
             }
-            catch (const std::exception &e)
+            catch (const std::exception &)
             {
                 continue;
             }
