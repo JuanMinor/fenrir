@@ -44,10 +44,16 @@ else()
     set(ONNXRUNTIME_URL "https://github.com/microsoft/onnxruntime/releases/download/v${ONNXRUNTIME_VERSION}/onnxruntime-linux-x64-gpu-${ONNXRUNTIME_VERSION}.tgz")
 endif()
 
+if(WIN32)
+    set(ONNXRUNTIME_DOWNLOAD_NAME onnxruntime_dml.zip)
+else()
+    set(ONNXRUNTIME_DOWNLOAD_NAME onnxruntime.tgz)
+endif()
+
 FetchContent_Declare(
   onnxruntime
   URL ${ONNXRUNTIME_URL}
-  DOWNLOAD_NAME onnxruntime_dml.zip
+  DOWNLOAD_NAME ${ONNXRUNTIME_DOWNLOAD_NAME}
   DOWNLOAD_EXTRACT_TIMESTAMP true
 )
 FetchContent_MakeAvailable(onnxruntime)
