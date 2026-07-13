@@ -29,7 +29,7 @@
 #include <unistd.h>
 #endif
 
-namespace fenrir
+namespace chess
 {
     SelfPlay::SelfPlay(int gpu_id, int simulations_per_move, int num_games, const std::string &start_fen_arg)
         : gpu_id_(gpu_id), simulations(simulations_per_move), max_games(num_games), start_fen(start_fen_arg)
@@ -50,8 +50,8 @@ namespace fenrir
         std::cout << "Games: " << max_games << "\n";
         std::cout << "Output Directory: " << get_output_dir() << "\n\n";
 
-        auto evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx", gpu_id_);
-        auto search = std::make_unique<MCTSSearch>(evaluator.get(), 16);
+        auto evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", gpu_id_);
+        auto search = std::make_unique<mcts::MCTSSearch>(evaluator.get(), 16);
 
         std::mt19937 rng(std::random_device{}());
 

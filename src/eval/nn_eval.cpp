@@ -25,7 +25,7 @@
 #include <dml_provider_factory.h>
 #endif
 
-namespace fenrir
+namespace nn
 {
     NNEvaluator::NNEvaluator(const std::string &path, int gpu_id, size_t b_size)
         : model_path(path), gpu_id_(gpu_id), stop_worker(false)
@@ -60,7 +60,7 @@ namespace fenrir
         }
     }
 
-    std::vector<float> NNEvaluator::board_to_tensor(const AbstractBoard &board)
+    std::vector<float> NNEvaluator::board_to_tensor(const chess::AbstractBoard &board)
     {
         std::vector<float> tensor(14 * 8 * 8, 0.0f);
 
@@ -102,7 +102,7 @@ namespace fenrir
         return tensor;
     }
 
-    std::future<NNResult> NNEvaluator::request_evaluation(const AbstractBoard &board)
+    std::future<NNResult> NNEvaluator::request_evaluation(const chess::AbstractBoard &board)
     {
         EvalRequest req;
         req.features = board_to_tensor(board);

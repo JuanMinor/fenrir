@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
                     gpu_id = std::stoi(argv[++i]);
                 }
             }
-            fenrir::SelfPlay sp(gpu_id, simulations, games);
+            chess::SelfPlay sp(gpu_id, simulations, games);
             sp.run();
         }
 #ifdef ENABLE_AUTOTUNE_FLAG
@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 #endif
         else
         {
-            fenrir::UCI uci_loop;
+            chess::UCI uci_loop;
             uci_loop.loop();
         }
     }

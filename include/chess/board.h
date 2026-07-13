@@ -32,7 +32,7 @@
 #include "include/utils/utils.h"
 #include "include/abstract/board.h"
 
-namespace fenrir
+namespace chess
 {
     /*
      * UndoState captures state to reverse apply_move().

@@ -20,15 +20,15 @@
 #include <iostream>
 #include <sstream>
 
-namespace fenrir
+namespace chess
 {
     UCI::UCI()
     {
         engine = std::make_unique<Engine>();
         
         tuner::TuningParameters tuning(true);
-        evaluator = std::make_unique<NNEvaluator>("onnx/fenrir.onnx", tuning.get_gpu_id(0), tuning.get_batch_size());
-        search = std::make_unique<MCTSSearch>(evaluator.get(), tuning.get_search_threads(), tuning.get_pipeline_target());
+        evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", tuning.get_gpu_id(0), tuning.get_batch_size());
+        search = std::make_unique<mcts::MCTSSearch>(evaluator.get(), tuning.get_search_threads(), tuning.get_pipeline_target());
     }
 
     UCI::~UCI() = default;
@@ -160,7 +160,7 @@ namespace fenrir
                 simulations = 1200;
         }
 
-        Move best_move = search->find_best_move(*engine, allocated_time_ms, simulations);
+        chess::Move best_move = this->search->find_best_move(*engine, allocated_time_ms, simulations);
         std::cout << "bestmove " << best_move.to_uci_notation() << std::endl;
     }
 }

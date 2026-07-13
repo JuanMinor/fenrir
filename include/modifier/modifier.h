@@ -20,7 +20,7 @@
 #include <ostream>
 #include "include/core/core.h"
 
-namespace color
+namespace modifier
 {
     enum class Color : uint8_t
     {

@@ -22,7 +22,7 @@
 #define FENRIR_VERSION "0.0.0-unknown"
 #endif
 
-namespace fenrir
+namespace chess
 {
 
     Engine::Engine(const std::string &fen_string) : fen(fen_string), board(fen_string)

@@ -19,7 +19,7 @@
 #include "include/chess/attacks.h"
 #include <atomic>
 
-namespace fenrir
+namespace chess
 {
     Board::Board(const std::string &fen_string)
         : fen(fen_string)
@@ -296,38 +296,38 @@ namespace fenrir
         std::cout << "  ";
         for (uint8_t j = 0; j < BOARD_SIZE; ++j)
         {
-            std::cout << color::Modifier(color::Color::FG_YELLOW) << char(97 + j) << " ";
+            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << char(97 + j) << " ";
         }
-        std::cout << color::Modifier(color::Color::RESET) << std::endl;
+        std::cout << modifier::Modifier(modifier::Color::RESET) << std::endl;
         for (int i = BOARD_SIZE - 1; i >= 0; i--)
         {
-            std::cout << color::Modifier(color::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1) << " "
-                      << color::Modifier(color::Color::RESET);
+            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1) << " "
+                      << modifier::Modifier(modifier::Color::RESET);
             for (uint8_t j = 0; j < BOARD_SIZE; ++j)
             {
                 char c = this->get_piece(static_cast<uint8_t>(i), j);
                 if (c != '\0')
                 {
                     bool is_white = std::isupper(static_cast<unsigned char>(c));
-                    std::cout << color::Modifier(is_white ? color::Color::RESET : color::Color::FG_CYAN)
+                    std::cout << modifier::Modifier(is_white ? modifier::Color::RESET : modifier::Color::FG_CYAN)
                               << c
-                              << color::Modifier(color::Color::RESET) << " ";
+                              << modifier::Modifier(modifier::Color::RESET) << " ";
                 }
                 else
                 {
                     std::cout << ". ";
                 }
             }
-            std::cout << color::Modifier(color::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1)
-                      << color::Modifier(color::Color::RESET) << std::endl;
+            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1)
+                      << modifier::Modifier(modifier::Color::RESET) << std::endl;
         }
 
         std::cout << "  ";
         for (uint8_t j = 0; j < BOARD_SIZE; ++j)
         {
-            std::cout << color::Modifier(color::Color::FG_YELLOW) << char(97 + j) << " ";
+            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << char(97 + j) << " ";
         }
-        std::cout << color::Modifier(color::Color::RESET) << std::endl;
+        std::cout << modifier::Modifier(modifier::Color::RESET) << std::endl;
     }
 
     /* =========================================================
@@ -692,11 +692,11 @@ namespace fenrir
                     uint8_t first_blocker;
                     if (dir == RAY_NE || dir == RAY_N || dir == RAY_NW || dir == RAY_E)
                     {
-                        first_blocker = fenrir::bitscan_forward(blockers);
+                        first_blocker = chess::bitscan_forward(blockers);
                     }
                     else
                     {
-                        first_blocker = fenrir::bitscan_reverse(blockers);
+                        first_blocker = chess::bitscan_reverse(blockers);
                     }
                     if ((1ULL << first_blocker) & bishops)
                     {
@@ -718,11 +718,11 @@ namespace fenrir
                     uint8_t first_blocker;
                     if (dir == RAY_N || dir == RAY_E)
                     {
-                        first_blocker = fenrir::bitscan_forward(blockers);
+                        first_blocker = chess::bitscan_forward(blockers);
                     }
                     else
                     {
-                        first_blocker = fenrir::bitscan_reverse(blockers);
+                        first_blocker = chess::bitscan_reverse(blockers);
                     }
                     if ((1ULL << first_blocker) & rooks)
                     {
@@ -744,9 +744,9 @@ namespace fenrir
         {
             return false; /* No king on board */
         }
-        uint8_t king_square = fenrir::bitscan_forward(king_bb);
+        uint8_t king_square = chess::bitscan_forward(king_bb);
         uint8_t opponent = (clr == WHITE) ? BLACK : WHITE;
         return is_square_attacked_by(king_square, opponent);
     }
 
-} /* namespace fenrir */
+} /* namespace chess */

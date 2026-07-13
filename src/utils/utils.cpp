@@ -88,7 +88,7 @@ namespace utils
      */
     std::string get_algebraic_notation(uint8_t rank, uint8_t file)
     {
-        if (rank >= fenrir::BOARD_SIZE || file >= fenrir::BOARD_SIZE)
+        if (rank >= chess::BOARD_SIZE || file >= chess::BOARD_SIZE)
         {
             LOG_THROW_ERROR("Cannot get algebraic notation for invalid board address", true);
         }
@@ -136,7 +136,7 @@ namespace utils
         int f = std::tolower(algebraic_notation[0]) - 'a';
         int r = algebraic_notation[1] - '1';
 
-        if (r < 0 || r >= fenrir::BOARD_SIZE || f < 0 || f >= fenrir::BOARD_SIZE)
+        if (r < 0 || r >= chess::BOARD_SIZE || f < 0 || f >= chess::BOARD_SIZE)
         {
             LOG_THROW_ERROR("Invalid algebraic notation", true);
         }

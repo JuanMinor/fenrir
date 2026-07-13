@@ -17,7 +17,7 @@
 
 #include "include/chess/attacks.h"
 
-namespace fenrir
+namespace chess
 {
     static constexpr int ATTACK_WHITE = 0;
     static constexpr int ATTACK_BLACK = 1;
@@ -114,4 +114,4 @@ namespace fenrir
         }
     }
 
-} /* namespace fenrir */
+} /* namespace chess */

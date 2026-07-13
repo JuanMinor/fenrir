@@ -20,7 +20,7 @@
 #include <string>
 #include <cstdint>
 
-namespace fenrir
+namespace chess
 {
     class AbstractBoard
     {

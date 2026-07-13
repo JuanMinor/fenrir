@@ -21,7 +21,7 @@
 #include <memory>
 #include <include/core/core.h>
 
-namespace fenrir
+namespace chess
 {
     class Move
     {

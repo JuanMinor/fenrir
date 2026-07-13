@@ -18,7 +18,7 @@
 #include "include/chess/move.h"
 #include "include/utils/utils.h"
 
-namespace fenrir
+namespace chess
 {
     Move::Move(const std::string &from, const std::string &to,
                MoveType type, char promotion)

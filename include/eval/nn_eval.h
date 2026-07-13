@@ -38,7 +38,7 @@
 #pragma GCC diagnostic pop
 #endif
 
-namespace fenrir
+namespace nn
 {
     struct NNResult
     {
@@ -63,10 +63,10 @@ namespace fenrir
         ~NNEvaluator();
 
         // Threads call this to queue a board state for evaluation.
-        std::future<NNResult> request_evaluation(const AbstractBoard &board);
+        std::future<NNResult> request_evaluation(const chess::AbstractBoard &board);
 
         // Convert board to input tensor features (14 channels * 8 * 8 = 896 floats)
-        static std::vector<float> board_to_tensor(const AbstractBoard &board);
+        static std::vector<float> board_to_tensor(const chess::AbstractBoard &board);
 
         HardwareProfile get_hardware_profile() const { return hw_profile; }
 

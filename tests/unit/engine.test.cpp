@@ -23,7 +23,7 @@
 class EngineTest : public ::testing::Test
 {
 protected:
-    fenrir::Engine engine;
+    chess::Engine engine;
 
     char get_piece(const std::string &square)
     {
@@ -54,7 +54,7 @@ TEST_F(EngineTest, DefaultBoardSetup)
 
 TEST_F(EngineTest, MakeMove)
 {
-    engine.make_move(fenrir::Move("b2", "b4"));
+    engine.make_move(chess::Move("b2", "b4"));
 
     EXPECT_EQ(get_piece("b2"), '.');
     EXPECT_EQ(get_piece("b4"), 'P');
@@ -65,7 +65,7 @@ TEST_F(EngineTest, MakeMove)
 
 TEST_F(EngineTest, ResetBoard)
 {
-    engine.make_move(fenrir::Move("b2", "b4"));
+    engine.make_move(chess::Move("b2", "b4"));
     EXPECT_EQ(get_piece("b4"), 'P');
 
     engine.reset();
@@ -86,7 +86,7 @@ TEST_F(EngineTest, GetFenInitialBoard)
 
 TEST_F(EngineTest, GetFenAfterMove)
 {
-    engine.make_move(fenrir::Move("e2", "e4"));
+    engine.make_move(chess::Move("e2", "e4"));
     std::string fen = engine.get_fen();
 
     EXPECT_FALSE(fen.empty());
@@ -123,7 +123,7 @@ TEST_F(EngineTest, GenerateMovesEmptySquare)
 
 TEST_F(EngineTest, MakeMoveFromEmptySquare)
 {
-    EXPECT_THROW(engine.make_move(fenrir::Move("e4", "e5")), std::invalid_argument);
+    EXPECT_THROW(engine.make_move(chess::Move("e4", "e5")), std::invalid_argument);
 }
 
 TEST_F(EngineTest, PrintBoard)
@@ -146,8 +146,8 @@ TEST_F(EngineTest, StressTestManyMovesAndResets)
 
     for (int i = 0; i < num_iterations; ++i)
     {
-        engine.make_move(fenrir::Move("b2", "b4"));
-        engine.make_move(fenrir::Move("b7", "b5"));
+        engine.make_move(chess::Move("b2", "b4"));
+        engine.make_move(chess::Move("b7", "b5"));
 
         engine.reset();
 
@@ -171,7 +171,7 @@ TEST_F(EngineTest, GenerateAllMoves_InitialPosition)
 
 TEST_F(EngineTest, UndoMove_RestoredBoard)
 {
-    engine.make_move(fenrir::Move("e2", "e4"));
+    engine.make_move(chess::Move("e2", "e4"));
     EXPECT_EQ(get_piece("e4"), 'P');
     EXPECT_EQ(get_piece("e2"), '.');
 
@@ -189,8 +189,8 @@ TEST_F(EngineTest, UndoMove_EmptyStack)
 
 TEST_F(EngineTest, UndoMove_MultipleUndos)
 {
-    engine.make_move(fenrir::Move("e2", "e4"));
-    engine.make_move(fenrir::Move("e7", "e5"));
+    engine.make_move(chess::Move("e2", "e4"));
+    engine.make_move(chess::Move("e7", "e5"));
     engine.undo_move();
     engine.undo_move();
 
@@ -215,7 +215,7 @@ TEST_F(EngineTest, IsCheckmate_SimplePosition)
      * Queen covers: g-file (g8 in check), rank 7 (f7,h7), diag NW (f8), diag NE (h8).
      * King at f6 covers: f7, g7 (occupied), e7, e6, g6.
      * Black king cannot move to f8 (queen diag), h8 (queen diag), f7/h7 (queen rank). CHECKMATE. */
-    fenrir::Engine e("6k1/6Q1/5K2/8/8/8/8/8 b - - 0 1");
+    chess::Engine e("6k1/6Q1/5K2/8/8/8/8/8 b - - 0 1");
     EXPECT_TRUE(e.is_checkmate());
     EXPECT_FALSE(e.is_stalemate());
 }
@@ -225,7 +225,7 @@ TEST_F(EngineTest, IsCheckmate_ScholarsMate_IsCheck)
     /* The classic Scholar's Mate FEN (after 4.Qxf7+): this is CHECK but not mate
      * because the black king can escape to d8, which is not covered by any white piece.
      * The famous "Scholar's Mate" variant requires no d8 escape — this position has one. */
-    fenrir::Engine e("rnb1kb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4");
+    chess::Engine e("rnb1kb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4");
     EXPECT_FALSE(e.is_checkmate()); /* king can escape to d8 */
     EXPECT_FALSE(e.is_stalemate());
 }
@@ -233,7 +233,7 @@ TEST_F(EngineTest, IsCheckmate_ScholarsMate_IsCheck)
 TEST_F(EngineTest, IsStalemate_Position)
 {
     /* Classic stalemate: black king trapped with no moves, not in check */
-    fenrir::Engine e("k7/8/1Q6/8/8/8/8/K7 b - - 0 1");
+    chess::Engine e("k7/8/1Q6/8/8/8/8/K7 b - - 0 1");
     EXPECT_TRUE(e.is_stalemate());
     EXPECT_FALSE(e.is_checkmate());
 }
@@ -241,7 +241,7 @@ TEST_F(EngineTest, IsStalemate_Position)
 TEST_F(EngineTest, IsInCheck_Position)
 {
     /* King in check from a rook */
-    fenrir::Engine e("k7/8/8/8/8/8/8/KR5r b - - 0 1");
+    chess::Engine e("k7/8/8/8/8/8/8/KR5r b - - 0 1");
     /* White king at a1, white rook at b1, black rook at h1 attacks white king? No.
      * Black king at a8 is not in check. Rethink: */
     (void)e; /* We test via generate_all_moves count */
@@ -250,7 +250,7 @@ TEST_F(EngineTest, IsInCheck_Position)
 TEST_F(EngineTest, LegalMoveFiltering_PinnedPiece)
 {
     /* Rook pinned: Ke1, Re2, Re8, black king at a8 (to satisfy validation) */
-    fenrir::Engine e("k3r3/8/8/8/8/8/4R3/4K3 w - - 0 1");
+    chess::Engine e("k3r3/8/8/8/8/8/4R3/4K3 w - - 0 1");
     /* White rook at e2 is pinned along e-file by black rook at e8.
      * White king at e1 would be in check if rook moves off e-file.
      * Legal moves for rook: only along e-file. */
@@ -271,12 +271,12 @@ TEST_F(EngineTest, LegalMoveFiltering_PinnedPiece)
 TEST_F(EngineTest, Castling_KingsideWhite)
 {
     /* Position where white can castle kingside */
-    fenrir::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+    chess::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
     auto moves = e.generate_moves("e1");
     bool foundKingside = false;
     for (const auto &m : moves)
     {
-        if (m.get_move_type() == fenrir::MoveType::CASTLE_KINGSIDE)
+        if (m.get_move_type() == chess::MoveType::CASTLE_KINGSIDE)
         {
             foundKingside = true;
         }
@@ -286,12 +286,12 @@ TEST_F(EngineTest, Castling_KingsideWhite)
 
 TEST_F(EngineTest, Castling_QueensideWhite)
 {
-    fenrir::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+    chess::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
     auto moves = e.generate_moves("e1");
     bool foundQueenside = false;
     for (const auto &m : moves)
     {
-        if (m.get_move_type() == fenrir::MoveType::CASTLE_QUEENSIDE)
+        if (m.get_move_type() == chess::MoveType::CASTLE_QUEENSIDE)
         {
             foundQueenside = true;
         }
@@ -316,8 +316,8 @@ TEST_F(EngineTest, Castling_Blocked_NoCastling)
 
 TEST_F(EngineTest, Castling_MakeMove_KingsideWhite)
 {
-    fenrir::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
-    e.make_move(fenrir::Move("e1", "g1", fenrir::MoveType::CASTLE_KINGSIDE));
+    chess::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+    e.make_move(chess::Move("e1", "g1", chess::MoveType::CASTLE_KINGSIDE));
 
     /* King should be at g1, rook at f1 */
     uint8_t rank, file;
@@ -333,8 +333,8 @@ TEST_F(EngineTest, Castling_MakeMove_KingsideWhite)
 
 TEST_F(EngineTest, Castling_MakeMove_QueensideWhite)
 {
-    fenrir::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
-    e.make_move(fenrir::Move("e1", "c1", fenrir::MoveType::CASTLE_QUEENSIDE));
+    chess::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+    e.make_move(chess::Move("e1", "c1", chess::MoveType::CASTLE_QUEENSIDE));
 
     /* King should be at c1, rook at d1 */
     uint8_t rank, file;
@@ -348,13 +348,13 @@ TEST_F(EngineTest, Promotion_WhitePawnAtRank7)
 {
     /* White pawn at e7, black king at a8 (far corner, not adjacent), white king at e1.
      * Pawn can only push to e8 (no pieces on d8 or f8 to capture). */
-    fenrir::Engine e("k7/4P3/8/8/8/8/8/4K3 w - - 0 1");
+    chess::Engine e("k7/4P3/8/8/8/8/8/4K3 w - - 0 1");
     auto moves = e.generate_moves("e7");
     /* Should generate exactly 4 promotion moves (Q, R, B, N) */
     int promotionCount = 0;
     for (const auto &m : moves)
     {
-        if (m.get_move_type() == fenrir::MoveType::PROMOTION)
+        if (m.get_move_type() == chess::MoveType::PROMOTION)
         {
             promotionCount++;
         }
@@ -366,12 +366,12 @@ TEST_F(EngineTest, Promotion_BlackPawnAtRank2)
 {
     /* Black pawn at e2, white king at a1 (far corner, not adjacent), black king at e8.
      * Pawn can only push to e1 (no pieces on d1 or f1 to capture). */
-    fenrir::Engine e("4k3/8/8/8/8/8/4p3/K7 b - - 0 1");
+    chess::Engine e("4k3/8/8/8/8/8/4p3/K7 b - - 0 1");
     auto moves = e.generate_moves("e2");
     int promotionCount = 0;
     for (const auto &m : moves)
     {
-        if (m.get_move_type() == fenrir::MoveType::PROMOTION)
+        if (m.get_move_type() == chess::MoveType::PROMOTION)
         {
             promotionCount++;
         }
@@ -381,8 +381,8 @@ TEST_F(EngineTest, Promotion_BlackPawnAtRank2)
 
 TEST_F(EngineTest, Promotion_MakeMove_PawnBecomesQueen)
 {
-    fenrir::Engine e("k7/4P3/8/8/8/8/8/4K3 w - - 0 1");
-    e.make_move(fenrir::Move("e7", "e8", fenrir::MoveType::PROMOTION, 'Q'));
+    chess::Engine e("k7/4P3/8/8/8/8/8/4K3 w - - 0 1");
+    e.make_move(chess::Move("e7", "e8", chess::MoveType::PROMOTION, 'Q'));
 
     uint8_t rank, file;
     utils::parse_algebraic_notation("e8", rank, file);
@@ -393,8 +393,8 @@ TEST_F(EngineTest, Promotion_MakeMove_PawnBecomesQueen)
 
 TEST_F(EngineTest, GetFen_AfterCastling)
 {
-    fenrir::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
-    e.make_move(fenrir::Move("e1", "g1", fenrir::MoveType::CASTLE_KINGSIDE));
+    chess::Engine e("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w KQkq - 0 1");
+    e.make_move(chess::Move("e1", "g1", chess::MoveType::CASTLE_KINGSIDE));
     std::string fen = e.get_fen();
     EXPECT_FALSE(fen.empty());
     /* King should have moved, castling rights for white removed */
@@ -404,7 +404,7 @@ TEST_F(EngineTest, GetFen_AfterCastling)
 
 TEST_F(EngineTest, GenerateAllMoves_AfterMove)
 {
-    engine.make_move(fenrir::Move("e2", "e4"));
+    engine.make_move(chess::Move("e2", "e4"));
     /* Now it's black's turn */
     auto moves = engine.generate_all_moves();
     EXPECT_EQ(moves.size(), 20U); /* Black also has 20 legal moves */
@@ -412,47 +412,47 @@ TEST_F(EngineTest, GenerateAllMoves_AfterMove)
 
 TEST_F(EngineTest, EngineVersion)
 {
-    const char *ver = fenrir::Engine::version();
+    const char *ver = chess::Engine::version();
     EXPECT_STREQ(ver, "0.3.2");
 }
 
 TEST_F(EngineTest, IsDraw_Stalemate)
 {
-    fenrir::Engine e("k7/8/1Q6/8/8/8/8/K7 b - - 0 1");
+    chess::Engine e("k7/8/1Q6/8/8/8/8/K7 b - - 0 1");
     EXPECT_TRUE(e.is_draw());
 }
 
 TEST_F(EngineTest, IsDraw_FiftyMoveRule)
 {
-    fenrir::Engine e("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 100 1");
+    chess::Engine e("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 100 1");
     EXPECT_TRUE(e.is_draw());
 }
 
 TEST_F(EngineTest, IsDraw_ThreefoldRepetition)
 {
-    fenrir::Engine e;
+    chess::Engine e;
     EXPECT_FALSE(e.is_draw());
 
-    e.make_move(fenrir::Move("g1", "f3"));
-    e.make_move(fenrir::Move("g8", "f6"));
+    e.make_move(chess::Move("g1", "f3"));
+    e.make_move(chess::Move("g8", "f6"));
     EXPECT_FALSE(e.is_draw());
 
-    e.make_move(fenrir::Move("f3", "g1"));
-    e.make_move(fenrir::Move("f6", "g8"));
+    e.make_move(chess::Move("f3", "g1"));
+    e.make_move(chess::Move("f6", "g8"));
     EXPECT_FALSE(e.is_draw());
 
-    e.make_move(fenrir::Move("g1", "f3"));
-    e.make_move(fenrir::Move("g8", "f6"));
+    e.make_move(chess::Move("g1", "f3"));
+    e.make_move(chess::Move("g8", "f6"));
     EXPECT_FALSE(e.is_draw());
 
-    e.make_move(fenrir::Move("f3", "g1"));
-    e.make_move(fenrir::Move("f6", "g8"));
+    e.make_move(chess::Move("f3", "g1"));
+    e.make_move(chess::Move("f6", "g8"));
     EXPECT_TRUE(e.is_draw());
 }
 
 TEST_F(EngineTest, MakeMoveFast)
 {
-    engine.make_move_fast(fenrir::Move("e2", "e4"));
+    engine.make_move_fast(chess::Move("e2", "e4"));
 
     uint8_t rank, file;
     utils::parse_algebraic_notation("e4", rank, file);

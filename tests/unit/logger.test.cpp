@@ -135,7 +135,7 @@ TEST_F(LoggerTest, LogDebugMessage)
 
     std::string content = readLogFile();
 
-    if (fenrir::DEBUG)
+    if (chess::DEBUG)
     {
         EXPECT_TRUE(content.find("[DEBUG] - Test debug message") != std::string::npos);
         EXPECT_TRUE(content.find(__FILE__) != std::string::npos);
@@ -194,7 +194,7 @@ TEST_F(LoggerTest, DebugMacro)
 
     std::string content = readLogFile();
 
-    if (fenrir::DEBUG)
+    if (chess::DEBUG)
     {
         EXPECT_TRUE(content.find("[DEBUG] - Test debug macro") != std::string::npos);
     }
@@ -248,7 +248,7 @@ TEST_F(LoggerTest, DebugMessageBehavior)
 
     std::string content = readLogFile();
 
-    if (fenrir::DEBUG)
+    if (chess::DEBUG)
     {
         EXPECT_TRUE(content.find("Debug message behavior test") != std::string::npos);
         EXPECT_TRUE(content.find("[DEBUG]") != std::string::npos);

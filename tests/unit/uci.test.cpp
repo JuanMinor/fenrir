@@ -2,7 +2,7 @@
 #include "include/uci/uci.h"
 #include <sstream>
 
-using namespace fenrir;
+using namespace chess;
 
 TEST(UCITest, LoopCommands) {
     std::istringstream in("uci\nisready\nucinewgame\nposition startpos\nposition fen rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\nposition startpos moves e2e4\nposition startpos moves e2e4 e7e5\ngo nodes 10\nquit\n");

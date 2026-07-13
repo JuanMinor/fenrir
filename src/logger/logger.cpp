@@ -57,7 +57,7 @@ namespace logger
      */
     void Logger::log(const std::string &message, const char *file, uint32_t line_number, LEVEL level) const
     {
-        if (level == LEVEL::DEBUG && !fenrir::DEBUG)
+        if (level == LEVEL::DEBUG && !chess::DEBUG)
         {
             return;
         }

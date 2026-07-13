@@ -26,7 +26,7 @@
 #include "include/logger/logger.h"
 #include "include/utils/utils.h"
 
-namespace fenrir
+namespace chess
 {
     class Fen
     {

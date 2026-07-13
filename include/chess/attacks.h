@@ -19,7 +19,7 @@
 
 #include <cstdint>
 
-namespace fenrir
+namespace chess
 {
     extern uint64_t KNIGHT_ATTACKS[64];
     extern uint64_t KING_ATTACKS[64];
@@ -40,4 +40,4 @@ namespace fenrir
      */
     void init_attack_tables();
 
-} /* namespace fenrir */
+} /* namespace chess */

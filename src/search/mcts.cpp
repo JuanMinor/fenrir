@@ -20,11 +20,11 @@
 #include <iostream>
 #include <random>
 
-namespace fenrir
+namespace mcts
 {
     namespace
     {
-        uint32_t move_index(const Move &m)
+        uint32_t move_index(const chess::Move &m)
         {
             int from_sq = static_cast<int>(m.get_from_square());
             int to_sq = static_cast<int>(m.get_to_square());
@@ -103,7 +103,7 @@ namespace fenrir
         };
     }
 
-    MCTSNode::MCTSNode(MCTSNode *parent_node, const Move &m, uint8_t color)
+    MCTSNode::MCTSNode(MCTSNode *parent_node, const chess::Move &m, uint8_t color)
         : parent(parent_node), move(m), color_to_move(color),
           visits(0), win_score(0.0), virtual_loss(0), prior(0.0), is_expanded(false)
     {
@@ -111,13 +111,13 @@ namespace fenrir
 
     MCTSNode::~MCTSNode() = default;
 
-    void MCTSNode::expand(Engine &engine, const std::vector<double> &policy)
+    void MCTSNode::expand(chess::Engine &engine, const std::vector<double> &policy)
     {
         std::lock_guard<std::mutex> lock(expand_mutex);
         if (is_expanded.load())
             return;
 
-        std::vector<Move> moves = engine.generate_all_moves();
+        std::vector<chess::Move> moves = engine.generate_all_moves();
         children.reserve(moves.size());
 
         for (size_t i = 0; i < moves.size(); ++i)
@@ -156,9 +156,9 @@ namespace fenrir
                 };
 
                 double base = 1.0;
-                const MoveType mt = moves[i].get_move_type();
+                const chess::MoveType mt = moves[i].get_move_type();
 
-                if (mt == MoveType::CAPTURE)
+                if (mt == chess::MoveType::CAPTURE)
                 {
                     uint8_t to_sq = moves[i].get_to_square();
                     uint8_t from_sq = moves[i].get_from_square();
@@ -169,17 +169,17 @@ namespace fenrir
                     if (base < 1.0)
                         base = 1.0;
                 }
-                else if (mt == MoveType::EN_PASSANT)
+                else if (mt == chess::MoveType::EN_PASSANT)
                 {
                     // Pawn takes pawn: victim=100, attacker=100 → 100 - 10 = 90 + 1 = 91
                     base = 1.0 + 100.0 - 100.0 / 10.0;
                 }
-                else if (mt == MoveType::PROMOTION)
+                else if (mt == chess::MoveType::PROMOTION)
                 {
                     // Score by the value of the piece we promote to.
                     base = 1.0 + piece_value(moves[i].get_promotion_piece()) / 100.0;
                 }
-                // MoveType::NORMAL / CASTLE: base stays 1.0
+                // chess::MoveType::NORMAL / CASTLE: base stays 1.0
 
                 children.back()->prior = base;
             }
@@ -324,21 +324,21 @@ namespace fenrir
             parent->backpropagate(1.0 - result);
     }
 
-    MCTSSearch::MCTSSearch(NNEvaluator *eval, int threads, size_t pipeline_t)
+    MCTSSearch::MCTSSearch(nn::NNEvaluator *eval, int threads, size_t pipeline_t)
         : evaluator(eval), num_threads(threads), pipeline_target(pipeline_t) {}
 
     MCTSSearch::~MCTSSearch() = default;
 
-    Move MCTSSearch::find_best_move(Engine &engine, int time_limit_ms, int max_simulations)
+    chess::Move MCTSSearch::find_best_move(chess::Engine &engine, int time_limit_ms, int max_simulations)
     {
         uint8_t root_color = engine.get_board_view().get_color();
-        Move empty_move(0, 0);
+        chess::Move empty_move(0, 0);
         auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
 
         if (evaluator)
         {
             auto future = evaluator->request_evaluation(engine.get_board_view());
-            NNResult res = future.get();
+            nn::NNResult res = future.get();
             root->expand(engine, res.policy);
         }
         else
@@ -364,7 +364,7 @@ namespace fenrir
 
         for (int i = 0; i < num_threads; ++i)
         {
-            workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread, end_time, use_time);
+            workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), sims_per_thread, end_time, use_time);
         }
 
         for (auto &w : workers)
@@ -372,7 +372,7 @@ namespace fenrir
             w.join();
         }
 
-        Move best_move(0, 0);
+        chess::Move best_move(0, 0);
         int max_visits = -1;
         double best_score = 0.5;
         for (auto &child : root->children)
@@ -394,10 +394,10 @@ namespace fenrir
         return best_move;
     }
 
-    std::pair<Move, std::vector<std::pair<Move, double>>> MCTSSearch::find_best_move_with_policy(Engine &engine, int simulations, bool apply_noise)
+    std::pair<chess::Move, std::vector<std::pair<chess::Move, double>>> MCTSSearch::find_best_move_with_policy(chess::Engine &engine, int simulations, bool apply_noise)
     {
         uint8_t root_color = engine.get_board_view().get_color();
-        Move empty_move(0, 0);
+        chess::Move empty_move(0, 0);
         auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
 
         if (evaluator)
@@ -405,7 +405,7 @@ namespace fenrir
             try
             {
                 auto future = evaluator->request_evaluation(engine.get_board_view());
-                NNResult res = future.get();
+                nn::NNResult res = future.get();
                 root->expand(engine, res.policy);
             }
             catch (const std::exception &e)
@@ -437,7 +437,7 @@ namespace fenrir
         {
             try
             {
-                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), sims_per_thread, std::chrono::steady_clock::now(), false);
+                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), sims_per_thread, std::chrono::steady_clock::now(), false);
             }
             catch (const std::exception &e)
             {
@@ -449,7 +449,7 @@ namespace fenrir
         if (workers.empty())
         {
             std::cerr << "Warning: Falling back to synchronous search!\n";
-            search_worker(std::make_unique<Engine>(engine.get_fen()), root.get(), simulations, std::chrono::steady_clock::now(), false);
+            search_worker(std::make_unique<chess::Engine>(engine.get_fen()), root.get(), simulations, std::chrono::steady_clock::now(), false);
         }
 
         for (auto &w : workers)
@@ -458,9 +458,9 @@ namespace fenrir
                 w.join();
         }
 
-        Move best_move(0, 0);
+        chess::Move best_move(0, 0);
         int max_visits = -1;
-        std::vector<std::pair<Move, double>> policy;
+        std::vector<std::pair<chess::Move, double>> policy;
         double total_visits = root->visits.load();
 
         for (auto &child : root->children)
@@ -476,10 +476,10 @@ namespace fenrir
         return {best_move, policy};
     }
 
-    int MCTSSearch::benchmark_search(Engine &engine, int time_limit_ms)
+    int MCTSSearch::benchmark_search(chess::Engine &engine, int time_limit_ms)
     {
         uint8_t root_color = engine.get_board_view().get_color();
-        Move empty_move(0, 0);
+        chess::Move empty_move(0, 0);
         auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
 
         if (evaluator)
@@ -487,7 +487,7 @@ namespace fenrir
             try
             {
                 auto future = evaluator->request_evaluation(engine.get_board_view());
-                NNResult res = future.get();
+                nn::NNResult res = future.get();
                 root->expand(engine, res.policy);
             }
             catch (...)
@@ -507,7 +507,7 @@ namespace fenrir
         {
             try
             {
-                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<Engine>(engine.get_fen()), root.get(), -1, end_time, true);
+                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
             }
             catch (...)
             {
@@ -517,7 +517,7 @@ namespace fenrir
 
         if (workers.empty())
         {
-            search_worker(std::make_unique<Engine>(engine.get_fen()), root.get(), -1, end_time, true);
+            search_worker(std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
         }
         else
         {
@@ -531,9 +531,9 @@ namespace fenrir
         return root->visits.load();
     }
 
-    void MCTSSearch::search_worker(std::unique_ptr<Engine> thread_engine_ptr, MCTSNode *root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
+    void MCTSSearch::search_worker(std::unique_ptr<chess::Engine> thread_engine_ptr, MCTSNode *root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
     {
-        Engine &thread_engine = *thread_engine_ptr;
+        chess::Engine &thread_engine = *thread_engine_ptr;
         int sim_count = 0;
 
         // The GPU stays fully saturated without the tree exploding sideways on every cycle.
@@ -543,14 +543,14 @@ namespace fenrir
         {
             MCTSNode *node;
             std::vector<VirtualLossGuard> path_guards;
-            std::future<NNResult> eval_future;
+            std::future<nn::NNResult> eval_future;
             bool is_terminal;
             double terminal_result;
             // Moves from root to this leaf node (in order). Used in the second
             // loop to re-walk thread_engine to the leaf position cheaply, avoiding
             // the need to construct a new Engine (which parses FEN, inits attack
             // tables, and emits a log line) for every single pipeline item.
-            std::vector<Move> path_moves;
+            std::vector<chess::Move> path_moves;
         };
 
         while (true)
@@ -577,7 +577,7 @@ namespace fenrir
                 // Record moves made during descent so the second loop can
                 // cheaply re-walk thread_engine to the leaf without constructing
                 // a new Engine object.
-                std::vector<Move> path;
+                std::vector<chess::Move> path;
 
                 while (node->is_expanded.load() && !node->children.empty())
                 {
@@ -663,7 +663,7 @@ namespace fenrir
                     // Now it's just make_move_fast × depth, which is near-zero cost.
                     try
                     {
-                        NNResult res = item.eval_future.get();
+                        nn::NNResult res = item.eval_future.get();
                         for (const auto &m : item.path_moves)
                             thread_engine.make_move_fast(m);
                         item.node->expand(thread_engine, res.policy);
@@ -688,7 +688,7 @@ namespace fenrir
         }
     }
 
-    double MCTSSearch::simulate(Engine &engine)
+    double MCTSSearch::simulate(chess::Engine &engine)
     {
         int moves_played = 0;
         uint8_t start_color = engine.get_board_view().get_color();
@@ -697,7 +697,7 @@ namespace fenrir
 
         while (!engine.is_checkmate() && !engine.is_stalemate() && !engine.is_draw() && moves_played < 100)
         {
-            std::vector<Move> legal_moves = engine.generate_all_moves();
+            std::vector<chess::Move> legal_moves = engine.generate_all_moves();
             if (legal_moves.empty())
                 break;
 

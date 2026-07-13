@@ -17,7 +17,7 @@
 
 #include "include/modifier/modifier.h"
 
-namespace color
+namespace modifier
 {
     /**
      * @brief Constructs an ANSI color modifier.

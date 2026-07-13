@@ -19,7 +19,7 @@
 #include <locale>
 #include <cctype>
 
-namespace fenrir
+namespace chess
 {
     void Moves::generate_bishop_moves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves)
     {

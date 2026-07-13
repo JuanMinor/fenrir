@@ -45,10 +45,10 @@ namespace tuner
 
     void AutoTuner::print_detected_hardware()
     {
-        color::Modifier cyan_modifier = color::Modifier(color::Color::FG_CYAN);
-        color::Modifier magenta_modifier = color::Modifier(color::Color::FG_MAGENTA);
-        color::Modifier reset_modifier = color::Modifier(color::Color::RESET);
-        color::Modifier yellow_modifier = color::Modifier(color::Color::FG_YELLOW);
+        modifier::Modifier cyan_modifier = modifier::Modifier(modifier::Color::FG_CYAN);
+        modifier::Modifier magenta_modifier = modifier::Modifier(modifier::Color::FG_MAGENTA);
+        modifier::Modifier reset_modifier = modifier::Modifier(modifier::Color::RESET);
+        modifier::Modifier yellow_modifier = modifier::Modifier(modifier::Color::FG_YELLOW);
 
         hardware::HostInfo host_info;
 
@@ -126,9 +126,9 @@ namespace tuner
 
             try
             {
-                auto evaluator = std::make_unique<fenrir::NNEvaluator>("onnx/fenrir.onnx", baseline_tuning_parameters.get_gpu_id(0), current_batch_size);
-                fenrir::MCTSSearch search(evaluator.get(), baseline_search_threads, current_pipeline_target);
-                fenrir::Engine engine(BENCHMARK_KIWIPETE_FEN);
+                auto evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", baseline_tuning_parameters.get_gpu_id(0), current_batch_size);
+                mcts::MCTSSearch search(evaluator.get(), baseline_search_threads, current_pipeline_target);
+                chess::Engine engine(BENCHMARK_KIWIPETE_FEN);
 
                 /* Run test */
                 auto start = std::chrono::steady_clock::now();
@@ -180,9 +180,9 @@ namespace tuner
 
             try
             {
-                auto evaluator = std::make_unique<fenrir::NNEvaluator>("onnx/fenrir.onnx", baseline_tuning_parameters.get_gpu_id(0), best_batch_size);
-                fenrir::MCTSSearch search(evaluator.get(), current_search_threads, current_pipeline_target);
-                fenrir::Engine engine(BENCHMARK_KIWIPETE_FEN);
+                auto evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", baseline_tuning_parameters.get_gpu_id(0), best_batch_size);
+                mcts::MCTSSearch search(evaluator.get(), current_search_threads, current_pipeline_target);
+                chess::Engine engine(BENCHMARK_KIWIPETE_FEN);
 
                 auto start = std::chrono::steady_clock::now();
                 int nodes_evaluated = search.benchmark_search(engine, 10000);

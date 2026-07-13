@@ -2,18 +2,18 @@
 #include "include/search/mcts.h"
 #include "include/engine/engine.h"
 
-using namespace fenrir;
+using namespace chess;
 
 class MCTSTest : public ::testing::Test
 {
 protected:
     Engine engine;
-    MCTSSearch search;
+    mcts::MCTSSearch search;
 };
 
 TEST_F(MCTSTest, FindBestMove_InitialPosition)
 {
-    Move best_move = search.find_best_move(engine, 50);
+    chess::Move best_move = search.find_best_move(engine, 50);
     
     auto legal_moves = engine.generate_all_moves();
     bool is_legal = false;
@@ -32,14 +32,14 @@ TEST_F(MCTSTest, FindBestMove_InitialPosition)
 
 TEST_F(MCTSTest, NodeExpansionAndPuct)
 {
-    Move dummy_move(0, 0);
-    MCTSNode root(nullptr, dummy_move, WHITE);
+    chess::Move dummy_move(0, 0);
+    mcts::MCTSNode root(nullptr, dummy_move, WHITE);
     
     root.expand(engine);
     EXPECT_TRUE(root.is_expanded);
     EXPECT_EQ(root.children.size(), 20U); 
     
-    MCTSNode* child = root.select_child();
+    mcts::MCTSNode* child = root.select_child();
     EXPECT_NE(child, nullptr);
     EXPECT_EQ(child->visits, 0);
     
@@ -54,8 +54,8 @@ TEST_F(MCTSTest, CheckmateInOne)
 {
     Engine mate_engine("7k/5Q2/5K2/8/8/8/8/8 w - - 0 1");
     
-    MCTSSearch search_single(nullptr, 1);
-    Move best_move = search_single.find_best_move(mate_engine, -1, 400);
+    mcts::MCTSSearch search_single(nullptr, 1);
+    chess::Move best_move = search_single.find_best_move(mate_engine, -1, 400);
     
     EXPECT_EQ(best_move.get_from(), "f7");
     EXPECT_EQ(best_move.get_to(), "g7");
@@ -63,8 +63,8 @@ TEST_F(MCTSTest, CheckmateInOne)
 
 TEST_F(MCTSTest, DirichletNoiseAndPolicyExpand)
 {
-    Move dummy_move(0, 0);
-    MCTSNode root(nullptr, dummy_move, WHITE);
+    chess::Move dummy_move(0, 0);
+    mcts::MCTSNode root(nullptr, dummy_move, WHITE);
     
     std::vector<double> policy(4096, 0.0);
     policy[0] = 1.0; 
@@ -78,7 +78,7 @@ TEST_F(MCTSTest, DirichletNoiseAndPolicyExpand)
     
     // Check if find_best_move_with_policy runs without crashing
     auto result = search.find_best_move_with_policy(engine, 50, true);
-    Move best_move = result.first;
+    chess::Move best_move = result.first;
     auto extracted_policy = result.second;
     
     EXPECT_GT(extracted_policy.size(), 0U);
@@ -88,7 +88,7 @@ TEST_F(MCTSTest, DirichletNoiseAndPolicyExpand)
 TEST_F(MCTSTest, EmptyChildrenReturnEmptyMove)
 {
     Engine mated_engine("7k/5Q2/5K2/8/8/8/8/8 b - - 0 1"); // Black is mated
-    Move m = search.find_best_move(mated_engine, 10);
+    chess::Move m = search.find_best_move(mated_engine, 10);
     EXPECT_EQ(m.to_uci_notation(), "a1a1");
 
     auto result = search.find_best_move_with_policy(mated_engine, 10, false);
@@ -103,7 +103,7 @@ TEST_F(MCTSTest, RolloutOpponentCheckmate)
     // White's king is trapped, so its only legal moves are pawn moves.
     // White plays a pawn move, then Black (in the rollout) plays randomly 
     // and will easily checkmate White's trapped king with its 3 queens.
-    // This will reliably trigger the result = 1.0 path in MCTSSearch::simulate.
+    // This will reliably trigger the result = 1.0 path in mcts::MCTSSearch::simulate.
     Engine custom_engine("K7/2qqq3/8/8/8/8/1P6/k7 w - - 0 1");
     search.find_best_move(custom_engine, 400);
     // As long as it doesn't crash and completes simulations, the coverage should be hit reliably.
@@ -112,7 +112,7 @@ TEST_F(MCTSTest, RolloutOpponentCheckmate)
 
 TEST_F(MCTSTest, FallbackToSynchronous)
 {
-    MCTSSearch sync_search(nullptr, 0); // 0 threads to trigger fallback
+    mcts::MCTSSearch sync_search(nullptr, 0); // 0 threads to trigger fallback
     auto result = sync_search.find_best_move_with_policy(engine, 10, false);
     EXPECT_NE(result.first.to_uci_notation(), "0000");
 }

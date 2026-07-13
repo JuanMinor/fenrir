@@ -36,7 +36,7 @@
 #define FENRIR_API
 #endif
 
-namespace fenrir
+namespace chess
 {
     /**
      * @brief Performs a forward bitscan to find the index of the least significant set bit (LSB).

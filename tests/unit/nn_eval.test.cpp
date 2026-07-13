@@ -6,28 +6,28 @@
 #include <thread>
 #include <chrono>
 
-using namespace fenrir;
+using namespace chess;
 
 class NNEvaluatorTest : public ::testing::Test {
 };
 
 TEST_F(NNEvaluatorTest, RequestEvaluationFallback) {
-    NNEvaluator eval("dummy_does_not_exist", 2);
+    nn::NNEvaluator eval("dummy_does_not_exist", 2);
     Engine engine;
     
     auto f1 = eval.request_evaluation(engine.get_board_view());
-    NNResult res1 = f1.get();
+    nn::NNResult res1 = f1.get();
 
     EXPECT_EQ(res1.value, 0.5);
     EXPECT_EQ(res1.policy.size(), 4096);
 }
 
 TEST_F(NNEvaluatorTest, RequestEvaluationWithModel) {
-    NNEvaluator eval("onnx/fenrir.onnx", 2);
+    nn::NNEvaluator eval("onnx/fenrir.onnx", 2);
     Engine engine;
     
     auto f1 = eval.request_evaluation(engine.get_board_view());
-    NNResult res1 = f1.get();
+    nn::NNResult res1 = f1.get();
 
     EXPECT_EQ(res1.value, 0.0);
     EXPECT_EQ(res1.policy.size(), 4096);
@@ -41,10 +41,10 @@ TEST_F(NNEvaluatorTest, CatchInvalidModelLoad) {
     out << "garbage data";
     out.close();
 
-    NNEvaluator eval("bad_model.onnx", 1);
+    nn::NNEvaluator eval("bad_model.onnx", 1);
     Engine engine;
     auto f1 = eval.request_evaluation(engine.get_board_view());
-    NNResult res1 = f1.get();
+    nn::NNResult res1 = f1.get();
 
     EXPECT_EQ(res1.value, 0.5);
 

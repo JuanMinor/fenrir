@@ -2,7 +2,7 @@
 #include "include/selfplay/selfplay.h"
 #include <filesystem>
 
-using namespace fenrir;
+using namespace chess;
 
 TEST(SelfPlayTest, RunGameDefault) {
     SelfPlay sp(0, 1, 1);

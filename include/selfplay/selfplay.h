@@ -23,7 +23,7 @@
 #include <vector>
 #include <utility>
 
-namespace fenrir
+namespace chess
 {
     class SelfPlay
     {
@@ -39,7 +39,7 @@ namespace fenrir
         };
 
         std::string get_output_dir();
-        void apply_dirichlet_noise(MCTSNode* root);
+        void apply_dirichlet_noise(mcts::MCTSNode* root);
 
         int gpu_id_;
         int simulations;

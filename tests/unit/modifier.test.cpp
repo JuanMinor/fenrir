@@ -34,14 +34,14 @@ protected:
     {
     }
 
-    std::string captureModifierOutput(const color::Modifier &modifier)
+    std::string captureModifierOutput(const modifier::Modifier &modifier)
     {
         std::ostringstream oss;
         oss << modifier;
         return oss.str();
     }
 
-    bool isValidAnsiSequence(const std::string &output, color::Color expectedColor)
+    bool isValidAnsiSequence(const std::string &output, modifier::Color expectedColor)
     {
         std::string expected = "\033[" + std::to_string(static_cast<int>(expectedColor)) + "m";
         return output == expected;
@@ -52,14 +52,14 @@ TEST_F(ModifierTest, ConstructorAndDestructor)
 {
 
     {
-        color::Modifier resetModifier(color::Color::RESET);
+        modifier::Modifier resetModifier(modifier::Color::RESET);
         EXPECT_NO_THROW({
 
         });
     }
 
     {
-        color::Modifier redModifier(color::Color::FG_RED);
+        modifier::Modifier redModifier(modifier::Color::FG_RED);
         EXPECT_NO_THROW({
 
         });
@@ -70,51 +70,51 @@ TEST_F(ModifierTest, ConstructorAndDestructor)
 
 TEST_F(ModifierTest, StreamOperatorReset)
 {
-    color::Modifier modifier(color::Color::RESET);
+    modifier::Modifier modifier(modifier::Color::RESET);
     std::string output = captureModifierOutput(modifier);
 
-    EXPECT_TRUE(isValidAnsiSequence(output, color::Color::RESET));
+    EXPECT_TRUE(isValidAnsiSequence(output, modifier::Color::RESET));
     EXPECT_EQ(output, "\033[0m");
 }
 
 TEST_F(ModifierTest, StreamOperatorForegroundColors)
 {
 
-    std::vector<color::Color> fgColors = {
-        color::Color::FG_BLACK, color::Color::FG_RED, color::Color::FG_GREEN, color::Color::FG_YELLOW,
-        color::Color::FG_BLUE, color::Color::FG_MAGENTA, color::Color::FG_CYAN, color::Color::FG_WHITE};
+    std::vector<modifier::Color> fgColors = {
+        modifier::Color::FG_BLACK, modifier::Color::FG_RED, modifier::Color::FG_GREEN, modifier::Color::FG_YELLOW,
+        modifier::Color::FG_BLUE, modifier::Color::FG_MAGENTA, modifier::Color::FG_CYAN, modifier::Color::FG_WHITE};
 
     for (auto color_value : fgColors)
     {
-        color::Modifier modifier(color_value);
+        modifier::Modifier modifier(color_value);
         std::string output = captureModifierOutput(modifier);
 
         EXPECT_TRUE(isValidAnsiSequence(output, color_value));
 
         switch (color_value)
         {
-        case color::Color::FG_BLACK:
+        case modifier::Color::FG_BLACK:
             EXPECT_EQ(output, "\033[30m");
             break;
-        case color::Color::FG_RED:
+        case modifier::Color::FG_RED:
             EXPECT_EQ(output, "\033[31m");
             break;
-        case color::Color::FG_GREEN:
+        case modifier::Color::FG_GREEN:
             EXPECT_EQ(output, "\033[32m");
             break;
-        case color::Color::FG_YELLOW:
+        case modifier::Color::FG_YELLOW:
             EXPECT_EQ(output, "\033[33m");
             break;
-        case color::Color::FG_BLUE:
+        case modifier::Color::FG_BLUE:
             EXPECT_EQ(output, "\033[34m");
             break;
-        case color::Color::FG_MAGENTA:
+        case modifier::Color::FG_MAGENTA:
             EXPECT_EQ(output, "\033[35m");
             break;
-        case color::Color::FG_CYAN:
+        case modifier::Color::FG_CYAN:
             EXPECT_EQ(output, "\033[36m");
             break;
-        case color::Color::FG_WHITE:
+        case modifier::Color::FG_WHITE:
             EXPECT_EQ(output, "\033[37m");
             break;
         default:
@@ -126,41 +126,41 @@ TEST_F(ModifierTest, StreamOperatorForegroundColors)
 TEST_F(ModifierTest, StreamOperatorBackgroundColors)
 {
 
-    std::vector<color::Color> bgColors = {
-        color::Color::BG_BLACK, color::Color::BG_RED, color::Color::BG_GREEN, color::Color::BG_YELLOW,
-        color::Color::BG_BLUE, color::Color::BG_MAGENTA, color::Color::BG_CYAN, color::Color::BG_WHITE};
+    std::vector<modifier::Color> bgColors = {
+        modifier::Color::BG_BLACK, modifier::Color::BG_RED, modifier::Color::BG_GREEN, modifier::Color::BG_YELLOW,
+        modifier::Color::BG_BLUE, modifier::Color::BG_MAGENTA, modifier::Color::BG_CYAN, modifier::Color::BG_WHITE};
 
     for (auto color_value : bgColors)
     {
-        color::Modifier modifier(color_value);
+        modifier::Modifier modifier(color_value);
         std::string output = captureModifierOutput(modifier);
 
         EXPECT_TRUE(isValidAnsiSequence(output, color_value));
 
         switch (color_value)
         {
-        case color::Color::BG_BLACK:
+        case modifier::Color::BG_BLACK:
             EXPECT_EQ(output, "\033[40m");
             break;
-        case color::Color::BG_RED:
+        case modifier::Color::BG_RED:
             EXPECT_EQ(output, "\033[41m");
             break;
-        case color::Color::BG_GREEN:
+        case modifier::Color::BG_GREEN:
             EXPECT_EQ(output, "\033[42m");
             break;
-        case color::Color::BG_YELLOW:
+        case modifier::Color::BG_YELLOW:
             EXPECT_EQ(output, "\033[43m");
             break;
-        case color::Color::BG_BLUE:
+        case modifier::Color::BG_BLUE:
             EXPECT_EQ(output, "\033[44m");
             break;
-        case color::Color::BG_MAGENTA:
+        case modifier::Color::BG_MAGENTA:
             EXPECT_EQ(output, "\033[45m");
             break;
-        case color::Color::BG_CYAN:
+        case modifier::Color::BG_CYAN:
             EXPECT_EQ(output, "\033[46m");
             break;
-        case color::Color::BG_WHITE:
+        case modifier::Color::BG_WHITE:
             EXPECT_EQ(output, "\033[47m");
             break;
         default:
@@ -173,9 +173,9 @@ TEST_F(ModifierTest, MultipleModifiersInSequence)
 {
     std::ostringstream oss;
 
-    color::Modifier red(color::Color::FG_RED);
-    color::Modifier bgBlue(color::Color::BG_BLUE);
-    color::Modifier reset(color::Color::RESET);
+    modifier::Modifier red(modifier::Color::FG_RED);
+    modifier::Modifier bgBlue(modifier::Color::BG_BLUE);
+    modifier::Modifier reset(modifier::Color::RESET);
 
     oss << red << "Red text" << bgBlue << " with blue background" << reset << " normal text";
 
@@ -191,9 +191,9 @@ TEST_F(ModifierTest, MultipleModifiersInSequence)
 
 TEST_F(ModifierTest, CopySemantics)
 {
-    color::Modifier original(color::Color::FG_GREEN);
+    modifier::Modifier original(modifier::Color::FG_GREEN);
 
-    color::Modifier copy(original);
+    modifier::Modifier copy(original);
 
     std::string originalOutput = captureModifierOutput(original);
     std::string copyOutput = captureModifierOutput(copy);
@@ -204,7 +204,7 @@ TEST_F(ModifierTest, CopySemantics)
 
 TEST_F(ModifierTest, DifferentStreamTypes)
 {
-    color::Modifier modifier(color::Color::FG_YELLOW);
+    modifier::Modifier modifier(modifier::Color::FG_YELLOW);
 
     std::ostringstream oss;
     oss << modifier;
@@ -218,15 +218,15 @@ TEST_F(ModifierTest, DifferentStreamTypes)
 TEST_F(ModifierTest, BoundaryValues)
 {
 
-    color::Modifier resetModifier(color::Color::RESET);
+    modifier::Modifier resetModifier(modifier::Color::RESET);
     std::string resetOutput = captureModifierOutput(resetModifier);
     EXPECT_EQ(resetOutput, "\033[0m");
 
-    color::Modifier whiteModifier(color::Color::FG_WHITE);
+    modifier::Modifier whiteModifier(modifier::Color::FG_WHITE);
     std::string whiteOutput = captureModifierOutput(whiteModifier);
     EXPECT_EQ(whiteOutput, "\033[37m");
 
-    color::Modifier bgWhiteModifier(color::Color::BG_WHITE);
+    modifier::Modifier bgWhiteModifier(modifier::Color::BG_WHITE);
     std::string bgWhiteOutput = captureModifierOutput(bgWhiteModifier);
     EXPECT_EQ(bgWhiteOutput, "\033[47m");
 }
@@ -235,13 +235,13 @@ TEST_F(ModifierTest, MemoryManagement)
 {
 
     const int numModifiers = 1000;
-    std::vector<std::unique_ptr<color::Modifier>> modifiers;
+    std::vector<std::unique_ptr<modifier::Modifier>> modifiers;
 
     EXPECT_NO_THROW({
         for (int i = 0; i < numModifiers; ++i)
         {
-            color::Color color_value = static_cast<color::Color>(static_cast<int>(color::Color::FG_RED) + (i % 8));
-            modifiers.push_back(std::make_unique<color::Modifier>(color_value));
+            modifier::Color color_value = static_cast<modifier::Color>(static_cast<int>(modifier::Color::FG_RED) + (i % 8));
+            modifiers.push_back(std::make_unique<modifier::Modifier>(color_value));
         }
     });
 
@@ -259,15 +259,15 @@ TEST_F(ModifierTest, MemoryManagement)
 
 TEST_F(ModifierTest, OutputFormatConsistency)
 {
-    std::vector<color::Color> allColors = {
-        color::Color::RESET, color::Color::FG_BLACK, color::Color::BG_BLACK, color::Color::FG_RED, color::Color::BG_RED,
-        color::Color::FG_GREEN, color::Color::BG_GREEN, color::Color::FG_YELLOW, color::Color::BG_YELLOW,
-        color::Color::FG_BLUE, color::Color::BG_BLUE, color::Color::FG_MAGENTA, color::Color::BG_MAGENTA,
-        color::Color::FG_CYAN, color::Color::BG_CYAN, color::Color::FG_WHITE, color::Color::BG_WHITE};
+    std::vector<modifier::Color> allColors = {
+        modifier::Color::RESET, modifier::Color::FG_BLACK, modifier::Color::BG_BLACK, modifier::Color::FG_RED, modifier::Color::BG_RED,
+        modifier::Color::FG_GREEN, modifier::Color::BG_GREEN, modifier::Color::FG_YELLOW, modifier::Color::BG_YELLOW,
+        modifier::Color::FG_BLUE, modifier::Color::BG_BLUE, modifier::Color::FG_MAGENTA, modifier::Color::BG_MAGENTA,
+        modifier::Color::FG_CYAN, modifier::Color::BG_CYAN, modifier::Color::FG_WHITE, modifier::Color::BG_WHITE};
 
     for (auto color_value : allColors)
     {
-        color::Modifier modifier(color_value);
+        modifier::Modifier modifier(color_value);
         std::string output = captureModifierOutput(modifier);
 
         EXPECT_GE(output.length(), 4);
@@ -285,10 +285,10 @@ TEST_F(ModifierTest, RealWorldUsagePattern)
 
     std::ostringstream console;
 
-    color::Modifier green(color::Color::FG_GREEN);
-    color::Modifier red(color::Color::FG_RED);
-    color::Modifier yellow(color::Color::FG_YELLOW);
-    color::Modifier reset(color::Color::RESET);
+    modifier::Modifier green(modifier::Color::FG_GREEN);
+    modifier::Modifier red(modifier::Color::FG_RED);
+    modifier::Modifier yellow(modifier::Color::FG_YELLOW);
+    modifier::Modifier reset(modifier::Color::RESET);
 
     console << green << "[INFO] " << reset << "Application started successfully" << std::endl;
     console << yellow << "[WARN] " << reset << "Configuration file not found, using defaults" << std::endl;
@@ -311,7 +311,7 @@ TEST_F(ModifierTest, PerformanceModifierCreation)
 
     for (int i = 0; i < numIterations; ++i)
     {
-        color::Modifier modifier(color::Color::FG_RED);
+        modifier::Modifier modifier(modifier::Color::FG_RED);
         std::ostringstream oss;
         oss << modifier;
     }
@@ -338,9 +338,9 @@ TEST_F(ModifierTest, StressTest)
     {
         for (int i = 0; i < operationsPerThread; ++i)
         {
-            color::Color randomColor = static_cast<color::Color>(
-                static_cast<int>(color::Color::FG_RED) + (i % 8));
-            color::Modifier modifier(randomColor);
+            modifier::Color randomColor = static_cast<modifier::Color>(
+                static_cast<int>(modifier::Color::FG_RED) + (i % 8));
+            modifier::Modifier modifier(randomColor);
 
             std::ostringstream oss;
             oss << modifier << "Test " << i;

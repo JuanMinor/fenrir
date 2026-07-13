@@ -2,7 +2,7 @@
 #include "include/search/mcts.h"
 #include "include/engine/engine.h"
 
-using namespace fenrir;
+using namespace chess;
 
 TEST(MCTSTestFallback, FallbackToSynchronous)
 {

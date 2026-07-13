@@ -22,16 +22,16 @@
 #include <string>
 #include <memory>
 
-namespace fenrir
+namespace chess
 {
     class UCI
     {
         void parse_position(const std::string &command);
         void parse_go(const std::string &command);
 
-        std::unique_ptr<Engine> engine;
-        std::unique_ptr<NNEvaluator> evaluator;
-        std::unique_ptr<MCTSSearch> search;
+        std::unique_ptr<chess::Engine> engine;
+        std::unique_ptr<nn::NNEvaluator> evaluator;
+        std::unique_ptr<mcts::MCTSSearch> search;
 
     public:
         UCI();

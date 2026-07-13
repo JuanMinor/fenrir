@@ -17,7 +17,7 @@
 
 #include "include/chess/fen.h"
 
-namespace fenrir
+namespace chess
 {
     Fen::Fen(const std::string &fen_string)
         : placement(""), castling(""), en_passant(""), color(WHITE), half_move_clock(0), full_moves(1)
@@ -124,7 +124,7 @@ namespace fenrir
         int white_king_rank = -1, white_king_file = -1;
         int black_king_rank = -1, black_king_file = -1;
 
-        for (int rank = 0; rank < fenrir::BOARD_SIZE; rank++)
+        for (int rank = 0; rank < chess::BOARD_SIZE; rank++)
         {
             int file = 0;
             for (char c : ranks[static_cast<size_t>(rank)])
