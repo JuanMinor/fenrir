@@ -22,6 +22,10 @@
 
 namespace tuner
 {
+    /**
+     * @brief Constructs TuningParameters and optionally loads search parameters from configuration file.
+     * @param load_from_file If true, the constructor attempts to parse fenrir.cfg for custom parameters.
+     */
     TuningParameters::TuningParameters(bool load_from_file)
     {
         bool loaded = false;
@@ -63,27 +67,15 @@ namespace tuner
         }
     }
 
+    /**
+     * @brief Destructs the TuningParameters object.
+     */
     TuningParameters::~TuningParameters() = default;
 
-    uint8_t TuningParameters::calculate_search_threads()
-    {
-        uint8_t cores = DEFAULT_CPU_CORES;
-        if (host_info && host_info->get_cpus().size() > 0)
-        {
-            cores = static_cast<uint8_t>(host_info->get_cpus().at(0).get_logical_cores());
-        }
-
-        if (cores > 4)
-        {
-            return cores - 2;
-        }
-        else if (cores > 1)
-        {
-            return cores - 1;
-        }
-        return 1;
-    }
-
+    /**
+     * @brief Computes optimal inference batch size based on available GPU count and VRAM.
+     * @returns The calculated batch size.
+     */
     uint16_t TuningParameters::calculate_batch_size()
     {
         if (!host_info || host_info->get_gpus().empty())
@@ -116,6 +108,10 @@ namespace tuner
         return static_cast<uint16_t>(std::min(gpu_batch, std::max(static_cast<uint32_t>(DEFAULT_CPU_BATCH_SIZE), search_thread_batch)));
     }
 
+    /**
+     * @brief Computes optimal pipeline size based on batch size and search threads.
+     * @returns The calculated pipeline target.
+     */
     uint16_t TuningParameters::calculate_pipeline_target()
     {
         uint32_t base_pipeline = batch_size * DEFAULT_BASE_PIPELINE;
@@ -125,6 +121,34 @@ namespace tuner
         return static_cast<uint16_t>(std::max(base_pipeline, thread_minimum));
     }
 
+    /**
+     * @brief Computes optimal number of search threads based on logical CPU cores.
+     * @returns The calculated number of threads.
+     */
+    uint8_t TuningParameters::calculate_search_threads()
+    {
+        uint8_t cores = DEFAULT_CPU_CORES;
+        if (host_info && host_info->get_cpus().size() > 0)
+        {
+            cores = static_cast<uint8_t>(host_info->get_cpus().at(0).get_logical_cores());
+        }
+
+        if (cores > 4)
+        {
+            return cores - 2;
+        }
+        else if (cores > 1)
+        {
+            return cores - 1;
+        }
+        return 1;
+    }
+
+    /**
+     * @brief Translates a logical GPU index to its physical hardware Device ID.
+     * @param index The 0-based logical index in the detected list.
+     * @returns The underlying physical device identifier.
+     */
     uint8_t TuningParameters::get_gpu_id(uint8_t index) const
     {
         if (host_info && index < host_info->get_gpus().size())

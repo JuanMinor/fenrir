@@ -1,16 +1,16 @@
 /*
- *   Copyright (c) 2025 Juan Minor
-
+ *   Copyright (c) 2026 Juan Minor
+ *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
  *   the Free Software Foundation, either version 3 of the License, or
  *   (at your option) any later version.
-
+ *
  *   This program is distributed in the hope that it will be useful,
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU General Public License for more details.
-
+ *
  *   You should have received a copy of the GNU General Public License
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
@@ -184,36 +184,64 @@ namespace fenrir
         this->validate_chess_rules(placement_string);
     }
 
+    /**
+     * @brief Get board placement string (the rank/file portion of FEN).
+     * @returns Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
+     */
     std::string Fen::get_placement(void) const
     {
         return this->placement;
     }
 
+    /**
+     * @brief Get castling rights string representation.
+     * @returns Castling rights (e.g., "KQkq", "-").
+     */
     std::string Fen::get_castling(void) const
     {
         return this->castling;
     }
 
-    std::string Fen::get_en_passant(void) const
-    {
-        return this->en_passant;
-    }
-
+    /**
+     * @brief Get color (side to move).
+     * @returns Color value: 0 for white, 1 for black.
+     */
     uint8_t Fen::get_color(void) const
     {
         return this->color;
     }
 
-    uint32_t Fen::get_half_move_clock(void) const
+    /**
+     * @brief Get en passant target square.
+     * @returns En passant square (e.g., "e3", "-").
+     */
+    std::string Fen::get_en_passant(void) const
     {
-        return this->half_move_clock;
+        return this->en_passant;
     }
 
+    /**
+     * @brief Get full move number (increments each time black moves).
+     * @returns Full move count.
+     */
     uint32_t Fen::get_full_moves(void) const
     {
         return this->full_moves;
     }
 
+    /**
+     * @brief Get half-move clock (moves since last pawn move or capture).
+     * @returns Half-move clock value (0-50 for draw rule).
+     */
+    uint32_t Fen::get_half_move_clock(void) const
+    {
+        return this->half_move_clock;
+    }
+
+    /**
+     * @brief Set board placement string (rank/file portion of FEN).
+     * @param placement_string Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
+     */
     void Fen::set_placement(const std::string &placement_string)
     {
         std::regex placement_regex(
@@ -229,6 +257,10 @@ namespace fenrir
         return;
     }
 
+    /**
+     * @brief Set castling rights.
+     * @param castling_rights Castling rights string (e.g., "KQkq", "-").
+     */
     void Fen::set_castling(const std::string &castling_rights)
     {
         if (castling_rights != "-" && !std::regex_match(castling_rights, std::regex("^[KQkq]+$")))
@@ -239,16 +271,10 @@ namespace fenrir
         return;
     }
 
-    void Fen::set_en_passant(const std::string &en_passant_square)
-    {
-        if (en_passant_square != "-" && !std::regex_match(en_passant_square, std::regex("^[a-h][36]$")))
-        {
-            LOG_THROW_ERROR("Invalid en passant square: " + en_passant_square, true);
-        }
-        this->en_passant = en_passant_square;
-        return;
-    }
-
+    /**
+     * @brief Set color (side to move).
+     * @param color_value Color value: 0 for white, 1 for black.
+     */
     void Fen::set_color(uint8_t color_value)
     {
         if (color_value != WHITE && color_value != BLACK)
@@ -259,16 +285,24 @@ namespace fenrir
         return;
     }
 
-    void Fen::set_half_move_clock(uint32_t half_move_clock_value)
+    /**
+     * @brief Set en passant target square.
+     * @param en_passant_square En passant square (e.g., "e3", "-").
+     */
+    void Fen::set_en_passant(const std::string &en_passant_square)
     {
-        if (half_move_clock_value > 100)
+        if (en_passant_square != "-" && !std::regex_match(en_passant_square, std::regex("^[a-h][36]$")))
         {
-            LOG_THROW_ERROR("Invalid half move clock: cannot exceed 100 (50-move rule)", true);
+            LOG_THROW_ERROR("Invalid en passant square: " + en_passant_square, true);
         }
-        this->half_move_clock = half_move_clock_value;
+        this->en_passant = en_passant_square;
         return;
     }
 
+    /**
+     * @brief Set full move number (increments each time black moves).
+     * @param full_moves_value Full move count.
+     */
     void Fen::set_full_moves(uint32_t full_moves_value)
     {
         if (full_moves_value == 0)
@@ -279,6 +313,24 @@ namespace fenrir
         return;
     }
 
+    /**
+     * @brief Set half-move clock (moves since last pawn move or capture).
+     * @param half_move_clock_value Half-move clock value (0-50 for draw rule).
+     */
+    void Fen::set_half_move_clock(uint32_t half_move_clock_value)
+    {
+        if (half_move_clock_value > 100)
+        {
+            LOG_THROW_ERROR("Invalid half move clock: cannot exceed 100 (50-move rule)", true);
+        }
+        this->half_move_clock = half_move_clock_value;
+        return;
+    }
+
+    /**
+     * @brief Generate FEN string from current position state.
+     * @returns Complete FEN notation string.
+     */
     std::string Fen::generate_fen(void) const
     {
         std::ostringstream oss;

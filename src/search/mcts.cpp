@@ -1,3 +1,20 @@
+/*
+ *   Copyright (c) 2026 Juan Minor
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "include/search/mcts.h"
 #include <algorithm>
 #include <iostream>
@@ -191,8 +208,6 @@ namespace fenrir
     {
         MCTSNode *best_child = nullptr;
         double best_value = -1e9;
-        // Interior nodes no longer carry virtual loss (we apply VL only to leaves),
-        // so parent_visits is simply the backpropagated visit count.
         int parent_visits = visits.load();
 
         for (auto &child : children)
@@ -230,7 +245,9 @@ namespace fenrir
         {
             // Q is always computed from real backpropagated results only, never
             // diluted by VL. VL only affects the exploration (U) denominator.
-            q = win_score.load() / real_visits;
+            // Since child's win_score represents the child's (opponent's) win rate,
+            // the parent's win rate is 1.0 - q.
+            q = 1.0 - (win_score.load() / real_visits);
         }
 
         // Standard AlphaZero dynamic CPUCT constant.
@@ -364,7 +381,8 @@ namespace fenrir
             {
                 max_visits = child->visits.load();
                 best_move = child->move;
-                best_score = child->win_score.load() / std::max(1, child->visits.load());
+                // child's score is from opponent's perspective, so invert for root's perspective
+                best_score = 1.0 - (child->win_score.load() / std::max(1, child->visits.load()));
             }
         }
 

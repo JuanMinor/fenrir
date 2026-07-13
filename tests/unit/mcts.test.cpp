@@ -54,7 +54,8 @@ TEST_F(MCTSTest, CheckmateInOne)
 {
     Engine mate_engine("7k/5Q2/5K2/8/8/8/8/8 w - - 0 1");
     
-    Move best_move = search.find_best_move(mate_engine, 200);
+    MCTSSearch search_single(nullptr, 1);
+    Move best_move = search_single.find_best_move(mate_engine, -1, 400);
     
     EXPECT_EQ(best_move.get_from(), "f7");
     EXPECT_EQ(best_move.get_to(), "g7");

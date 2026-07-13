@@ -29,11 +29,18 @@
 
 namespace tuner
 {
+    /**
+     * @brief Initialize the auto-tuner with baseline tuning parameters.
+     * @param tuning_parameters Reference to tuning parameters to optimize.
+     */
     AutoTuner::AutoTuner(TuningParameters &tuning_parameters)
         : baseline_tuning_parameters(tuning_parameters), real_tuning_parameters(tuning_parameters)
     {
     }
 
+    /**
+     * @brief Destructor.
+     */
     AutoTuner::~AutoTuner() = default;
 
     void AutoTuner::print_detected_hardware()
@@ -84,6 +91,10 @@ namespace tuner
         std::cout << reset_modifier;
     }
 
+    /**
+     * @brief Run the auto-tuning process to find optimal parameters.
+     * @returns Optimized TuningParameters based on hardware benchmarks.
+     */
     TuningParameters AutoTuner::run()
     {
         print_detected_hardware();

@@ -1,3 +1,20 @@
+/*
+ *   Copyright (c) 2026 Juan Minor
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "include/eval/nn_eval.h"
 #include <chrono>
 #include <iostream>
@@ -234,7 +251,7 @@ namespace fenrir
                         {
                             NNResult res;
                             res.value = 0.5;
-                            res.policy.resize(4672, 0.01); // FIXED: 4672
+                            res.policy.resize(4096, 0.01);
                             p.set_value(res);
                         }
                         catch (...)
@@ -254,7 +271,7 @@ namespace fenrir
             {
                 NNResult res;
                 res.value = 0.5;
-                res.policy.resize(4672, 0.01); // FIXED: 4672
+                res.policy.resize(4096, 0.01);
                 promises[i].set_value(res);
             }
             return;
@@ -285,7 +302,7 @@ namespace fenrir
 
             auto policy_info = output_tensors[0].GetTensorTypeAndShapeInfo();
             auto value_info = output_tensors[1].GetTensorTypeAndShapeInfo();
-            size_t policy_size = 4672; // FIXED: Changed from 4096 to 4672
+            size_t policy_size = 4096;
 
             if (policy_info.GetElementCount() < batch_size_actual * policy_size || value_info.GetElementCount() < batch_size_actual)
             {
@@ -315,7 +332,7 @@ namespace fenrir
                     {
                         NNResult res;
                         res.value = 0.5;
-                        res.policy.resize(4672, 0.01); // FIXED: 4672
+                        res.policy.resize(4096, 0.01);
                         promises[i].set_value(res);
                     }
                     catch (...)

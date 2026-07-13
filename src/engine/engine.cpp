@@ -33,16 +33,29 @@ namespace fenrir
 
     Engine::~Engine() {}
 
+    /**
+     * @brief Get the library version string.
+     * @returns Version string (e.g., "0.3.0").
+     */
     const char *Engine::version()
     {
         return FENRIR_VERSION;
     }
 
+    /**
+     * @brief Get a const view of the board for inspection (e.g., by evaluators).
+     * @returns Const reference to the AbstractBoard interface.
+     */
     const AbstractBoard &Engine::get_board_view() const
     {
         return board;
     }
 
+    /**
+     * @brief Generate all legal moves for a piece at a specific square.
+     * @param algebraic_address Square in algebraic notation (e.g., "e2").
+     * @returns Vector of legal moves for the piece on that square.
+     */
     std::vector<Move> Engine::generate_moves(const std::string &algebraic_address)
     {
         std::vector<Move> pseudo_legal;
@@ -97,6 +110,10 @@ namespace fenrir
         return legal;
     }
 
+    /**
+     * @brief Generate all legal moves for the side to move.
+     * @returns Vector of all legal moves in the current position.
+     */
     std::vector<Move> Engine::generate_all_moves()
     {
         uint8_t active_color = board.get_color();
@@ -158,12 +175,20 @@ namespace fenrir
         return all_moves;
     }
 
+    /**
+     * @brief Get FEN notation of current board position.
+     * @returns Full FEN string.
+     */
     std::string Engine::get_fen(void)
     {
         std::string current_fen = board.get_fen();
         return current_fen;
     }
 
+    /**
+     * @brief Make a move on the board with full validation.
+     * @param move Move to apply.
+     */
     void Engine::make_move(const Move &move)
     {
         /* Generate legal moves */
@@ -196,12 +221,19 @@ namespace fenrir
         logger::DEBUG("Made move from " + matched_move.get_from() + " to " + matched_move.get_to());
     }
 
+    /**
+     * @brief Make a move without recording undo state (for performance-critical paths).
+     * @param move Move to apply.
+     */
     void Engine::make_move_fast(const Move &move)
     {
         UndoState state = board.apply_move(move);
         undo_stack.push_back(state);
     }
 
+    /**
+     * @brief Undo the last move made.
+     */
     void Engine::undo_move()
     {
         if (undo_stack.empty())
@@ -215,6 +247,10 @@ namespace fenrir
         logger::DEBUG("Undid last move");
     }
 
+    /**
+     * @brief Check if current position is checkmate.
+     * @returns True if the side to move is in checkmate, false otherwise.
+     */
     bool Engine::is_checkmate()
     {
         uint8_t active_color = board.get_color();
@@ -227,6 +263,10 @@ namespace fenrir
         return all_moves.empty();
     }
 
+    /**
+     * @brief Check if current position is stalemate.
+     * @returns True if the side to move is stalemated, false otherwise.
+     */
     bool Engine::is_stalemate()
     {
         uint8_t active_color = board.get_color();
@@ -239,6 +279,10 @@ namespace fenrir
         return all_moves.empty();
     }
 
+    /**
+     * @brief Check if current position is a draw (50-move rule or stalemate).
+     * @returns True if game is drawn, false otherwise.
+     */
     bool Engine::is_draw()
     {
         if (is_stalemate())
@@ -293,6 +337,10 @@ namespace fenrir
         return false;
     }
 
+    /**
+     * @brief Get combined terminal state information in a single query.
+     * @returns TerminalState struct with is_terminal flag and game score.
+     */
     Engine::TerminalState Engine::get_terminal_state()
     {
         // --- Cheap checks first (no move generation required) ---
@@ -355,11 +403,17 @@ namespace fenrir
         return {false, 0.5}; // not a terminal position
     }
 
+    /**
+     * @brief Print the current board state in text format.
+     */
     void Engine::print_board(void) const
     {
         board.print();
     }
 
+    /**
+     * @brief Reset the board to the starting position.
+     */
     void Engine::reset()
     {
         board.reset(fen);

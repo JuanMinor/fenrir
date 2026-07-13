@@ -20,9 +20,21 @@
 
 namespace chrono
 {
+    /**
+     * @brief Constructs a new Chrono timer object.
+     */
     Chrono::Chrono() {}
+
+    /**
+     * @brief Destroys the Chrono timer object.
+     */
     Chrono::~Chrono() {}
 
+    /**
+     * @brief Retrieves the local time structure based on a system timer.
+     * @param timer Optional pointer to a time_t value to convert. If nullptr, current system time is used.
+     * @returns A pointer to a thread-local tm structure containing local time components.
+     */
     tm *Chrono::get_local_time(time_t *timer) const noexcept
     {
         static thread_local tm local_time_buf;
@@ -40,11 +52,20 @@ namespace chrono
         return &local_time_buf;
     }
 
+    /**
+     * @brief Gets the current calendar raw time.
+     * @returns The current system time as a time_t value.
+     */
     time_t Chrono::get_raw_time(void) const noexcept
     {
         return std::time(nullptr);
     }
 
+    /**
+     * @brief Returns a formatted string representing the current system local time.
+     * @param format The format specifier string (compatible with std::put_time).
+     * @returns A std::string containing the formatted date/time.
+     */
     std::string Chrono::get_time_with_format(const char *format) const
     {
         tm *local_time = this->get_local_time(nullptr);

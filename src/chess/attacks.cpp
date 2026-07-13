@@ -19,7 +19,6 @@
 
 namespace fenrir
 {
-    /* White pawn attacks = 0, black pawn attacks = 1 */
     static constexpr int ATTACK_WHITE = 0;
     static constexpr int ATTACK_BLACK = 1;
 
@@ -28,6 +27,9 @@ namespace fenrir
     uint64_t PAWN_ATTACKS[2][64];
     uint64_t RAY[64][8];
 
+    /**
+     * @brief Initialize precomputed attack tables for all piece types.
+     */
     void init_attack_tables()
     {
         /* Knight move deltas */

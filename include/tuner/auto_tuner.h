@@ -28,9 +28,21 @@ namespace tuner
         void print_detected_hardware();
 
     public:
+        /**
+         * @brief Initialize the auto-tuner with baseline tuning parameters.
+         * @param tuning_parameters Reference to tuning parameters to optimize.
+         */
         AutoTuner(TuningParameters &tuning_parameters);
+
+        /**
+         * @brief Destructor.
+         */
         ~AutoTuner();
 
+        /**
+         * @brief Run the auto-tuning process to find optimal parameters.
+         * @returns Optimized TuningParameters based on hardware benchmarks.
+         */
         TuningParameters run();
     };
 }

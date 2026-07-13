@@ -153,6 +153,10 @@ namespace fenrir
         return placement;
     }
 
+    /**
+     * @brief Generate FEN notation of current board position.
+     * @returns Full FEN string.
+     */
     std::string Board::get_fen(void)
     {
         fen.set_placement(this->generate_placement_from_board());

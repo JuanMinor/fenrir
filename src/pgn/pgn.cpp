@@ -19,50 +19,32 @@
 
 namespace io
 {
+    /**
+     * @brief Private constructor to enforce the Singleton pattern.
+     */
     Pgn::Pgn()
     {
         logger::INFO("Portable Game Notation (PGN) initialized");
     }
 
+    /**
+     * @brief Destructor for the Pgn class.
+     */
     Pgn::~Pgn() {}
 
-    Pgn &Pgn::get_instance()
-    {
-        static Pgn instance;
-        return instance;
-    }
-
+    /**
+     * @brief Resets stream flags and seeks the output stream to the beginning of the file.
+     * @param os The output stream to modify.
+     */
     void Pgn::clear_stream_flags(std::ostream &os) const
     {
         os.seekp(std::ios_base::beg);
         os.clear();
     }
 
-    void Pgn::set_metadata(std::ostream &os) const
-    {
-        auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
-        this->clear_stream_flags(os);
-        os << "[Event \"User vs. Fenrir\"]\n"
-           << "[Site \"Remote server - atom\"]\n"
-           << "[Date \"" << date << "\"]\n"
-           << "[Round \"1\"]\n"
-           << "[White \"User\"]\n"
-           << "[Black \"Fenrir\"]\n"
-           << "[Result \"-\"]\n\n";
-    }
-
-    void Pgn::record(const std::string &move) const
-    {
-        std::lock_guard<std::mutex> lock(pgn_mutex);
-        std::ofstream file(PGN_FILE_STORE, std::ios_base::app);
-        if (!file)
-        {
-            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
-            return;
-        }
-        file << move << '\n';
-    }
-
+    /**
+     * @brief Reads all recorded moves from the store and generates a final formatted PGN file with metadata tags.
+     */
     void Pgn::create(void) const
     {
         std::lock_guard<std::mutex> lock(pgn_mutex);
@@ -97,5 +79,48 @@ namespace io
             }
             move_count++;
         }
+    }
+
+    /**
+     * @brief Retrieves the single global instance of the PGN recorder.
+     * @returns A reference to the Singleton Pgn instance.
+     */
+    Pgn &Pgn::get_instance()
+    {
+        static Pgn instance;
+        return instance;
+    }
+
+    /**
+     * @brief Appends a single move to the temporary PGN move store file.
+     * @param move The move string to record.
+     */
+    void Pgn::record(const std::string &move) const
+    {
+        std::lock_guard<std::mutex> lock(pgn_mutex);
+        std::ofstream file(PGN_FILE_STORE, std::ios_base::app);
+        if (!file)
+        {
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
+            return;
+        }
+        file << move << '\n';
+    }
+
+    /**
+     * @brief Writes standard PGN metadata tags to the output stream.
+     * @param os The output stream to write metadata to.
+     */
+    void Pgn::set_metadata(std::ostream &os) const
+    {
+        auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
+        this->clear_stream_flags(os);
+        os << "[Event \"User vs. Fenrir\"]\n"
+           << "[Site \"Remote server - atom\"]\n"
+           << "[Date \"" << date << "\"]\n"
+           << "[Round \"1\"]\n"
+           << "[White \"User\"]\n"
+           << "[Black \"Fenrir\"]\n"
+           << "[Result \"-\"]\n\n";
     }
 }

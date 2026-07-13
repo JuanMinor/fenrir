@@ -126,7 +126,7 @@ namespace fenrir
     }
 
     /* Append pawn promotion moves */
-    static void addPromotionMoves(uint8_t from_sq, uint8_t to_sq, std::vector<Move> &moves)
+    static void add_promotion_moves(uint8_t from_sq, uint8_t to_sq, std::vector<Move> &moves)
     {
         /* Append Q, R, B, N promotions */
         static const char promotion_pieces[4] = {'Q', 'R', 'B', 'N'};
@@ -152,7 +152,7 @@ namespace fenrir
             uint8_t new_rank_u = static_cast<uint8_t>(new_rank_int);
             if (new_rank_u == promotion_rank)
             {
-                addPromotionMoves(from_sq, to_sq, moves);
+                add_promotion_moves(from_sq, to_sq, moves);
             }
             else
             {
@@ -173,7 +173,7 @@ namespace fenrir
                     uint8_t new_rank_u = static_cast<uint8_t>(new_rank_int);
                     if (new_rank_u == promotion_rank)
                     {
-                        addPromotionMoves(from_sq, to_sq, moves);
+                        add_promotion_moves(from_sq, to_sq, moves);
                     }
                     else
                     {
@@ -196,7 +196,7 @@ namespace fenrir
                     uint8_t new_rank_u = static_cast<uint8_t>(new_rank_int);
                     if (new_rank_u == promotion_rank)
                     {
-                        addPromotionMoves(from_sq, to_sq, moves);
+                        add_promotion_moves(from_sq, to_sq, moves);
                     }
                     else
                     {

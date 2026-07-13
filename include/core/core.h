@@ -24,7 +24,6 @@
 #include <intrin.h>
 #endif
 
-/* Export dll symbols */
 #if defined(_WIN32) || defined(_WIN64)
 #ifdef FENRIR_BUILD_DLL
 #define FENRIR_API __declspec(dllexport)
@@ -39,30 +38,11 @@
 
 namespace fenrir
 {
-#ifdef NDEBUG
-    constexpr bool DEBUG = false;
-#else
-    constexpr bool DEBUG = true;
-#endif
-
-    constexpr int BOARD_SIZE = 8;
-    constexpr int BOARD_MAX_LEFT = 0;
-    constexpr int BOARD_MAX_RIGHT = 7;
-
-    constexpr uint8_t WHITE = 0;
-    constexpr uint8_t BLACK = 1;
-
-    enum class MoveType : uint8_t
-    {
-        NORMAL,
-        CAPTURE,
-        EN_PASSANT,
-        CASTLE_KINGSIDE,
-        CASTLE_QUEENSIDE,
-        PROMOTION
-    };
-
-    // Cross-platform bitscan utilities
+    /**
+     * @brief Performs a forward bitscan to find the index of the least significant set bit (LSB).
+     * @param bb The 64-bit bitboard to scan.
+     * @returns The 0-indexed position of the least significant set bit.
+     */
     inline uint8_t bitscan_forward(uint64_t bb)
     {
 #if defined(_MSC_VER)
@@ -74,6 +54,11 @@ namespace fenrir
 #endif
     }
 
+    /**
+     * @brief Performs a reverse bitscan to find the index of the most significant set bit (MSB).
+     * @param bb The 64-bit bitboard to scan.
+     * @returns The 0-indexed position of the most significant set bit.
+     */
     inline uint8_t bitscan_reverse(uint64_t bb)
     {
 #if defined(_MSC_VER)
@@ -84,6 +69,30 @@ namespace fenrir
         return static_cast<uint8_t>(63 - __builtin_clzll(bb));
 #endif
     }
+
+    constexpr uint8_t BLACK = 1;
+
+    constexpr int BOARD_MAX_LEFT = 0;
+    constexpr int BOARD_MAX_RIGHT = 7;
+    constexpr int BOARD_SIZE = 8;
+
+#ifdef NDEBUG
+    constexpr bool DEBUG = false;
+#else
+    constexpr bool DEBUG = true;
+#endif
+
+    enum class MoveType : uint8_t
+    {
+        CAPTURE,
+        CASTLE_KINGSIDE,
+        CASTLE_QUEENSIDE,
+        EN_PASSANT,
+        NORMAL,
+        PROMOTION
+    };
+
+    constexpr uint8_t WHITE = 0;
 }
 
 namespace io
@@ -94,21 +103,25 @@ namespace io
 
 namespace logger
 {
-    constexpr const char *LOG_FILE = "logs/fenrir.log";
-    constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024;
-
     enum class LEVEL : uint8_t
     {
+        CRITICAL,
         DEBUG,
-        INFO,
-        WARN,
         ERROR,
-        CRITICAL
+        INFO,
+        WARN
     };
+
+    constexpr const char *LOG_FILE = "logs/fenrir.log";
+    constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024;
 }
 
 namespace test
 {
+    /**
+     * @brief Retrieves the value of the "CI" environment variable.
+     * @returns A pointer to the CI environment variable's value string, or nullptr if not defined.
+     */
     inline const char *get_ci()
     {
 #ifdef _MSC_VER

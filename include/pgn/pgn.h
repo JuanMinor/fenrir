@@ -30,27 +30,55 @@ namespace io
     class Pgn
     {
     private:
-        mutable std::mutex pgn_mutex;
+        /**
+         * @brief Private constructor to enforce the Singleton pattern.
+         */
         Pgn();
 
+        /**
+         * @brief Resets stream flags and seeks the output stream to the beginning of the file.
+         * @param os The output stream to modify.
+         */
         void clear_stream_flags(std::ostream &os) const;
+
+        mutable std::mutex pgn_mutex;
+
+        /**
+         * @brief Writes standard PGN metadata tags to the output stream.
+         * @param os The output stream to write metadata to.
+         */
         void set_metadata(std::ostream &os) const;
 
     public:
-        static Pgn &get_instance();
-
-        Pgn(const Pgn &) = delete;
-        Pgn &operator=(const Pgn &) = delete;
-        Pgn(Pgn &&) = delete;
-        Pgn &operator=(Pgn &&) = delete;
-
+        /**
+         * @brief Destructor for the Pgn class.
+         */
         ~Pgn();
 
-        void record(const std::string &move) const;
+        Pgn(const Pgn &) = delete;
+        Pgn(Pgn &&) = delete;
+        Pgn &operator=(const Pgn &) = delete;
+        Pgn &operator=(Pgn &&) = delete;
+
+        /**
+         * @brief Reads all recorded moves from the store and generates a final formatted PGN file with metadata tags.
+         */
         void create(void) const;
+
+        /**
+         * @brief Retrieves the single global instance of the PGN recorder.
+         * @returns A reference to the Singleton Pgn instance.
+         */
+        static Pgn &get_instance();
+
+        /**
+         * @brief Appends a single move to the temporary PGN move store file.
+         * @param move The move string to record.
+         */
+        void record(const std::string &move) const;
     };
 
 #define PGN Pgn::get_instance()
-#define PGN_RECORD(MOVE) PGN.record(MOVE);
 #define PGN_CREATE() PGN.create();
+#define PGN_RECORD(MOVE) PGN.record(MOVE);
 }
