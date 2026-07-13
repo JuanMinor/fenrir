@@ -94,3 +94,6 @@ __pycache__/
 
 # Configuration
 *.cfg
+
+# AI
+.agents/
