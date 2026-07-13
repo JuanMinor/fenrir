@@ -16,9 +16,9 @@
  */
 
 #include "include/tuner/auto_tuner.h"
-#include "include/search/mcts.h"
+#include "include/mcts/mcts.h"
 #include "include/modifier/modifier.h"
-#include "include/eval/nn_eval.h"
+#include "include/nn/nn.h"
 #include "include/engine/engine.h"
 #include <iostream>
 #include <chrono>
@@ -93,7 +93,9 @@ namespace tuner
 
     /**
      * @brief Run the auto-tuning process to find optimal parameters.
-     * @returns Optimized TuningParameters based on hardware benchmarks.
+     * @returns Optimized TuningParameters based on hardware benchmarks. The
+     * final search thread count scales the best single-GPU thread count by
+     * the detected GPU count so all available GPUs stay saturated.
      */
     TuningParameters AutoTuner::run()
     {
@@ -215,7 +217,6 @@ namespace tuner
         std::cout << "[Auto-Tuner] Peak NPS      | " << std::left << std::setw(18) << "N/A" << " | " << static_cast<int>(max_nodes_per_second) << "\n";
         std::cout << "[Auto-Tuner] ==================================================\n";
 
-        // Scale total CPU threads to saturate all available GPUs
         uint8_t system_gpus = baseline_tuning_parameters.get_gpu_count();
         if (system_gpus == 0)
         {

@@ -18,7 +18,7 @@
 #pragma once
 
 #include "include/engine/engine.h"
-#include "include/eval/nn_eval.h"
+#include "include/nn/nn.h"
 #include <vector>
 #include <memory>
 #include <cmath>

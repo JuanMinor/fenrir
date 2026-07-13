@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "include/eval/nn_eval.h"
+#include "include/nn/nn.h"
 #include <chrono>
 #include <iostream>
 #include <fstream>
@@ -27,6 +27,12 @@
 
 namespace nn
 {
+    /**
+     * Loads the ONNX model, detects hardware, and starts the batch worker
+     * thread. batch_timeout_ms is set to 25% of the measured inference
+     * latency (minimum 2ms). @p b_size overrides the hardware-recommended
+     * batch size when nonzero.
+     */
     NNEvaluator::NNEvaluator(const std::string &path, int gpu_id, size_t b_size)
         : model_path(path), gpu_id_(gpu_id), stop_worker(false)
     {
@@ -39,9 +45,8 @@ namespace nn
         detect_hardware();
         int latency = measure_latency_ms();
         hw_profile.inference_latency_ms = latency;
-        batch_timeout_ms = std::max(2, latency / 4); // dynamically assign timeout to 25% of inference latency, minimum 2ms.
-        
-        // Use user batch size parameter if provided and non-zero, else use our hw_profile recommendation
+        batch_timeout_ms = std::max(2, latency / 4);
+
         batch_size = (b_size > 0) ? b_size : hw_profile.batch_size;
 
         worker_thread = std::thread(&NNEvaluator::batch_worker_loop, this);
@@ -60,6 +65,14 @@ namespace nn
         }
     }
 
+    /**
+     * Encodes @p board into a 14x8x8 float tensor for the NN: channels 0-11
+     * are per-piece-type bitboards, channel 12 is the side to move (+1.0 for
+     * white, -1.0 for black) broadcast across all squares, and channel 13 is
+     * the castling-rights encoding broadcast across all squares, computed to
+     * exactly mirror Python's `float(ord(castling_rights[0])) if len > 0 else
+     * 0.0`.
+     */
     std::vector<float> NNEvaluator::board_to_tensor(const chess::AbstractBoard &board)
     {
         std::vector<float> tensor(14 * 8 * 8, 0.0f);
@@ -77,7 +90,6 @@ namespace nn
             }
         }
 
-        // Channel 12: side to move
         float color_val = (board.get_color() == 0) ? 1.0f : -1.0f;
         size_t color_offset = 12 * 64;
         for (size_t sq = 0; sq < 64; ++sq)
@@ -85,7 +97,6 @@ namespace nn
             tensor[color_offset + sq] = color_val;
         }
 
-        // FIXED: Perfectly mirrors Python's float(ord(castling_rights[0])) if len > 0 else 0.0
         const std::string &castling_rights = board.get_castling_rights();
         float castling_val = 0.0f;
         if (!castling_rights.empty())
@@ -343,28 +354,34 @@ namespace nn
             }
         }
     }
+    /**
+     * Populates hw_profile from the detected core count: search_threads
+     * reserves one core for the OS and one for the NN batch worker,
+     * pipeline_target is fixed at 32 (enough in-flight items to saturate the
+     * GPU), and batch_size scales with search_threads * pipeline_target.
+     */
     void NNEvaluator::detect_hardware()
     {
         int logical_cores = static_cast<int>(std::thread::hardware_concurrency());
-        if (logical_cores <= 0) logical_cores = 4; // fallback
-        
+        if (logical_cores <= 0) logical_cores = 4;
+
         hw_profile.logical_cores = logical_cores;
-        
-        // Reserve 1 for OS, 1 for NN batch worker
+
         hw_profile.search_threads = std::max(1, logical_cores - 2);
-        
-        // For pipeline target: enough items to saturate GPU
-        hw_profile.pipeline_target = 32; 
-        
-        // Dynamic batch size based on threads available
+
+        hw_profile.pipeline_target = 32;
+
         hw_profile.batch_size = static_cast<size_t>(hw_profile.search_threads) * hw_profile.pipeline_target;
     }
 
+    /**
+     * Runs one dummy full-size batch through evaluate_batch() and times it,
+     * to calibrate batch_timeout_ms. Returns 4ms if no model is loaded yet.
+     */
     int NNEvaluator::measure_latency_ms()
     {
         if (!session) return 4;
-        
-        // Create dummy batch of batch_size
+
         std::vector<std::vector<float>> dummy_batch;
         for (size_t i = 0; i < hw_profile.batch_size; ++i) {
             dummy_batch.push_back(std::vector<float>(14 * 8 * 8, 0.0f));

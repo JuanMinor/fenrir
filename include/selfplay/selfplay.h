@@ -17,8 +17,8 @@
 
 #pragma once
 #include "include/engine/engine.h"
-#include "include/search/mcts.h"
-#include "include/eval/nn_eval.h"
+#include "include/mcts/mcts.h"
+#include "include/nn/nn.h"
 #include <string>
 #include <vector>
 #include <utility>

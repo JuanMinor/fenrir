@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "include/search/mcts.h"
+#include "include/mcts/mcts.h"
 #include "include/engine/engine.h"
 
 using namespace chess;
@@ -76,7 +76,6 @@ TEST_F(MCTSTest, DirichletNoiseAndPolicyExpand)
     root.add_dirichlet_noise(0.25, 0.3);
     EXPECT_TRUE(root.is_expanded);
     
-    // Check if find_best_move_with_policy runs without crashing
     auto result = search.find_best_move_with_policy(engine, 50, true);
     chess::Move best_move = result.first;
     auto extracted_policy = result.second;
@@ -87,7 +86,7 @@ TEST_F(MCTSTest, DirichletNoiseAndPolicyExpand)
 
 TEST_F(MCTSTest, EmptyChildrenReturnEmptyMove)
 {
-    Engine mated_engine("7k/5Q2/5K2/8/8/8/8/8 b - - 0 1"); // Black is mated
+    Engine mated_engine("7k/5Q2/5K2/8/8/8/8/8 b - - 0 1");
     chess::Move m = search.find_best_move(mated_engine, 10);
     EXPECT_EQ(m.to_uci_notation(), "a1a1");
 
@@ -97,22 +96,24 @@ TEST_F(MCTSTest, EmptyChildrenReturnEmptyMove)
 }
 
 
+/**
+ * White's king is trapped with only pawn moves available against Black's 3
+ * queens, so the random rollout in mcts::MCTSSearch::simulate will reliably
+ * checkmate White and exercise the result = 1.0 path.
+ */
 TEST_F(MCTSTest, RolloutOpponentCheckmate)
 {
-    // Start with a FEN where Black has 3 queens and White has a king and a pawn.
-    // White's king is trapped, so its only legal moves are pawn moves.
-    // White plays a pawn move, then Black (in the rollout) plays randomly 
-    // and will easily checkmate White's trapped king with its 3 queens.
-    // This will reliably trigger the result = 1.0 path in mcts::MCTSSearch::simulate.
     Engine custom_engine("K7/2qqq3/8/8/8/8/1P6/k7 w - - 0 1");
     search.find_best_move(custom_engine, 400);
-    // As long as it doesn't crash and completes simulations, the coverage should be hit reliably.
     SUCCEED();
 }
 
+/**
+ * Passing 0 threads forces the synchronous fallback path.
+ */
 TEST_F(MCTSTest, FallbackToSynchronous)
 {
-    mcts::MCTSSearch sync_search(nullptr, 0); // 0 threads to trigger fallback
+    mcts::MCTSSearch sync_search(nullptr, 0);
     auto result = sync_search.find_best_move_with_policy(engine, 10, false);
     EXPECT_NE(result.first.to_uci_notation(), "0000");
 }

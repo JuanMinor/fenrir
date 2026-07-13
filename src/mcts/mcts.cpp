@@ -15,7 +15,7 @@
  *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "include/search/mcts.h"
+#include "include/mcts/mcts.h"
 #include <algorithm>
 #include <iostream>
 #include <random>
@@ -94,7 +94,11 @@ namespace mcts
             return static_cast<uint32_t>((from_sq * 73) + channel);
         }
 
-        // RAII helper to ensure virtual loss is perfectly decremented regardless of exceptions
+        /**
+         * RAII helper that increments a node's virtual loss on construction and
+         * decrements it on destruction, guaranteeing balance even if an
+         * exception unwinds the stack mid-search.
+         */
         struct VirtualLossGuard
         {
             MCTSNode *node;
@@ -111,6 +115,16 @@ namespace mcts
 
     MCTSNode::~MCTSNode() = default;
 
+    /**
+     * Expands this node with one child per legal move. When @p policy is
+     * supplied (from the NN), each child's prior is taken directly from the
+     * policy vector indexed by move_index(). When no policy is given, priors
+     * fall back to an MVV-LVA (Most Valuable Victim, Least Valuable
+     * Aggressor) heuristic so the tree explores tactical lines before quiet
+     * ones: score = victim_value - aggressor_value / 10 (piece values in
+     * centipawns, P=100 N=320 B=330 R=500 Q=900 K=20000), clamped to a floor
+     * of 1.0. Heuristic priors are then normalized to sum to 1.0.
+     */
     void MCTSNode::expand(chess::Engine &engine, const std::vector<double> &policy)
     {
         std::lock_guard<std::mutex> lock(expand_mutex);
@@ -127,13 +141,6 @@ namespace mcts
 
             if (policy.empty())
             {
-                // No NN policy: score moves with MVV-LVA (Most Valuable Victim,
-                // Least Valuable Aggressor) so the tree explores tactical lines
-                // before quiet moves. Piece values in centipawns (standard scale):
-                //   P=100  N=320  B=330  R=500  Q=900  K=20000
-                // MVV-LVA score = victim_value - aggressor_value / 10
-                // (dividing aggressor by 10 keeps victim ranking dominant while
-                // still preferring a cheaper attacker when victims are equal).
                 auto piece_value = [](char pc) -> double
                 {
                     switch (std::tolower(static_cast<unsigned char>(pc)))
@@ -165,21 +172,17 @@ namespace mcts
                     char victim = engine.get_board_view().get_piece(to_sq / 8, to_sq % 8);
                     char attacker = engine.get_board_view().get_piece(from_sq / 8, from_sq % 8);
                     base = 1.0 + piece_value(victim) - piece_value(attacker) / 10.0;
-                    // Clamp to a small positive floor so captures never score below quiet moves.
                     if (base < 1.0)
                         base = 1.0;
                 }
                 else if (mt == chess::MoveType::EN_PASSANT)
                 {
-                    // Pawn takes pawn: victim=100, attacker=100 → 100 - 10 = 90 + 1 = 91
                     base = 1.0 + 100.0 - 100.0 / 10.0;
                 }
                 else if (mt == chess::MoveType::PROMOTION)
                 {
-                    // Score by the value of the piece we promote to.
                     base = 1.0 + piece_value(moves[i].get_promotion_piece()) / 100.0;
                 }
-                // chess::MoveType::NORMAL / CASTLE: base stays 1.0
 
                 children.back()->prior = base;
             }
@@ -190,7 +193,6 @@ namespace mcts
             }
         }
 
-        // Normalize heuristic priors to sum to 1.0 (only needed when no NN policy).
         if (policy.empty() && !children.empty())
         {
             double sum = 0.0;
@@ -222,45 +224,50 @@ namespace mcts
         return best_child;
     }
 
+    /**
+     * Computes the PUCT (predictor + UCT) selection score for this child, per
+     * the AlphaZero formula Q + U with a dynamic CPUCT constant.
+     *
+     * The visit count feeding the U-term denominator, v, depends on node
+     * state: for a node with real visits, v = real_visits + virtual_loss
+     * (virtual loss is normally 0 on interior nodes and only nonzero for a
+     * leaf currently being evaluated by another walk in the same pipeline);
+     * for an in-flight leaf with no backpropagated result yet, v = virtual_loss
+     * alone, so U shrinks each time another walk lands here, naturally
+     * diverting concurrent walks to sibling nodes; for an untouched leaf,
+     * v = 0 and U is maximised, the standard MCTS exploration behaviour.
+     *
+     * Q is computed only from real backpropagated results, never diluted by
+     * virtual loss; since a child's win_score is the child's (opponent's) win
+     * rate, the parent's win rate is 1.0 - q.
+     */
     double MCTSNode::puct_value(int total_visits) const
     {
         const int real_visits = visits.load();
         const int vl = virtual_loss.load();
 
-        // v is used as the denominator of both Q and U.
-        // - Normal node (real_visits > 0): use real visits for Q, real+VL for U.
-        //   VL is always 0 for interior nodes now; this matters only for leaf nodes
-        //   that are currently being evaluated by another walk in the same pipeline.
-        // - In-flight leaf (real_visits == 0, vl > 0): the node is queued for NN
-        //   evaluation but has no backpropagated result yet. Setting v = vl makes
-        //   the U term = c * prior * √N / (1 + vl), which shrinks each time another
-        //   walk lands here, naturally pushing subsequent walks to siblings without
-        //   requiring them to re-evaluate the same position redundantly.
-        // - Unvisited, untouched leaf (real_visits == 0, vl == 0): v = 0, U is
-        //   maximised (pure exploration), which is the standard MCTS behaviour.
         int v = (real_visits > 0) ? (real_visits + vl) : vl;
 
         double q = 0.0;
         if (real_visits > 0)
         {
-            // Q is always computed from real backpropagated results only, never
-            // diluted by VL. VL only affects the exploration (U) denominator.
-            // Since child's win_score represents the child's (opponent's) win rate,
-            // the parent's win rate is 1.0 - q.
             q = 1.0 - (win_score.load() / real_visits);
         }
 
-        // Standard AlphaZero dynamic CPUCT constant.
         double c_init = 1.25;
         double c_base = 19652.0;
         double c = std::log((1.0 + total_visits + c_base) / c_base) + c_init;
 
-        // U shrinks as v grows, whether from real visits or in-flight VL.
         double u = c * prior * std::sqrt(static_cast<double>(total_visits)) / (1 + v);
 
         return q + u;
     }
 
+    /**
+     * Returns the deepest explored line below this node. A child counts as
+     * explored if it has real visits or a nonzero virtual loss, so in-flight
+     * (currently evaluating) branches aren't underreported.
+     */
     int MCTSNode::get_max_depth() const
     {
         if (!is_expanded.load() || children.empty())
@@ -268,8 +275,6 @@ namespace mcts
         int max_d = 0;
         for (const auto &child : children)
         {
-            // Count nodes that have been visited OR were selected (virtual loss > 0)
-            // to avoid underreporting depth when nodes are in-flight.
             if (child->visits.load() > 0 || child->virtual_loss.load() > 0)
             {
                 max_d = std::max(max_d, child->get_max_depth());
@@ -329,6 +334,13 @@ namespace mcts
 
     MCTSSearch::~MCTSSearch() = default;
 
+    /**
+     * Runs a multithreaded MCTS search from the given position for either a
+     * fixed time budget or a fixed simulation count, and returns the move
+     * with the most visits at the root. The reported score is inverted from
+     * the best child's win_score, since that value represents the opponent's
+     * win rate.
+     */
     chess::Move MCTSSearch::find_best_move(chess::Engine &engine, int time_limit_ms, int max_simulations)
     {
         uint8_t root_color = engine.get_board_view().get_color();
@@ -381,7 +393,6 @@ namespace mcts
             {
                 max_visits = child->visits.load();
                 best_move = child->move;
-                // child's score is from opponent's perspective, so invert for root's perspective
                 best_score = 1.0 - (child->win_score.load() / std::max(1, child->visits.load()));
             }
         }
@@ -531,12 +542,39 @@ namespace mcts
         return root->visits.load();
     }
 
+    /**
+     * Runs simulations on a dedicated engine/thread until the time budget or
+     * simulation count is exhausted, using two-phase pipelined batches of
+     * size pipeline_target to keep the GPU evaluator saturated without the
+     * tree exploding sideways every cycle.
+     *
+     * Phase 1 (selection): for each pipeline slot, walk from the root via
+     * PUCT to a leaf, recording the move path taken so the leaf position can
+     * be cheaply re-reached later without reconstructing an Engine (which
+     * would re-parse FEN, rebuild attack tables, and log). Virtual loss is
+     * applied only to the leaf, never to interior nodes on the path — marking
+     * every node en route would make PUCT treat the whole line as "in use"
+     * and force purely horizontal tree growth; leaving interior nodes clean
+     * lets subsequent walks keep following the same best line to different
+     * leaves. Each leaf's terminal status is resolved with a single
+     * get_terminal_state() call (checks the 50-move rule and repetition
+     * first, then calls generate_all_moves() at most once), replacing the
+     * old is_stalemate() + is_draw() pattern that generated moves twice per
+     * position. Non-terminal leaves kick off an async NN evaluation request
+     * when an evaluator is configured; otherwise, since thread_engine is
+     * still sitting at the leaf at this point, the leaf is expanded and
+     * rolled out immediately via simulate().
+     *
+     * Phase 2 (backpropagation): for each pipeline item, await its NN result
+     * (re-walking thread_engine along the recorded path to reach the leaf
+     * again, cheaply, via make_move_fast), expand the node with the
+     * resulting policy, and backpropagate the value up the tree.
+     */
     void MCTSSearch::search_worker(std::unique_ptr<chess::Engine> thread_engine_ptr, MCTSNode *root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
     {
         chess::Engine &thread_engine = *thread_engine_ptr;
         int sim_count = 0;
 
-        // The GPU stays fully saturated without the tree exploding sideways on every cycle.
         const size_t local_pipeline_target = pipeline_target;
 
         struct PipelineItem
@@ -546,10 +584,6 @@ namespace mcts
             std::future<nn::NNResult> eval_future;
             bool is_terminal;
             double terminal_result;
-            // Moves from root to this leaf node (in order). Used in the second
-            // loop to re-walk thread_engine to the leaf position cheaply, avoiding
-            // the need to construct a new Engine (which parses FEN, inits attack
-            // tables, and emits a log line) for every single pipeline item.
             std::vector<chess::Move> path_moves;
         };
 
@@ -574,18 +608,10 @@ namespace mcts
                 sim_count++;
                 MCTSNode *node = root;
                 std::vector<VirtualLossGuard> guards;
-                // Record moves made during descent so the second loop can
-                // cheaply re-walk thread_engine to the leaf without constructing
-                // a new Engine object.
                 std::vector<chess::Move> path;
 
                 while (node->is_expanded.load() && !node->children.empty())
                 {
-                    // Do NOT apply virtual loss to interior nodes. Stamping every
-                    // node on the path with VL++ causes PUCT to treat the whole
-                    // path as "in use" and reroutes all subsequent walks to new
-                    // branches — forcing horizontal growth. Interior nodes stay
-                    // clean so future walks can follow the same best line.
                     MCTSNode *next_node = node->select_child();
 
                     if (!next_node)
@@ -595,9 +621,6 @@ namespace mcts
                     path.push_back(node->move);
                     thread_engine.make_move_fast(node->move);
                 }
-                // Only the leaf gets a virtual loss. This marks it as "in evaluation"
-                // so other walks divert to its siblings, but the path leading to it
-                // remains attractive for the next selection.
                 guards.emplace_back(node);
 
                 PipelineItem item;
@@ -606,11 +629,6 @@ namespace mcts
                 item.is_terminal = false;
                 item.terminal_result = 0.0;
 
-                // Single combined terminal check. get_terminal_state() tests
-                // 50-move and repetition first (no move generation), then calls
-                // generate_all_moves() exactly once for checkmate/stalemate. The
-                // old pattern of is_stalemate() + is_draw() called generate_all_moves()
-                // twice for every normal position — 512 redundant calls per cycle.
                 auto ts = thread_engine.get_terminal_state();
                 if (ts.is_terminal)
                 {
@@ -619,14 +637,11 @@ namespace mcts
                 }
                 else if (evaluator)
                 {
-                    // Store the path so the second loop can re-walk to this leaf.
                     item.path_moves = path;
                     item.eval_future = evaluator->request_evaluation(thread_engine.get_board_view());
                 }
                 else
                 {
-                    // No evaluator: engine is still at the leaf here, so expand and
-                    // simulate are both correct at this point in the first loop.
                     item.is_terminal = true;
                     node->expand(thread_engine);
                     item.terminal_result = simulate(thread_engine);
@@ -649,18 +664,9 @@ namespace mcts
                 if (item.is_terminal)
                 {
                     final_result = item.terminal_result;
-                    if (!item.node->is_expanded.load())
-                    {
-                        // Handled terminal or rollout states
-                    }
                 }
                 else
                 {
-                    // Re-walk thread_engine to the leaf position using the recorded
-                    // path. This replaces the old Engine(leaf_fen) construction which
-                    // called FEN parsing, init_attack_tables(), and logger::INFO()
-                    // for every single item — 512 expensive Engine objects per cycle.
-                    // Now it's just make_move_fast × depth, which is near-zero cost.
                     try
                     {
                         nn::NNResult res = item.eval_future.get();

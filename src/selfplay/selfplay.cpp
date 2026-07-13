@@ -43,6 +43,17 @@ namespace chess
         return dir;
     }
 
+    /**
+     * Runs the self-play pipeline: for each game, repeatedly searches the
+     * current position, filters the raw MCTS policy down to strictly legal
+     * moves (falling back to a uniform distribution over legal moves if
+     * filtering empties it due to a noise mismatch) and renormalizes it,
+     * records the position/policy pair, then samples the next move from the
+     * legal policy (falling back to sampling if best_move comes back
+     * uninitialized). Output batches are written to a temp JSONL file named
+     * with the GPU id, this process's PID, and a timestamp, so multiple
+     * concurrent instances never collide.
+     */
     void SelfPlay::run()
     {
         std::cout << "Starting Self-Play Pipeline on GPU " << gpu_id_ << "...\n";
@@ -66,10 +77,8 @@ namespace chess
                 auto now = std::chrono::system_clock::now().time_since_epoch();
                 int timestamp = static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(now).count() % 100000000);
 
-                // Get the unique process ID of this specific running engine instance
                 int pid = static_cast<int>(getpid());
 
-                // FIXED: Appended the unique PID into the filename string
                 temp_filename = get_output_dir() + "temp_gpu" + std::to_string(gpu_id_) + "_pid" + std::to_string(pid) + "_" + std::to_string(timestamp) + ".jsonl";
                 batch_out.open(temp_filename);
             }
@@ -89,12 +98,10 @@ namespace chess
                 if (raw_policy.empty())
                     break;
 
-                // Create a fast lookup set of absolute legal moves for the current board state
                 std::vector<Move> legal_moves = engine.generate_all_moves();
                 if (legal_moves.empty())
                     break;
 
-                // Filter raw_policy to ensure only strictly legal choices can be recorded or played
                 std::vector<std::pair<Move, double>> legal_policy;
                 double legal_sum = 0.0;
 
@@ -117,7 +124,6 @@ namespace chess
                     }
                 }
 
-                // If filtering wiped the vector due to noise mismatch, fallback safely to strict legal generation
                 if (legal_policy.empty())
                 {
                     for (const auto &lm : legal_moves)
@@ -127,7 +133,6 @@ namespace chess
                     legal_sum = 1.0;
                 }
 
-                // Renormalize the legal policy distribution
                 for (auto &p : legal_policy)
                 {
                     p.second /= (legal_sum > 0.0 ? legal_sum : 1.0);
@@ -142,7 +147,6 @@ namespace chess
                 }
                 game_data.push_back(pd);
 
-                // Fallback safely to a known legal choice if best_move returns uninitialized or blank data
                 Move chosen_move = best_move;
                 if (chosen_move.get_from_square() == chosen_move.get_to_square() || moves_played < 30)
                 {

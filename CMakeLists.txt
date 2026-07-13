@@ -111,8 +111,8 @@ add_library(fenrir_core STATIC
     src/pgn/pgn.cpp
     src/utils/utils.cpp
     src/abi/c_api.cpp
-    src/search/mcts.cpp
-    src/eval/nn_eval.cpp
+    src/mcts/mcts.cpp
+    src/nn/nn.cpp
     src/uci/uci.cpp
     src/selfplay/selfplay.cpp
     src/hardware/hardware.cpp
@@ -179,7 +179,7 @@ if(ENABLE_TESTING)
         tests/unit/pgn.test.cpp
         tests/unit/c_api.test.cpp
         tests/unit/mcts.test.cpp
-        tests/unit/nn_eval.test.cpp
+        tests/unit/nn.test.cpp
         tests/unit/uci.test.cpp
         tests/unit/selfplay.test.cpp
     )

@@ -71,17 +71,22 @@ namespace chess
         }
     }
 
+    /**
+     * Handles the UCI "position" command: sets up the board from either
+     * "startpos" or a "fen ..." spec, then applies any trailing "moves ..."
+     * list in UCI notation.
+     */
     void UCI::parse_position(const std::string &command)
     {
         std::istringstream is(command);
         std::string token;
-        is >> token; // consume "position"
+        is >> token;
 
         is >> token;
         if (token == "startpos")
         {
             engine->reset();
-            is >> token; // consume "moves" if it exists
+            is >> token;
         }
         else if (token == "fen")
         {
@@ -91,11 +96,10 @@ namespace chess
                 fen += token + " ";
             }
             if (!fen.empty())
-                fen.pop_back(); // strip trailing space
+                fen.pop_back();
             engine = std::make_unique<Engine>(fen);
         }
 
-        // Parse moves
         while (is >> token)
         {
             if (token == "moves")
@@ -113,6 +117,15 @@ namespace chess
         }
     }
 
+    /**
+     * Handles the UCI "go" command and derives a time/simulation budget for
+     * the search. Priority: explicit "movetime" wins outright; otherwise
+     * "wtime"/"btime" allocate 1/30th of the side-to-move's remaining clock
+     * (floored at 100ms); otherwise an explicit "nodes" count is used as a
+     * simulation limit with no time bound. When only a time budget is known,
+     * it's converted to an estimated simulation count (at ~25000 nodes/sec,
+     * floored at 1200) for reporting/consistency purposes.
+     */
     void UCI::parse_go(const std::string &command)
     {
         int simulations = -1;
@@ -120,7 +133,7 @@ namespace chess
         int wtime = -1, btime = -1;
         std::istringstream is(command);
         std::string token;
-        is >> token; // consume "go"
+        is >> token;
 
         while (is >> token)
         {
@@ -134,8 +147,7 @@ namespace chess
                 is >> btime;
         }
 
-        // Time management logic
-        int allocated_time_ms = 1000; // default 1 second if nothing provided
+        int allocated_time_ms = 1000;
         if (move_time != -1)
         {
             allocated_time_ms = move_time;
@@ -143,13 +155,13 @@ namespace chess
         else if (wtime != -1 || btime != -1)
         {
             int time_left = (engine->get_board_view().get_color() == 0) ? wtime : btime;
-            allocated_time_ms = time_left / 30; // standard rule of thumb: use 1/30th of remaining time
+            allocated_time_ms = time_left / 30;
             if (allocated_time_ms < 100)
                 allocated_time_ms = 100;
         }
         else if (simulations != -1)
         {
-            allocated_time_ms = -1; // flag to use node limit instead of time
+            allocated_time_ms = -1;
         }
 
         if (simulations == -1 && allocated_time_ms != -1)

@@ -64,8 +64,6 @@ namespace chess
     };
 }
 
-// #define Moves MovesWrapper  // Commented out to avoid macro conflicts with chess::Moves::
-
 class MockBoard : public chess::AbstractBoard
 {
 public:
