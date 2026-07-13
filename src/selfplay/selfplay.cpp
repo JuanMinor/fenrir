@@ -36,13 +36,6 @@ namespace chess
     {
     }
 
-    std::string SelfPlay::get_output_dir()
-    {
-        std::string dir = "data/selfplay/";
-        std::filesystem::create_directories(dir);
-        return dir;
-    }
-
     /**
      * Runs the self-play pipeline: for each game, repeatedly searches the
      * current position, filters the raw MCTS policy down to strictly legal
@@ -205,5 +198,12 @@ namespace chess
                 games_in_batch = 0;
             }
         }
+    }
+
+    std::string SelfPlay::get_output_dir()
+    {
+        std::string dir = "data/selfplay/";
+        std::filesystem::create_directories(dir);
+        return dir;
     }
 }

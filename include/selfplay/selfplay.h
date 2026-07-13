@@ -38,8 +38,8 @@ namespace chess
             uint8_t color_to_move;
         };
 
-        std::string get_output_dir();
         void apply_dirichlet_noise(mcts::MCTSNode* root);
+        std::string get_output_dir();
 
         int gpu_id_;
         int simulations;

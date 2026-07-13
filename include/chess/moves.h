@@ -37,8 +37,8 @@ namespace chess
         Moves(Moves &&) = delete;
         Moves &operator=(Moves &&) = delete;
 
-        static void generate_bishop_moves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves);
         static void add_capture_move(uint8_t from_rank, uint8_t from_file, char piece_char, uint8_t to_rank, uint8_t to_file, char target_char, std::vector<Move> &moves);
+        static void generate_bishop_moves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves);
         static void generate_king_moves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves);
         static void generate_knight_moves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves);
         static void generate_pawn_moves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves);

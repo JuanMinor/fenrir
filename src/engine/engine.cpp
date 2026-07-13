@@ -34,83 +34,6 @@ namespace chess
     Engine::~Engine() {}
 
     /**
-     * @brief Get the library version string.
-     * @returns Version string (e.g., "0.3.0").
-     */
-    const char *Engine::version()
-    {
-        return FENRIR_VERSION;
-    }
-
-    /**
-     * @brief Get a const view of the board for inspection (e.g., by evaluators).
-     * @returns Const reference to the AbstractBoard interface.
-     */
-    const AbstractBoard &Engine::get_board_view() const
-    {
-        return board;
-    }
-
-    /**
-     * @brief Generate all legal moves for a piece at a specific square.
-     * @param algebraic_address Square in algebraic notation (e.g., "e2").
-     * @returns Vector of legal moves for the piece on that square.
-     */
-    std::vector<Move> Engine::generate_moves(const std::string &algebraic_address)
-    {
-        std::vector<Move> pseudo_legal;
-        uint8_t rank, file;
-        utils::parse_algebraic_notation(algebraic_address, rank, file);
-        char piece_char = board.get_piece(rank, file);
-        if (piece_char == '\0')
-        {
-            LOG_THROW_ERROR(
-                (std::string("Board address ") + algebraic_address + " does not contain a piece").c_str(),
-                false);
-            return pseudo_legal;
-        }
-
-        Moves::generate_moves(rank, file, board, pseudo_legal);
-
-        /* Filter pseudo-legal moves via check verification */
-        bool active_is_white = std::isupper(static_cast<unsigned char>(piece_char));
-        uint8_t active_color = active_is_white ? WHITE : BLACK;
-
-        std::vector<Move> legal;
-        legal.reserve(pseudo_legal.size());
-
-        uint8_t opp_color = (active_color == WHITE) ? BLACK : WHITE;
-        for (const Move &m : pseudo_legal)
-        {
-            if (m.get_move_type() == MoveType::CASTLE_KINGSIDE || m.get_move_type() == MoveType::CASTLE_QUEENSIDE)
-            {
-                if (board.is_in_check(active_color))
-                    continue;
-                uint8_t base_rank = (active_color == WHITE) ? 0 : 7;
-                if (m.get_move_type() == MoveType::CASTLE_KINGSIDE)
-                {
-                    if (board.is_square_attacked_by(static_cast<uint8_t>(base_rank * 8 + 5), opp_color))
-                        continue;
-                }
-                else
-                {
-                    if (board.is_square_attacked_by(static_cast<uint8_t>(base_rank * 8 + 3), opp_color))
-                        continue;
-                }
-            }
-
-            UndoState undo = board.apply_move(m);
-            bool in_check = board.is_in_check(active_color);
-            board.undo_move(undo);
-            if (!in_check)
-            {
-                legal.push_back(m);
-            }
-        }
-        return legal;
-    }
-
-    /**
      * @brief Generate all legal moves for the side to move.
      * @returns Vector of all legal moves in the current position.
      */
@@ -176,6 +99,74 @@ namespace chess
     }
 
     /**
+     * @brief Generate all legal moves for a piece at a specific square.
+     * @param algebraic_address Square in algebraic notation (e.g., "e2").
+     * @returns Vector of legal moves for the piece on that square.
+     */
+    std::vector<Move> Engine::generate_moves(const std::string &algebraic_address)
+    {
+        std::vector<Move> pseudo_legal;
+        uint8_t rank, file;
+        utils::parse_algebraic_notation(algebraic_address, rank, file);
+        char piece_char = board.get_piece(rank, file);
+        if (piece_char == '\0')
+        {
+            LOG_THROW_ERROR(
+                (std::string("Board address ") + algebraic_address + " does not contain a piece").c_str(),
+                false);
+            return pseudo_legal;
+        }
+
+        Moves::generate_moves(rank, file, board, pseudo_legal);
+
+        /* Filter pseudo-legal moves via check verification */
+        bool active_is_white = std::isupper(static_cast<unsigned char>(piece_char));
+        uint8_t active_color = active_is_white ? WHITE : BLACK;
+
+        std::vector<Move> legal;
+        legal.reserve(pseudo_legal.size());
+
+        uint8_t opp_color = (active_color == WHITE) ? BLACK : WHITE;
+        for (const Move &m : pseudo_legal)
+        {
+            if (m.get_move_type() == MoveType::CASTLE_KINGSIDE || m.get_move_type() == MoveType::CASTLE_QUEENSIDE)
+            {
+                if (board.is_in_check(active_color))
+                    continue;
+                uint8_t base_rank = (active_color == WHITE) ? 0 : 7;
+                if (m.get_move_type() == MoveType::CASTLE_KINGSIDE)
+                {
+                    if (board.is_square_attacked_by(static_cast<uint8_t>(base_rank * 8 + 5), opp_color))
+                        continue;
+                }
+                else
+                {
+                    if (board.is_square_attacked_by(static_cast<uint8_t>(base_rank * 8 + 3), opp_color))
+                        continue;
+                }
+            }
+
+            UndoState undo = board.apply_move(m);
+            bool in_check = board.is_in_check(active_color);
+            board.undo_move(undo);
+            if (!in_check)
+            {
+                legal.push_back(m);
+            }
+        }
+        return legal;
+    }
+
+    /**
+     * @brief Get a const view of the board for inspection (e.g., by evaluators).
+     * @returns Const reference to the AbstractBoard interface.
+     */
+    const AbstractBoard &Engine::get_board_view() const
+    {
+        return board;
+    }
+
+    /**
      * @brief Get FEN notation of current board position.
      * @returns Full FEN string.
      */
@@ -186,65 +177,63 @@ namespace chess
     }
 
     /**
-     * @brief Make a move on the board with full validation.
-     * @param move Move to apply.
+     * @brief Get combined terminal state information in a single query.
+     * @returns TerminalState struct with is_terminal flag and game score.
      */
-    void Engine::make_move(const Move &move)
+    Engine::TerminalState Engine::get_terminal_state()
     {
-        /* Generate legal moves */
-        std::vector<Move> legal_moves = generate_all_moves();
-
-        /* Match move */
-        bool found = false;
-        Move matched_move = move;
-        for (const auto &m : legal_moves)
+        if (board.get_half_move_clock() >= 100)
         {
-            if (m.get_from_square() == move.get_from_square() &&
-                m.get_to_square() == move.get_to_square() &&
-                m.get_promotion_piece() == move.get_promotion_piece())
+            return {true, 0.5};
+        }
+
+        {
+            UndoState current_state;
+            for (int i = 0; i < 12; ++i)
+                current_state.bitboards[i] = board.get_bitboard(i);
+            current_state.castling_rights = board.get_castling_rights_mask();
+            current_state.en_passant_square = board.get_en_passant_square();
+            current_state.color = board.get_color();
+
+            int repetitions = 1;
+            int limit = board.get_half_move_clock();
+            int stack_size = static_cast<int>(undo_stack.size());
+            int lookback = (limit < stack_size) ? limit : stack_size;
+
+            for (int i = 0; i < lookback; ++i)
             {
-                matched_move = m;
-                found = true;
-                break;
+                const UndoState &past = undo_stack[static_cast<size_t>(stack_size - 1 - i)];
+                bool match = true;
+                for (int j = 0; j < 12; ++j)
+                {
+                    if (past.bitboards[j] != current_state.bitboards[j])
+                    {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match &&
+                    past.castling_rights == current_state.castling_rights &&
+                    past.en_passant_square == current_state.en_passant_square &&
+                    past.color == current_state.color)
+                {
+                    if (++repetitions >= 3)
+                        return {true, 0.5};
+                }
             }
         }
 
-        if (!found)
+        auto all_moves = generate_all_moves();
+        if (all_moves.empty())
         {
-            logger::ERROR("Illegal or out-of-turn move requested: " + move.get_from() + " -> " + move.get_to());
-            throw std::invalid_argument("Illegal or out-of-turn move requested: " + move.get_from() + " -> " + move.get_to());
+            uint8_t active_color = board.get_color();
+            if (board.is_in_check(active_color))
+                return {true, 0.0};
+            else
+                return {true, 0.5};
         }
 
-        UndoState state = board.apply_move(matched_move);
-        undo_stack.push_back(state);
-
-        logger::DEBUG("Made move from " + matched_move.get_from() + " to " + matched_move.get_to());
-    }
-
-    /**
-     * @brief Make a move without recording undo state (for performance-critical paths).
-     * @param move Move to apply.
-     */
-    void Engine::make_move_fast(const Move &move)
-    {
-        UndoState state = board.apply_move(move);
-        undo_stack.push_back(state);
-    }
-
-    /**
-     * @brief Undo the last move made.
-     */
-    void Engine::undo_move()
-    {
-        if (undo_stack.empty())
-        {
-            logger::WARN("No moves to undo");
-            return;
-        }
-        const UndoState &state = undo_stack.back();
-        board.undo_move(state);
-        undo_stack.pop_back();
-        logger::DEBUG("Undid last move");
+        return {false, 0.5};
     }
 
     /**
@@ -255,22 +244,6 @@ namespace chess
     {
         uint8_t active_color = board.get_color();
         if (!board.is_in_check(active_color))
-        {
-            return false;
-        }
-        /* Verify legal moves exist */
-        auto all_moves = generate_all_moves();
-        return all_moves.empty();
-    }
-
-    /**
-     * @brief Check if current position is stalemate.
-     * @returns True if the side to move is stalemated, false otherwise.
-     */
-    bool Engine::is_stalemate()
-    {
-        uint8_t active_color = board.get_color();
-        if (board.is_in_check(active_color))
         {
             return false;
         }
@@ -338,63 +311,65 @@ namespace chess
     }
 
     /**
-     * @brief Get combined terminal state information in a single query.
-     * @returns TerminalState struct with is_terminal flag and game score.
+     * @brief Check if current position is stalemate.
+     * @returns True if the side to move is stalemated, false otherwise.
      */
-    Engine::TerminalState Engine::get_terminal_state()
+    bool Engine::is_stalemate()
     {
-        if (board.get_half_move_clock() >= 100)
+        uint8_t active_color = board.get_color();
+        if (board.is_in_check(active_color))
         {
-            return {true, 0.5};
+            return false;
         }
+        /* Verify legal moves exist */
+        auto all_moves = generate_all_moves();
+        return all_moves.empty();
+    }
 
+    /**
+     * @brief Make a move on the board with full validation.
+     * @param move Move to apply.
+     */
+    void Engine::make_move(const Move &move)
+    {
+        /* Generate legal moves */
+        std::vector<Move> legal_moves = generate_all_moves();
+
+        /* Match move */
+        bool found = false;
+        Move matched_move = move;
+        for (const auto &m : legal_moves)
         {
-            UndoState current_state;
-            for (int i = 0; i < 12; ++i)
-                current_state.bitboards[i] = board.get_bitboard(i);
-            current_state.castling_rights = board.get_castling_rights_mask();
-            current_state.en_passant_square = board.get_en_passant_square();
-            current_state.color = board.get_color();
-
-            int repetitions = 1;
-            int limit = board.get_half_move_clock();
-            int stack_size = static_cast<int>(undo_stack.size());
-            int lookback = (limit < stack_size) ? limit : stack_size;
-
-            for (int i = 0; i < lookback; ++i)
+            if (m.get_from_square() == move.get_from_square() &&
+                m.get_to_square() == move.get_to_square() &&
+                m.get_promotion_piece() == move.get_promotion_piece())
             {
-                const UndoState &past = undo_stack[static_cast<size_t>(stack_size - 1 - i)];
-                bool match = true;
-                for (int j = 0; j < 12; ++j)
-                {
-                    if (past.bitboards[j] != current_state.bitboards[j])
-                    {
-                        match = false;
-                        break;
-                    }
-                }
-                if (match &&
-                    past.castling_rights == current_state.castling_rights &&
-                    past.en_passant_square == current_state.en_passant_square &&
-                    past.color == current_state.color)
-                {
-                    if (++repetitions >= 3)
-                        return {true, 0.5};
-                }
+                matched_move = m;
+                found = true;
+                break;
             }
         }
 
-        auto all_moves = generate_all_moves();
-        if (all_moves.empty())
+        if (!found)
         {
-            uint8_t active_color = board.get_color();
-            if (board.is_in_check(active_color))
-                return {true, 0.0};
-            else
-                return {true, 0.5};
+            logger::ERROR("Illegal or out-of-turn move requested: " + move.get_from() + " -> " + move.get_to());
+            throw std::invalid_argument("Illegal or out-of-turn move requested: " + move.get_from() + " -> " + move.get_to());
         }
 
-        return {false, 0.5};
+        UndoState state = board.apply_move(matched_move);
+        undo_stack.push_back(state);
+
+        logger::DEBUG("Made move from " + matched_move.get_from() + " to " + matched_move.get_to());
+    }
+
+    /**
+     * @brief Make a move without recording undo state (for performance-critical paths).
+     * @param move Move to apply.
+     */
+    void Engine::make_move_fast(const Move &move)
+    {
+        UndoState state = board.apply_move(move);
+        undo_stack.push_back(state);
     }
 
     void Engine::print_board(void) const
@@ -410,5 +385,30 @@ namespace chess
         board.reset(fen);
         undo_stack.clear();
         logger::INFO("Reset the board to the initial state with FEN: " + fen);
+    }
+
+    /**
+     * @brief Undo the last move made.
+     */
+    void Engine::undo_move()
+    {
+        if (undo_stack.empty())
+        {
+            logger::WARN("No moves to undo");
+            return;
+        }
+        const UndoState &state = undo_stack.back();
+        board.undo_move(state);
+        undo_stack.pop_back();
+        logger::DEBUG("Undid last move");
+    }
+
+    /**
+     * @brief Get the library version string.
+     * @returns Version string (e.g., "0.3.0").
+     */
+    const char *Engine::version()
+    {
+        return FENRIR_VERSION;
     }
 }

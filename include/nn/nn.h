@@ -62,18 +62,18 @@ namespace nn
         NNEvaluator(const std::string &model_path, int gpu_id = 0, size_t batch_size = 512);
         ~NNEvaluator();
 
-        std::future<NNResult> request_evaluation(const chess::AbstractBoard &board);
-
         static std::vector<float> board_to_tensor(const chess::AbstractBoard &board);
 
         HardwareProfile get_hardware_profile() const { return hw_profile; }
 
+        std::future<NNResult> request_evaluation(const chess::AbstractBoard &board);
+
     private:
         void batch_worker_loop();
-        void evaluate_batch(const std::vector<std::vector<float>> &batch_features, std::vector<std::promise<NNResult>> &promises);
-        void try_reload_model();
         void detect_hardware();
+        void evaluate_batch(const std::vector<std::vector<float>> &batch_features, std::vector<std::promise<NNResult>> &promises);
         int measure_latency_ms();
+        void try_reload_model();
 
         std::string model_path;
         size_t batch_size;

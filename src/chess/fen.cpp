@@ -100,25 +100,6 @@ namespace chess
         this->validate_king_safety(ranks);
     }
 
-    void Fen::validate_pawn_placement(const std::vector<std::string> &ranks) const
-    {
-        for (char c : ranks[0])
-        {
-            if (c == 'P')
-            {
-                LOG_THROW_ERROR("Invalid FEN: white pawns must promote upon reaching 8th rank", true);
-            }
-        }
-
-        for (char c : ranks[7])
-        {
-            if (c == 'p')
-            {
-                LOG_THROW_ERROR("Invalid FEN: black pawns must promote upon reaching 1st rank", true);
-            }
-        }
-    }
-
     void Fen::validate_king_safety(const std::vector<std::string> &ranks) const
     {
         int white_king_rank = -1, white_king_file = -1;
@@ -162,6 +143,25 @@ namespace chess
         }
     }
 
+    void Fen::validate_pawn_placement(const std::vector<std::string> &ranks) const
+    {
+        for (char c : ranks[0])
+        {
+            if (c == 'P')
+            {
+                LOG_THROW_ERROR("Invalid FEN: white pawns must promote upon reaching 8th rank", true);
+            }
+        }
+
+        for (char c : ranks[7])
+        {
+            if (c == 'p')
+            {
+                LOG_THROW_ERROR("Invalid FEN: black pawns must promote upon reaching 1st rank", true);
+            }
+        }
+    }
+
     void Fen::validate_placement(const std::string &placement_string) const
     {
         int squares = 0;
@@ -185,12 +185,19 @@ namespace chess
     }
 
     /**
-     * @brief Get board placement string (the rank/file portion of FEN).
-     * @returns Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
+     * @brief Generate FEN string from current position state.
+     * @returns Complete FEN notation string.
      */
-    std::string Fen::get_placement(void) const
+    std::string Fen::generate_fen(void) const
     {
-        return this->placement;
+        std::ostringstream oss;
+        oss << this->placement << " "
+            << (this->color == WHITE ? "w" : "b") << " "
+            << this->castling << " "
+            << (this->en_passant.empty() ? "-" : this->en_passant) << " "
+            << this->half_move_clock << " "
+            << this->full_moves;
+        return oss.str();
     }
 
     /**
@@ -239,22 +246,12 @@ namespace chess
     }
 
     /**
-     * @brief Set board placement string (rank/file portion of FEN).
-     * @param placement_string Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
+     * @brief Get board placement string (the rank/file portion of FEN).
+     * @returns Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
      */
-    void Fen::set_placement(const std::string &placement_string)
+    std::string Fen::get_placement(void) const
     {
-        std::regex placement_regex(
-            "^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+)$");
-
-        if (!std::regex_match(placement_string, placement_regex))
-        {
-            LOG_THROW_ERROR("Invalid placement section: " + placement_string, true);
-        }
-
-        this->validate_placement(placement_string);
-        this->placement = placement_string;
-        return;
+        return this->placement;
     }
 
     /**
@@ -328,19 +325,22 @@ namespace chess
     }
 
     /**
-     * @brief Generate FEN string from current position state.
-     * @returns Complete FEN notation string.
+     * @brief Set board placement string (rank/file portion of FEN).
+     * @param placement_string Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
      */
-    std::string Fen::generate_fen(void) const
+    void Fen::set_placement(const std::string &placement_string)
     {
-        std::ostringstream oss;
-        oss << this->placement << " "
-            << (this->color == WHITE ? "w" : "b") << " "
-            << this->castling << " "
-            << (this->en_passant.empty() ? "-" : this->en_passant) << " "
-            << this->half_move_clock << " "
-            << this->full_moves;
-        return oss.str();
+        std::regex placement_regex(
+            "^(([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+)$");
+
+        if (!std::regex_match(placement_string, placement_regex))
+        {
+            LOG_THROW_ERROR("Invalid placement section: " + placement_string, true);
+        }
+
+        this->validate_placement(placement_string);
+        this->placement = placement_string;
+        return;
     }
 
 }

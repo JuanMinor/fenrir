@@ -153,187 +153,6 @@ namespace chess
         return placement;
     }
 
-    /**
-     * @brief Generate FEN notation of current board position.
-     * @returns Full FEN string.
-     */
-    std::string Board::get_fen(void)
-    {
-        fen.set_placement(this->generate_placement_from_board());
-        fen.set_castling(this->get_castling_rights().empty() ? "-" : this->get_castling_rights());
-        fen.set_en_passant(this->get_en_passant().empty() ? "-" : this->get_en_passant());
-        fen.set_color(this->color);
-        fen.set_half_move_clock(this->half_move_clock);
-        fen.set_full_moves(this->full_moves);
-
-        return fen.generate_fen();
-    }
-
-    const std::string &Board::get_en_passant(void) const
-    {
-        if (this->en_passant_dirty)
-        {
-            if (this->en_passant_square == 64)
-            {
-                this->en_passant_str = "";
-            }
-            else
-            {
-                this->en_passant_str = utils::get_algebraic_notation(
-                    this->en_passant_square / 8,
-                    this->en_passant_square % 8);
-            }
-            this->en_passant_dirty = false;
-        }
-        return this->en_passant_str;
-    }
-
-    const std::string &Board::get_castling_rights(void) const
-    {
-        if (this->castling_dirty)
-        {
-            this->castling_str = "";
-            if (this->castling_rights & CASTLE_K)
-                this->castling_str += 'K';
-            if (this->castling_rights & CASTLE_Q)
-                this->castling_str += 'Q';
-            if (this->castling_rights & CASTLE_k)
-                this->castling_str += 'k';
-            if (this->castling_rights & CASTLE_q)
-                this->castling_str += 'q';
-            if (this->castling_str.empty())
-            {
-                this->castling_str = "-";
-            }
-            this->castling_dirty = false;
-        }
-        return this->castling_str;
-    }
-
-    char Board::get_piece(uint8_t rank, uint8_t file) const
-    {
-        if (rank >= BOARD_SIZE || file >= BOARD_SIZE)
-            return '\0';
-        uint8_t square_idx = static_cast<uint8_t>(rank * 8 + file);
-
-        if (test_bit(this->white_occupancy, square_idx))
-        {
-            for (int i = 0; i < 6; ++i)
-            {
-                if (test_bit(this->bitboards[i], square_idx))
-                {
-                    static const char aliases[6] = {'P', 'N', 'B', 'R', 'Q', 'K'};
-                    return aliases[i];
-                }
-            }
-        }
-        else if (test_bit(this->black_occupancy, square_idx))
-        {
-            for (int i = 6; i < 12; ++i)
-            {
-                if (test_bit(this->bitboards[i], square_idx))
-                {
-                    static const char aliases[6] = {'p', 'n', 'b', 'r', 'q', 'k'};
-                    return aliases[i - 6];
-                }
-            }
-        }
-        return '\0';
-    }
-
-    uint64_t Board::get_en_passant_bb() const
-    {
-        if (this->en_passant_square == 64)
-        {
-            return 0ULL;
-        }
-        return (1ULL << this->en_passant_square);
-    }
-
-    void Board::reset(const std::string &fen_string)
-    {
-        this->fen = Fen(fen_string);
-
-        std::string fen_castling = fen.get_castling();
-        this->castling_rights = 0;
-        if (fen_castling.find('K') != std::string::npos)
-            this->castling_rights |= CASTLE_K;
-        if (fen_castling.find('Q') != std::string::npos)
-            this->castling_rights |= CASTLE_Q;
-        if (fen_castling.find('k') != std::string::npos)
-            this->castling_rights |= CASTLE_k;
-        if (fen_castling.find('q') != std::string::npos)
-            this->castling_rights |= CASTLE_q;
-
-        std::string fen_ep = fen.get_en_passant();
-        if (fen_ep == "-" || fen_ep.empty())
-        {
-            this->en_passant_square = 64;
-        }
-        else
-        {
-            uint8_t ep_rank = 0, ep_file = 0;
-            utils::parse_algebraic_notation(fen_ep.c_str(), ep_rank, ep_file);
-            this->en_passant_square = static_cast<uint8_t>(ep_rank * 8 + ep_file);
-        }
-
-        this->castling_dirty = true;
-        this->en_passant_dirty = true;
-
-        this->color = fen.get_color();
-        this->half_move_clock = static_cast<uint8_t>(fen.get_half_move_clock());
-        this->full_moves = static_cast<uint8_t>(fen.get_full_moves());
-        this->build_board(fen.get_placement());
-        logger::INFO("Board reset to FEN: " + fen_string);
-    }
-
-    void Board::print(void) const
-    {
-        if (!DEBUG)
-        {
-            return;
-        }
-        std::cout << "  ";
-        for (uint8_t j = 0; j < BOARD_SIZE; ++j)
-        {
-            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << char(97 + j) << " ";
-        }
-        std::cout << modifier::Modifier(modifier::Color::RESET) << std::endl;
-        for (int i = BOARD_SIZE - 1; i >= 0; i--)
-        {
-            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1) << " "
-                      << modifier::Modifier(modifier::Color::RESET);
-            for (uint8_t j = 0; j < BOARD_SIZE; ++j)
-            {
-                char c = this->get_piece(static_cast<uint8_t>(i), j);
-                if (c != '\0')
-                {
-                    bool is_white = std::isupper(static_cast<unsigned char>(c));
-                    std::cout << modifier::Modifier(is_white ? modifier::Color::RESET : modifier::Color::FG_CYAN)
-                              << c
-                              << modifier::Modifier(modifier::Color::RESET) << " ";
-                }
-                else
-                {
-                    std::cout << ". ";
-                }
-            }
-            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1)
-                      << modifier::Modifier(modifier::Color::RESET) << std::endl;
-        }
-
-        std::cout << "  ";
-        for (uint8_t j = 0; j < BOARD_SIZE; ++j)
-        {
-            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << char(97 + j) << " ";
-        }
-        std::cout << modifier::Modifier(modifier::Color::RESET) << std::endl;
-    }
-
-    /* =========================================================
-     *  Make / Unmake implementation
-     * ========================================================= */
-
     UndoState Board::apply_move(const Move &move)
     {
         /* Save state snapshot */
@@ -625,27 +444,118 @@ namespace chess
         return state;
     }
 
-    void Board::undo_move(const UndoState &state)
+    const std::string &Board::get_castling_rights(void) const
     {
-        for (int i = 0; i < 12; ++i)
+        if (this->castling_dirty)
         {
-            this->bitboards[i] = state.bitboards[i];
+            this->castling_str = "";
+            if (this->castling_rights & CASTLE_K)
+                this->castling_str += 'K';
+            if (this->castling_rights & CASTLE_Q)
+                this->castling_str += 'Q';
+            if (this->castling_rights & CASTLE_k)
+                this->castling_str += 'k';
+            if (this->castling_rights & CASTLE_q)
+                this->castling_str += 'q';
+            if (this->castling_str.empty())
+            {
+                this->castling_str = "-";
+            }
+            this->castling_dirty = false;
         }
-        this->white_occupancy = state.white_occupancy;
-        this->black_occupancy = state.black_occupancy;
-        this->combined_occupancy = state.combined_occupancy;
-        this->castling_rights = state.castling_rights;
-        this->en_passant_square = state.en_passant_square;
-        this->castling_dirty = true;
-        this->en_passant_dirty = true;
-        this->color = state.color;
-        this->half_move_clock = state.half_move_clock;
-        this->full_moves = state.full_moves;
+        return this->castling_str;
     }
 
-    /* =========================================================
-     *  Check detection — uses precomputed attack tables
-     * ========================================================= */
+    const std::string &Board::get_en_passant(void) const
+    {
+        if (this->en_passant_dirty)
+        {
+            if (this->en_passant_square == 64)
+            {
+                this->en_passant_str = "";
+            }
+            else
+            {
+                this->en_passant_str = utils::get_algebraic_notation(
+                    this->en_passant_square / 8,
+                    this->en_passant_square % 8);
+            }
+            this->en_passant_dirty = false;
+        }
+        return this->en_passant_str;
+    }
+
+    uint64_t Board::get_en_passant_bb() const
+    {
+        if (this->en_passant_square == 64)
+        {
+            return 0ULL;
+        }
+        return (1ULL << this->en_passant_square);
+    }
+
+    /**
+     * @brief Generate FEN notation of current board position.
+     * @returns Full FEN string.
+     */
+    std::string Board::get_fen(void)
+    {
+        fen.set_placement(this->generate_placement_from_board());
+        fen.set_castling(this->get_castling_rights().empty() ? "-" : this->get_castling_rights());
+        fen.set_en_passant(this->get_en_passant().empty() ? "-" : this->get_en_passant());
+        fen.set_color(this->color);
+        fen.set_half_move_clock(this->half_move_clock);
+        fen.set_full_moves(this->full_moves);
+
+        return fen.generate_fen();
+    }
+
+    char Board::get_piece(uint8_t rank, uint8_t file) const
+    {
+        if (rank >= BOARD_SIZE || file >= BOARD_SIZE)
+            return '\0';
+        uint8_t square_idx = static_cast<uint8_t>(rank * 8 + file);
+
+        if (test_bit(this->white_occupancy, square_idx))
+        {
+            for (int i = 0; i < 6; ++i)
+            {
+                if (test_bit(this->bitboards[i], square_idx))
+                {
+                    static const char aliases[6] = {'P', 'N', 'B', 'R', 'Q', 'K'};
+                    return aliases[i];
+                }
+            }
+        }
+        else if (test_bit(this->black_occupancy, square_idx))
+        {
+            for (int i = 6; i < 12; ++i)
+            {
+                if (test_bit(this->bitboards[i], square_idx))
+                {
+                    static const char aliases[6] = {'p', 'n', 'b', 'r', 'q', 'k'};
+                    return aliases[i - 6];
+                }
+            }
+        }
+        return '\0';
+    }
+
+    /* Check detection — uses precomputed attack tables */
+
+    bool Board::is_in_check(uint8_t clr) const
+    {
+        /* Find king square */
+        int king_bb_idx = (clr == WHITE) ? 5 : 11;
+        uint64_t king_bb = this->bitboards[king_bb_idx];
+        if (king_bb == 0ULL)
+        {
+            return false; /* No king on board */
+        }
+        uint8_t king_square = chess::bitscan_forward(king_bb);
+        uint8_t opponent = (clr == WHITE) ? BLACK : WHITE;
+        return is_square_attacked_by(king_square, opponent);
+    }
 
     bool Board::is_square_attacked_by(uint8_t square, uint8_t attacker_color) const
     {
@@ -735,18 +645,102 @@ namespace chess
         return false;
     }
 
-    bool Board::is_in_check(uint8_t clr) const
+    void Board::print(void) const
     {
-        /* Find king square */
-        int king_bb_idx = (clr == WHITE) ? 5 : 11;
-        uint64_t king_bb = this->bitboards[king_bb_idx];
-        if (king_bb == 0ULL)
+        if (!DEBUG)
         {
-            return false; /* No king on board */
+            return;
         }
-        uint8_t king_square = chess::bitscan_forward(king_bb);
-        uint8_t opponent = (clr == WHITE) ? BLACK : WHITE;
-        return is_square_attacked_by(king_square, opponent);
+        std::cout << "  ";
+        for (uint8_t j = 0; j < BOARD_SIZE; ++j)
+        {
+            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << char(97 + j) << " ";
+        }
+        std::cout << modifier::Modifier(modifier::Color::RESET) << std::endl;
+        for (int i = BOARD_SIZE - 1; i >= 0; i--)
+        {
+            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1) << " "
+                      << modifier::Modifier(modifier::Color::RESET);
+            for (uint8_t j = 0; j < BOARD_SIZE; ++j)
+            {
+                char c = this->get_piece(static_cast<uint8_t>(i), j);
+                if (c != '\0')
+                {
+                    bool is_white = std::isupper(static_cast<unsigned char>(c));
+                    std::cout << modifier::Modifier(is_white ? modifier::Color::RESET : modifier::Color::FG_CYAN)
+                              << c
+                              << modifier::Modifier(modifier::Color::RESET) << " ";
+                }
+                else
+                {
+                    std::cout << ". ";
+                }
+            }
+            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << static_cast<unsigned int>(i + 1)
+                      << modifier::Modifier(modifier::Color::RESET) << std::endl;
+        }
+
+        std::cout << "  ";
+        for (uint8_t j = 0; j < BOARD_SIZE; ++j)
+        {
+            std::cout << modifier::Modifier(modifier::Color::FG_YELLOW) << char(97 + j) << " ";
+        }
+        std::cout << modifier::Modifier(modifier::Color::RESET) << std::endl;
+    }
+
+    void Board::reset(const std::string &fen_string)
+    {
+        this->fen = Fen(fen_string);
+
+        std::string fen_castling = fen.get_castling();
+        this->castling_rights = 0;
+        if (fen_castling.find('K') != std::string::npos)
+            this->castling_rights |= CASTLE_K;
+        if (fen_castling.find('Q') != std::string::npos)
+            this->castling_rights |= CASTLE_Q;
+        if (fen_castling.find('k') != std::string::npos)
+            this->castling_rights |= CASTLE_k;
+        if (fen_castling.find('q') != std::string::npos)
+            this->castling_rights |= CASTLE_q;
+
+        std::string fen_ep = fen.get_en_passant();
+        if (fen_ep == "-" || fen_ep.empty())
+        {
+            this->en_passant_square = 64;
+        }
+        else
+        {
+            uint8_t ep_rank = 0, ep_file = 0;
+            utils::parse_algebraic_notation(fen_ep.c_str(), ep_rank, ep_file);
+            this->en_passant_square = static_cast<uint8_t>(ep_rank * 8 + ep_file);
+        }
+
+        this->castling_dirty = true;
+        this->en_passant_dirty = true;
+
+        this->color = fen.get_color();
+        this->half_move_clock = static_cast<uint8_t>(fen.get_half_move_clock());
+        this->full_moves = static_cast<uint8_t>(fen.get_full_moves());
+        this->build_board(fen.get_placement());
+        logger::INFO("Board reset to FEN: " + fen_string);
+    }
+
+    void Board::undo_move(const UndoState &state)
+    {
+        for (int i = 0; i < 12; ++i)
+        {
+            this->bitboards[i] = state.bitboards[i];
+        }
+        this->white_occupancy = state.white_occupancy;
+        this->black_occupancy = state.black_occupancy;
+        this->combined_occupancy = state.combined_occupancy;
+        this->castling_rights = state.castling_rights;
+        this->en_passant_square = state.en_passant_square;
+        this->castling_dirty = true;
+        this->en_passant_dirty = true;
+        this->color = state.color;
+        this->half_move_clock = state.half_move_clock;
+        this->full_moves = state.full_moves;
     }
 
 } /* namespace chess */

@@ -123,19 +123,6 @@ namespace chess
     }
 
     /**
-     * @brief Get destination square in algebraic notation (e.g., "e4").
-     * @returns Destination square as string.
-     */
-    std::string Move::get_to() const
-    {
-        if (invalid_squares)
-        {
-            return invalid_squares->second;
-        }
-        return utils::get_algebraic_notation(static_cast<uint8_t>(to_square / 8), static_cast<uint8_t>(to_square % 8));
-    }
-
-    /**
      * @brief Get source square as numeric index (0-63).
      * @returns Source square index.
      */
@@ -163,6 +150,19 @@ namespace chess
     }
 
     /**
+     * @brief Get destination square in algebraic notation (e.g., "e4").
+     * @returns Destination square as string.
+     */
+    std::string Move::get_to() const
+    {
+        if (invalid_squares)
+        {
+            return invalid_squares->second;
+        }
+        return utils::get_algebraic_notation(static_cast<uint8_t>(to_square / 8), static_cast<uint8_t>(to_square % 8));
+    }
+
+    /**
      * @brief Get destination square as numeric index (0-63).
      * @returns Destination square index.
      */
@@ -181,21 +181,21 @@ namespace chess
     }
 
     /**
-     * @brief Check if this move is a pawn promotion.
-     * @returns True if promotion, false otherwise.
-     */
-    bool Move::is_promotion() const
-    {
-        return this->move_type == MoveType::PROMOTION;
-    }
-
-    /**
      * @brief Check if this move is a castling move (kingside or queenside).
      * @returns True if castling, false otherwise.
      */
     bool Move::is_castling() const
     {
         return this->move_type == MoveType::CASTLE_KINGSIDE || this->move_type == MoveType::CASTLE_QUEENSIDE;
+    }
+
+    /**
+     * @brief Check if this move is a pawn promotion.
+     * @returns True if promotion, false otherwise.
+     */
+    bool Move::is_promotion() const
+    {
+        return this->move_type == MoveType::PROMOTION;
     }
 
     /**

@@ -78,6 +78,13 @@ namespace tuner
         inline uint8_t get_gpu_count() const { return gpu_count; }
 
         /**
+         * @brief Translates a logical GPU index to its physical hardware Device ID.
+         * @param index The 0-based logical index in the detected list.
+         * @returns The underlying physical device identifier.
+         */
+        uint8_t get_gpu_id(uint8_t index) const;
+
+        /**
          * @brief Gets the cached hardware host information (if detected during initialization).
          * @returns Optional containing HostInfo if query was performed.
          */
@@ -112,12 +119,5 @@ namespace tuner
          * @param threads The new thread count value.
          */
         inline void set_search_threads(uint8_t threads) { search_threads = threads; }
-
-        /**
-         * @brief Translates a logical GPU index to its physical hardware Device ID.
-         * @param index The 0-based logical index in the detected list.
-         * @returns The underlying physical device identifier.
-         */
-        uint8_t get_gpu_id(uint8_t index) const;
     };
 }

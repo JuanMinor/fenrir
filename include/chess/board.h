@@ -82,6 +82,15 @@ namespace chess
         uint8_t full_moves;
         Fen fen;
 
+        void build_board(const std::string &placement);
+
+        inline void clear_bit(uint64_t &bb, uint8_t square)
+        {
+            bb &= ~(1ULL << square);
+        }
+
+        std::string generate_placement_from_board(void) const;
+
         inline int get_bitboard_index(char alias) const
         {
             switch (alias)
@@ -120,18 +129,10 @@ namespace chess
             bb |= (1ULL << square);
         }
 
-        inline void clear_bit(uint64_t &bb, uint8_t square)
-        {
-            bb &= ~(1ULL << square);
-        }
-
         inline bool test_bit(uint64_t bb, uint8_t square) const
         {
             return (bb & (1ULL << square)) != 0;
         }
-
-        void build_board(const std::string &placement);
-        std::string generate_placement_from_board(void) const;
 
     public:
         explicit Board(const std::string &fen_string);
@@ -150,10 +151,17 @@ namespace chess
         UndoState apply_move(const Move &move);
 
         /**
-         * @brief Get castling rights as a bitmask.
-         * @returns Bitmask with castling rights flags (CASTLE_K, CASTLE_Q, CASTLE_k, CASTLE_q).
+         * @brief Get bitboard for a specific piece type.
+         * @param index Bitboard index (0-5: White P/N/B/R/Q/K, 6-11: Black p/n/b/r/q/k).
+         * @returns 64-bit bitboard representing piece positions.
          */
-        uint8_t get_castling_rights_mask() const { return castling_rights; }
+        uint64_t get_bitboard(int index) const override { return bitboards[index]; }
+
+        /**
+         * @brief Get legacy black occupancy bitboard.
+         * @returns 64-bit bitboard with all black pieces.
+         */
+        uint64_t get_black_occupancy() const { return black_occupancy; }
 
         /**
          * @brief Get the castling rights string representation.
@@ -162,10 +170,22 @@ namespace chess
         const std::string &get_castling_rights() const override;
 
         /**
+         * @brief Get castling rights as a bitmask.
+         * @returns Bitmask with castling rights flags (CASTLE_K, CASTLE_Q, CASTLE_k, CASTLE_q).
+         */
+        uint8_t get_castling_rights_mask() const { return castling_rights; }
+
+        /**
          * @brief Get the side to move.
          * @returns Color value: 0 for white, 1 for black.
          */
         uint8_t get_color() const override { return color; }
+
+        /**
+         * @brief Get combined occupancy bitboard (all pieces, both colors).
+         * @returns 64-bit bitboard with all occupied squares.
+         */
+        uint64_t get_combined_occupancy() const override { return combined_occupancy; }
 
         /**
          * @brief Get en passant target square as string.
@@ -198,39 +218,6 @@ namespace chess
         uint8_t get_half_move_clock(void) const override { return half_move_clock; }
 
         /**
-         * @brief Get piece character at given board coordinates.
-         * @param rank Rank index (0-7).
-         * @param file File index (0-7).
-         * @returns Piece character ('P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k', or ' ').
-         */
-        char get_piece(uint8_t rank, uint8_t file) const override;
-
-        /**
-         * @brief Get combined occupancy bitboard (all pieces, both colors).
-         * @returns 64-bit bitboard with all occupied squares.
-         */
-        uint64_t get_combined_occupancy() const override { return combined_occupancy; }
-
-        /**
-         * @brief Get bitboard for a specific piece type.
-         * @param index Bitboard index (0-5: White P/N/B/R/Q/K, 6-11: Black p/n/b/r/q/k).
-         * @returns 64-bit bitboard representing piece positions.
-         */
-        uint64_t get_bitboard(int index) const override { return bitboards[index]; }
-
-        /**
-         * @brief Get legacy white occupancy bitboard.
-         * @returns 64-bit bitboard with all white pieces.
-         */
-        uint64_t get_white_occupancy() const { return white_occupancy; }
-
-        /**
-         * @brief Get legacy black occupancy bitboard.
-         * @returns 64-bit bitboard with all black pieces.
-         */
-        uint64_t get_black_occupancy() const { return black_occupancy; }
-
-        /**
          * @brief Get occupancy bitboard for a specific color.
          * @param clr Color (0 for white, 1 for black).
          * @returns 64-bit bitboard with pieces of that color.
@@ -241,12 +228,18 @@ namespace chess
         }
 
         /**
-         * @brief Check if a square is attacked by the opponent.
-         * @param square Square index to check.
-         * @param attacker_color Attacking color.
-         * @returns True if square is attacked, false otherwise.
+         * @brief Get piece character at given board coordinates.
+         * @param rank Rank index (0-7).
+         * @param file File index (0-7).
+         * @returns Piece character ('P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k', or ' ').
          */
-        bool is_square_attacked_by(uint8_t square, uint8_t attacker_color) const;
+        char get_piece(uint8_t rank, uint8_t file) const override;
+
+        /**
+         * @brief Get legacy white occupancy bitboard.
+         * @returns 64-bit bitboard with all white pieces.
+         */
+        uint64_t get_white_occupancy() const { return white_occupancy; }
 
         /**
          * @brief Check if a color is in check.
@@ -254,6 +247,14 @@ namespace chess
          * @returns True if in check, false otherwise.
          */
         bool is_in_check(uint8_t clr) const;
+
+        /**
+         * @brief Check if a square is attacked by the opponent.
+         * @param square Square index to check.
+         * @param attacker_color Attacking color.
+         * @returns True if square is attacked, false otherwise.
+         */
+        bool is_square_attacked_by(uint8_t square, uint8_t attacker_color) const;
 
         /**
          * @brief Display the board position in text format.

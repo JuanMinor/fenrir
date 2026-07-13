@@ -21,12 +21,6 @@
 
 namespace chess
 {
-    void Moves::generate_bishop_moves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves)
-    {
-        constexpr int8_t directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
-        slide_in_directions(rank, file, piece_char, board, moves, directions, 4);
-    }
-
     void Moves::add_capture_move(uint8_t from_rank, uint8_t from_file, char piece_char, uint8_t to_rank, uint8_t to_file, char target_char, std::vector<Move> &moves)
     {
         bool is_white = std::isupper(static_cast<unsigned char>(piece_char));
@@ -38,6 +32,12 @@ namespace chess
             Move move = Move(from_sq, to_sq, MoveType::CAPTURE);
             moves.emplace_back(move);
         }
+    }
+
+    void Moves::generate_bishop_moves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves)
+    {
+        constexpr int8_t directions[4][2] = {{1, 1}, {1, -1}, {-1, 1}, {-1, -1}};
+        slide_in_directions(rank, file, piece_char, board, moves, directions, 4);
     }
 
     void Moves::generate_king_moves(uint8_t rank, uint8_t file, char piece_char, const AbstractBoard &board, std::vector<Move> &moves)

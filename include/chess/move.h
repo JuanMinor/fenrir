@@ -81,16 +81,16 @@ namespace chess
         uint8_t get_to_square() const;
 
         /**
-         * @brief Check if this move is a castling move (kingside or queenside).
-         * @returns True if castling, false otherwise.
-         */
-        bool is_castling() const;
-
-        /**
          * @brief Check if this move captures a piece.
          * @returns True if capture or en passant, false otherwise.
          */
         bool is_capture() const;
+
+        /**
+         * @brief Check if this move is a castling move (kingside or queenside).
+         * @returns True if castling, false otherwise.
+         */
+        bool is_castling() const;
 
         /**
          * @brief Check if this move is a pawn promotion.

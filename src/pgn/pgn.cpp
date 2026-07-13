@@ -28,11 +28,6 @@ namespace io
     }
 
     /**
-     * @brief Destructor for the Pgn class.
-     */
-    Pgn::~Pgn() {}
-
-    /**
      * @brief Resets stream flags and seeks the output stream to the beginning of the file.
      * @param os The output stream to modify.
      */
@@ -41,6 +36,28 @@ namespace io
         os.seekp(std::ios_base::beg);
         os.clear();
     }
+
+    /**
+     * @brief Writes standard PGN metadata tags to the output stream.
+     * @param os The output stream to write metadata to.
+     */
+    void Pgn::set_metadata(std::ostream &os) const
+    {
+        auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
+        this->clear_stream_flags(os);
+        os << "[Event \"User vs. Fenrir\"]\n"
+           << "[Site \"Remote server - atom\"]\n"
+           << "[Date \"" << date << "\"]\n"
+           << "[Round \"1\"]\n"
+           << "[White \"User\"]\n"
+           << "[Black \"Fenrir\"]\n"
+           << "[Result \"-\"]\n\n";
+    }
+
+    /**
+     * @brief Destructor for the Pgn class.
+     */
+    Pgn::~Pgn() {}
 
     /**
      * @brief Reads all recorded moves from the store and generates a final formatted PGN file with metadata tags.
@@ -105,22 +122,5 @@ namespace io
             return;
         }
         file << move << '\n';
-    }
-
-    /**
-     * @brief Writes standard PGN metadata tags to the output stream.
-     * @param os The output stream to write metadata to.
-     */
-    void Pgn::set_metadata(std::ostream &os) const
-    {
-        auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
-        this->clear_stream_flags(os);
-        os << "[Event \"User vs. Fenrir\"]\n"
-           << "[Site \"Remote server - atom\"]\n"
-           << "[Date \"" << date << "\"]\n"
-           << "[Round \"1\"]\n"
-           << "[White \"User\"]\n"
-           << "[Black \"Fenrir\"]\n"
-           << "[Result \"-\"]\n\n";
     }
 }

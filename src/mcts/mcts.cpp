@@ -115,6 +115,52 @@ namespace mcts
 
     MCTSNode::~MCTSNode() = default;
 
+    void MCTSNode::add_dirichlet_noise(double epsilon, double alpha)
+    {
+        if (children.empty())
+            return;
+
+        std::mt19937 rng(std::random_device{}());
+        std::gamma_distribution<double> gamma(alpha, 1.0);
+
+        double original_prior_sum = 0.0;
+        for (const auto &child : children)
+        {
+            original_prior_sum += child->prior;
+        }
+        if (original_prior_sum <= 0.0)
+            original_prior_sum = 1.0;
+
+        double noise_sum = 0.0;
+        std::vector<double> noise;
+        noise.reserve(children.size());
+        for (size_t i = 0; i < children.size(); ++i)
+        {
+            double n = gamma(rng);
+            noise.push_back(n);
+            noise_sum += n;
+        }
+        if (noise_sum <= 0.0)
+            noise_sum = 1.0;
+
+        for (size_t i = 0; i < children.size(); ++i)
+        {
+            double normalized_original = children[i]->prior / original_prior_sum;
+            double normalized_noise = noise[i] / noise_sum;
+            children[i]->prior = (1.0 - epsilon) * normalized_original + epsilon * normalized_noise;
+        }
+    }
+
+    void MCTSNode::backpropagate(double result)
+    {
+        visits++;
+        double current = win_score.load();
+        while (!win_score.compare_exchange_weak(current, current + result))
+            ;
+        if (parent)
+            parent->backpropagate(1.0 - result);
+    }
+
     /**
      * Expands this node with one child per legal move. When @p policy is
      * supplied (from the NN), each child's prior is taken directly from the
@@ -206,22 +252,24 @@ namespace mcts
         is_expanded.store(true);
     }
 
-    MCTSNode *MCTSNode::select_child()
+    /**
+     * Returns the deepest explored line below this node. A child counts as
+     * explored if it has real visits or a nonzero virtual loss, so in-flight
+     * (currently evaluating) branches aren't underreported.
+     */
+    int MCTSNode::get_max_depth() const
     {
-        MCTSNode *best_child = nullptr;
-        double best_value = -1e9;
-        int parent_visits = visits.load();
-
-        for (auto &child : children)
+        if (!is_expanded.load() || children.empty())
+            return 0;
+        int max_d = 0;
+        for (const auto &child : children)
         {
-            double puct = child->puct_value(parent_visits);
-            if (puct > best_value)
+            if (child->visits.load() > 0 || child->virtual_loss.load() > 0)
             {
-                best_value = puct;
-                best_child = child.get();
+                max_d = std::max(max_d, child->get_max_depth());
             }
         }
-        return best_child;
+        return 1 + max_d;
     }
 
     /**
@@ -263,76 +311,83 @@ namespace mcts
         return q + u;
     }
 
-    /**
-     * Returns the deepest explored line below this node. A child counts as
-     * explored if it has real visits or a nonzero virtual loss, so in-flight
-     * (currently evaluating) branches aren't underreported.
-     */
-    int MCTSNode::get_max_depth() const
+    MCTSNode *MCTSNode::select_child()
     {
-        if (!is_expanded.load() || children.empty())
-            return 0;
-        int max_d = 0;
-        for (const auto &child : children)
+        MCTSNode *best_child = nullptr;
+        double best_value = -1e9;
+        int parent_visits = visits.load();
+
+        for (auto &child : children)
         {
-            if (child->visits.load() > 0 || child->virtual_loss.load() > 0)
+            double puct = child->puct_value(parent_visits);
+            if (puct > best_value)
             {
-                max_d = std::max(max_d, child->get_max_depth());
+                best_value = puct;
+                best_child = child.get();
             }
         }
-        return 1 + max_d;
-    }
-
-    void MCTSNode::add_dirichlet_noise(double epsilon, double alpha)
-    {
-        if (children.empty())
-            return;
-
-        std::mt19937 rng(std::random_device{}());
-        std::gamma_distribution<double> gamma(alpha, 1.0);
-
-        double original_prior_sum = 0.0;
-        for (const auto &child : children)
-        {
-            original_prior_sum += child->prior;
-        }
-        if (original_prior_sum <= 0.0)
-            original_prior_sum = 1.0;
-
-        double noise_sum = 0.0;
-        std::vector<double> noise;
-        noise.reserve(children.size());
-        for (size_t i = 0; i < children.size(); ++i)
-        {
-            double n = gamma(rng);
-            noise.push_back(n);
-            noise_sum += n;
-        }
-        if (noise_sum <= 0.0)
-            noise_sum = 1.0;
-
-        for (size_t i = 0; i < children.size(); ++i)
-        {
-            double normalized_original = children[i]->prior / original_prior_sum;
-            double normalized_noise = noise[i] / noise_sum;
-            children[i]->prior = (1.0 - epsilon) * normalized_original + epsilon * normalized_noise;
-        }
-    }
-
-    void MCTSNode::backpropagate(double result)
-    {
-        visits++;
-        double current = win_score.load();
-        while (!win_score.compare_exchange_weak(current, current + result))
-            ;
-        if (parent)
-            parent->backpropagate(1.0 - result);
+        return best_child;
     }
 
     MCTSSearch::MCTSSearch(nn::NNEvaluator *eval, int threads, size_t pipeline_t)
         : evaluator(eval), num_threads(threads), pipeline_target(pipeline_t) {}
 
     MCTSSearch::~MCTSSearch() = default;
+
+    int MCTSSearch::benchmark_search(chess::Engine &engine, int time_limit_ms)
+    {
+        uint8_t root_color = engine.get_board_view().get_color();
+        chess::Move empty_move(0, 0);
+        auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
+
+        if (evaluator)
+        {
+            try
+            {
+                auto future = evaluator->request_evaluation(engine.get_board_view());
+                nn::NNResult res = future.get();
+                root->expand(engine, res.policy);
+            }
+            catch (...)
+            {
+                root->expand(engine);
+            }
+        }
+        else
+        {
+            root->expand(engine);
+        }
+
+        std::vector<std::thread> workers;
+        auto end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(std::max(1, time_limit_ms));
+
+        for (int i = 0; i < num_threads; ++i)
+        {
+            try
+            {
+                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
+            }
+            catch (...)
+            {
+                break;
+            }
+        }
+
+        if (workers.empty())
+        {
+            search_worker(std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
+        }
+        else
+        {
+            for (auto &w : workers)
+            {
+                if (w.joinable())
+                    w.join();
+            }
+        }
+
+        return root->visits.load();
+    }
 
     /**
      * Runs a multithreaded MCTS search from the given position for either a
@@ -485,61 +540,6 @@ namespace mcts
             }
         }
         return {best_move, policy};
-    }
-
-    int MCTSSearch::benchmark_search(chess::Engine &engine, int time_limit_ms)
-    {
-        uint8_t root_color = engine.get_board_view().get_color();
-        chess::Move empty_move(0, 0);
-        auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
-
-        if (evaluator)
-        {
-            try
-            {
-                auto future = evaluator->request_evaluation(engine.get_board_view());
-                nn::NNResult res = future.get();
-                root->expand(engine, res.policy);
-            }
-            catch (...)
-            {
-                root->expand(engine);
-            }
-        }
-        else
-        {
-            root->expand(engine);
-        }
-
-        std::vector<std::thread> workers;
-        auto end_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(std::max(1, time_limit_ms));
-
-        for (int i = 0; i < num_threads; ++i)
-        {
-            try
-            {
-                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
-            }
-            catch (...)
-            {
-                break;
-            }
-        }
-
-        if (workers.empty())
-        {
-            search_worker(std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
-        }
-        else
-        {
-            for (auto &w : workers)
-            {
-                if (w.joinable())
-                    w.join();
-            }
-        }
-
-        return root->visits.load();
     }
 
     /**

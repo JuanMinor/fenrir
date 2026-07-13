@@ -42,27 +42,6 @@ extern "C"
     }
 
     /**
-     * @brief Make a move on the board.
-     * @param engine Engine pointer.
-     * @param from Source square in algebraic notation (e.g., "e2").
-     * @param to Destination square in algebraic notation (e.g., "e4").
-     * @returns True if move was legal and applied, false otherwise.
-     */
-    bool fenrir_make_move(void *engine, const char *from, const char *to)
-    {
-        auto *eng = static_cast<chess::Engine *>(engine);
-        try
-        {
-            eng->make_move(chess::Move(from, to));
-            return true;
-        }
-        catch (const std::invalid_argument &)
-        {
-            return false;
-        }
-    }
-
-    /**
      * @brief Generate all legal moves for the side to move.
      * @param engine Engine pointer.
      * @param out_buffer Buffer to write move strings (format: "e2e4 e7e5 ...").
@@ -107,6 +86,27 @@ extern "C"
         strncpy(out_buffer, fen.c_str(), max_len - 1);
         out_buffer[max_len - 1] = '\0';
 #endif
+    }
+
+    /**
+     * @brief Make a move on the board.
+     * @param engine Engine pointer.
+     * @param from Source square in algebraic notation (e.g., "e2").
+     * @param to Destination square in algebraic notation (e.g., "e4").
+     * @returns True if move was legal and applied, false otherwise.
+     */
+    bool fenrir_make_move(void *engine, const char *from, const char *to)
+    {
+        auto *eng = static_cast<chess::Engine *>(engine);
+        try
+        {
+            eng->make_move(chess::Move(from, to));
+            return true;
+        }
+        catch (const std::invalid_argument &)
+        {
+            return false;
+        }
     }
 
     /**

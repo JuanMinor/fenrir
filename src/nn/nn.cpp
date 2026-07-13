@@ -41,7 +41,7 @@ namespace nn
         last_reload_check_time = std::chrono::steady_clock::now() - std::chrono::seconds(2);
 
         try_reload_model();
-        
+
         detect_hardware();
         int latency = measure_latency_ms();
         hw_profile.inference_latency_ms = latency;
@@ -128,83 +128,6 @@ namespace nn
         return future;
     }
 
-    void NNEvaluator::try_reload_model()
-    {
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_reload_check_time).count() < 1 && session)
-        {
-            return;
-        }
-        last_reload_check_time = now;
-
-        if (!std::filesystem::exists(model_path))
-            return;
-
-        std::error_code ec;
-        auto write_time = std::filesystem::last_write_time(model_path, ec);
-        if (ec)
-            return;
-
-        if (write_time > last_model_load_time || !session)
-        {
-            try
-            {
-                std::ifstream file(model_path, std::ios::binary | std::ios::ate);
-                if (!file.is_open())
-                    return;
-
-                std::streamsize size = file.tellg();
-                if (size <= 0)
-                    return;
-                file.seekg(0, std::ios::beg);
-                std::vector<char> temp_buffer(static_cast<size_t>(size));
-                if (!file.read(temp_buffer.data(), size))
-                    return;
-
-                Ort::SessionOptions session_options;
-                session_options.SetIntraOpNumThreads(1);
-                session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
-
-#ifdef _WIN32
-                try
-                {
-                    session_options.DisableMemPattern();
-                    session_options.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
-                    Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(session_options, 0));
-                }
-                catch (...)
-                {
-                    std::cerr << "Warning: Could not enable DirectML. Falling back to CPU.\n";
-                }
-#else
-                try
-                {
-                    OrtCUDAProviderOptions cuda_options;
-                    cuda_options.device_id = gpu_id_;
-                    session_options.AppendExecutionProvider_CUDA(cuda_options);
-                }
-                catch (const std::exception &e)
-                {
-                    std::cerr << "Warning: Could not enable CUDA for GPU " << gpu_id_ << ". Falling back to CPU.\n";
-                    std::cerr << "ONNX Runtime Error: " << e.what() << "\n";
-                }
-#endif
-
-                session.reset();
-                model_buffer = std::move(temp_buffer);
-                last_model_load_time = write_time;
-
-                auto new_session = std::make_unique<Ort::Session>(*env, model_buffer.data(), model_buffer.size(), session_options);
-                session = std::move(new_session);
-                std::cout << "Successfully loaded ONNX model: " << model_path << "\n";
-            }
-            catch (const std::exception &e)
-            {
-                std::cerr << "Failed to reload ONNX model: " << e.what() << "\n";
-            }
-        }
-    }
-
     void NNEvaluator::batch_worker_loop()
     {
         while (true)
@@ -272,6 +195,26 @@ namespace nn
                 }
             }
         }
+    }
+
+    /**
+     * Populates hw_profile from the detected core count: search_threads
+     * reserves one core for the OS and one for the NN batch worker,
+     * pipeline_target is fixed at 32 (enough in-flight items to saturate the
+     * GPU), and batch_size scales with search_threads * pipeline_target.
+     */
+    void NNEvaluator::detect_hardware()
+    {
+        int logical_cores = static_cast<int>(std::thread::hardware_concurrency());
+        if (logical_cores <= 0) logical_cores = 4;
+
+        hw_profile.logical_cores = logical_cores;
+
+        hw_profile.search_threads = std::max(1, logical_cores - 2);
+
+        hw_profile.pipeline_target = 32;
+
+        hw_profile.batch_size = static_cast<size_t>(hw_profile.search_threads) * hw_profile.pipeline_target;
     }
 
     void NNEvaluator::evaluate_batch(const std::vector<std::vector<float>> &batch_features, std::vector<std::promise<NNResult>> &promises)
@@ -354,25 +297,6 @@ namespace nn
             }
         }
     }
-    /**
-     * Populates hw_profile from the detected core count: search_threads
-     * reserves one core for the OS and one for the NN batch worker,
-     * pipeline_target is fixed at 32 (enough in-flight items to saturate the
-     * GPU), and batch_size scales with search_threads * pipeline_target.
-     */
-    void NNEvaluator::detect_hardware()
-    {
-        int logical_cores = static_cast<int>(std::thread::hardware_concurrency());
-        if (logical_cores <= 0) logical_cores = 4;
-
-        hw_profile.logical_cores = logical_cores;
-
-        hw_profile.search_threads = std::max(1, logical_cores - 2);
-
-        hw_profile.pipeline_target = 32;
-
-        hw_profile.batch_size = static_cast<size_t>(hw_profile.search_threads) * hw_profile.pipeline_target;
-    }
 
     /**
      * Runs one dummy full-size batch through evaluate_batch() and times it,
@@ -387,14 +311,91 @@ namespace nn
             dummy_batch.push_back(std::vector<float>(14 * 8 * 8, 0.0f));
         }
         std::vector<std::promise<NNResult>> dummy_promises(hw_profile.batch_size);
-        
+
         auto start = std::chrono::steady_clock::now();
-        
+
         try {
             evaluate_batch(dummy_batch, dummy_promises);
         } catch (...) {}
-        
+
         auto end = std::chrono::steady_clock::now();
         return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+    }
+
+    void NNEvaluator::try_reload_model()
+    {
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - last_reload_check_time).count() < 1 && session)
+        {
+            return;
+        }
+        last_reload_check_time = now;
+
+        if (!std::filesystem::exists(model_path))
+            return;
+
+        std::error_code ec;
+        auto write_time = std::filesystem::last_write_time(model_path, ec);
+        if (ec)
+            return;
+
+        if (write_time > last_model_load_time || !session)
+        {
+            try
+            {
+                std::ifstream file(model_path, std::ios::binary | std::ios::ate);
+                if (!file.is_open())
+                    return;
+
+                std::streamsize size = file.tellg();
+                if (size <= 0)
+                    return;
+                file.seekg(0, std::ios::beg);
+                std::vector<char> temp_buffer(static_cast<size_t>(size));
+                if (!file.read(temp_buffer.data(), size))
+                    return;
+
+                Ort::SessionOptions session_options;
+                session_options.SetIntraOpNumThreads(1);
+                session_options.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_EXTENDED);
+
+#ifdef _WIN32
+                try
+                {
+                    session_options.DisableMemPattern();
+                    session_options.SetExecutionMode(ExecutionMode::ORT_SEQUENTIAL);
+                    Ort::ThrowOnError(OrtSessionOptionsAppendExecutionProvider_DML(session_options, 0));
+                }
+                catch (...)
+                {
+                    std::cerr << "Warning: Could not enable DirectML. Falling back to CPU.\n";
+                }
+#else
+                try
+                {
+                    OrtCUDAProviderOptions cuda_options;
+                    cuda_options.device_id = gpu_id_;
+                    session_options.AppendExecutionProvider_CUDA(cuda_options);
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << "Warning: Could not enable CUDA for GPU " << gpu_id_ << ". Falling back to CPU.\n";
+                    std::cerr << "ONNX Runtime Error: " << e.what() << "\n";
+                }
+#endif
+
+                session.reset();
+                model_buffer = std::move(temp_buffer);
+                last_model_load_time = write_time;
+
+                auto new_session = std::make_unique<Ort::Session>(*env, model_buffer.data(), model_buffer.size(), session_options);
+                session = std::move(new_session);
+                std::cout << "Successfully loaded ONNX model: " << model_path << "\n";
+            }
+            catch (const std::exception &e)
+            {
+                std::cerr << "Failed to reload ONNX model: " << e.what() << "\n";
+            }
+        }
     }
 }

@@ -22,101 +22,6 @@
 
 namespace chess
 {
-    UCI::UCI()
-    {
-        engine = std::make_unique<Engine>();
-        
-        tuner::TuningParameters tuning(true);
-        evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", tuning.get_gpu_id(0), tuning.get_batch_size());
-        search = std::make_unique<mcts::MCTSSearch>(evaluator.get(), tuning.get_search_threads(), tuning.get_pipeline_target());
-    }
-
-    UCI::~UCI() = default;
-
-    void UCI::loop()
-    {
-        std::string line;
-        while (std::getline(std::cin, line))
-        {
-            std::istringstream is(line);
-            std::string token;
-            is >> std::skipws >> token;
-
-            if (token == "uci")
-            {
-                std::cout << "id name Fenrir " << Engine::version() << std::endl;
-                std::cout << "id author Juan Minor" << std::endl;
-                std::cout << "uciok" << std::endl;
-            }
-            else if (token == "isready")
-            {
-                std::cout << "readyok" << std::endl;
-            }
-            else if (token == "ucinewgame")
-            {
-                engine->reset();
-            }
-            else if (token == "position")
-            {
-                parse_position(line);
-            }
-            else if (token == "go")
-            {
-                parse_go(line);
-            }
-            else if (token == "quit")
-            {
-                break;
-            }
-        }
-    }
-
-    /**
-     * Handles the UCI "position" command: sets up the board from either
-     * "startpos" or a "fen ..." spec, then applies any trailing "moves ..."
-     * list in UCI notation.
-     */
-    void UCI::parse_position(const std::string &command)
-    {
-        std::istringstream is(command);
-        std::string token;
-        is >> token;
-
-        is >> token;
-        if (token == "startpos")
-        {
-            engine->reset();
-            is >> token;
-        }
-        else if (token == "fen")
-        {
-            std::string fen;
-            while (is >> token && token != "moves")
-            {
-                fen += token + " ";
-            }
-            if (!fen.empty())
-                fen.pop_back();
-            engine = std::make_unique<Engine>(fen);
-        }
-
-        while (is >> token)
-        {
-            if (token == "moves")
-                continue;
-
-            std::vector<Move> legal_moves = engine->generate_all_moves();
-            for (const auto &move : legal_moves)
-            {
-                if (move.to_uci_notation() == token)
-                {
-                    engine->make_move(move);
-                    break;
-                }
-            }
-        }
-    }
-
     /**
      * Handles the UCI "go" command and derives a time/simulation budget for
      * the search. Priority: explicit "movetime" wins outright; otherwise
@@ -174,5 +79,100 @@ namespace chess
 
         chess::Move best_move = this->search->find_best_move(*engine, allocated_time_ms, simulations);
         std::cout << "bestmove " << best_move.to_uci_notation() << std::endl;
+    }
+
+    /**
+     * Handles the UCI "position" command: sets up the board from either
+     * "startpos" or a "fen ..." spec, then applies any trailing "moves ..."
+     * list in UCI notation.
+     */
+    void UCI::parse_position(const std::string &command)
+    {
+        std::istringstream is(command);
+        std::string token;
+        is >> token;
+
+        is >> token;
+        if (token == "startpos")
+        {
+            engine->reset();
+            is >> token;
+        }
+        else if (token == "fen")
+        {
+            std::string fen;
+            while (is >> token && token != "moves")
+            {
+                fen += token + " ";
+            }
+            if (!fen.empty())
+                fen.pop_back();
+            engine = std::make_unique<Engine>(fen);
+        }
+
+        while (is >> token)
+        {
+            if (token == "moves")
+                continue;
+
+            std::vector<Move> legal_moves = engine->generate_all_moves();
+            for (const auto &move : legal_moves)
+            {
+                if (move.to_uci_notation() == token)
+                {
+                    engine->make_move(move);
+                    break;
+                }
+            }
+        }
+    }
+
+    UCI::UCI()
+    {
+        engine = std::make_unique<Engine>();
+
+        tuner::TuningParameters tuning(true);
+        evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", tuning.get_gpu_id(0), tuning.get_batch_size());
+        search = std::make_unique<mcts::MCTSSearch>(evaluator.get(), tuning.get_search_threads(), tuning.get_pipeline_target());
+    }
+
+    UCI::~UCI() = default;
+
+    void UCI::loop()
+    {
+        std::string line;
+        while (std::getline(std::cin, line))
+        {
+            std::istringstream is(line);
+            std::string token;
+            is >> std::skipws >> token;
+
+            if (token == "uci")
+            {
+                std::cout << "id name Fenrir " << Engine::version() << std::endl;
+                std::cout << "id author Juan Minor" << std::endl;
+                std::cout << "uciok" << std::endl;
+            }
+            else if (token == "isready")
+            {
+                std::cout << "readyok" << std::endl;
+            }
+            else if (token == "ucinewgame")
+            {
+                engine->reset();
+            }
+            else if (token == "position")
+            {
+                parse_position(line);
+            }
+            else if (token == "go")
+            {
+                parse_go(line);
+            }
+            else if (token == "quit")
+            {
+                break;
+            }
+        }
     }
 }

@@ -40,6 +40,42 @@ namespace chess
         ~Engine();
 
         /**
+         * @brief Generate all legal moves for the side to move.
+         * @returns Vector of all legal moves in the current position.
+         */
+        std::vector<Move> generate_all_moves();
+
+        /**
+         * @brief Generate all legal moves for a piece at a specific square.
+         * @param algebraic_address Square in algebraic notation (e.g., "e2").
+         * @returns Vector of legal moves for the piece on that square.
+         */
+        std::vector<Move> generate_moves(const std::string &algebraic_address);
+
+        /**
+         * @brief Get a const view of the board for inspection (e.g., by evaluators).
+         * @returns Const reference to the AbstractBoard interface.
+         */
+        const AbstractBoard &get_board_view() const;
+
+        /**
+         * @brief Get FEN notation of current board position.
+         * @returns Full FEN string.
+         */
+        std::string get_fen(void);
+
+        /**
+         * @brief Get combined terminal state information in a single query.
+         * @returns TerminalState struct with is_terminal flag and game score.
+         */
+        struct TerminalState
+        {
+            bool is_terminal;
+            double score;
+        };
+        TerminalState get_terminal_state();
+
+        /**
          * @brief Check if current position is checkmate.
          * @returns True if the side to move is in checkmate, false otherwise.
          */
@@ -56,42 +92,6 @@ namespace chess
          * @returns True if the side to move is stalemated, false otherwise.
          */
         bool is_stalemate();
-
-        /**
-         * @brief Generate all legal moves for the side to move.
-         * @returns Vector of all legal moves in the current position.
-         */
-        std::vector<Move> generate_all_moves();
-
-        /**
-         * @brief Generate all legal moves for a piece at a specific square.
-         * @param algebraic_address Square in algebraic notation (e.g., "e2").
-         * @returns Vector of legal moves for the piece on that square.
-         */
-        std::vector<Move> generate_moves(const std::string &algebraic_address);
-
-        /**
-         * @brief Get combined terminal state information in a single query.
-         * @returns TerminalState struct with is_terminal flag and game score.
-         */
-        struct TerminalState
-        {
-            bool is_terminal;
-            double score;
-        };
-        TerminalState get_terminal_state();
-
-        /**
-         * @brief Get a const view of the board for inspection (e.g., by evaluators).
-         * @returns Const reference to the AbstractBoard interface.
-         */
-        const AbstractBoard &get_board_view() const;
-
-        /**
-         * @brief Get FEN notation of current board position.
-         * @returns Full FEN string.
-         */
-        std::string get_fen(void);
 
         /**
          * @brief Make a move on the board with full validation.

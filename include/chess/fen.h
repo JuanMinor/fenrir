@@ -40,9 +40,9 @@ namespace chess
 
         void split_string(const std::string &fen_string, const std::string &delimiters, std::vector<std::string> &tokens) const;
         void validate_chess_rules(const std::string &placement_string) const;
-        void validate_placement(const std::string &placement_string) const;
-        void validate_pawn_placement(const std::vector<std::string> &ranks) const;
         void validate_king_safety(const std::vector<std::string> &ranks) const;
+        void validate_pawn_placement(const std::vector<std::string> &ranks) const;
+        void validate_placement(const std::string &placement_string) const;
 
     public:
         Fen(const std::string &fen_string);
@@ -50,10 +50,10 @@ namespace chess
         ~Fen();
 
         /**
-         * @brief Get board placement string (the rank/file portion of FEN).
-         * @returns Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
+         * @brief Generate FEN string from current position state.
+         * @returns Complete FEN notation string.
          */
-        std::string get_placement(void) const;
+        std::string generate_fen(void) const;
 
         /**
          * @brief Get castling rights string representation.
@@ -86,16 +86,10 @@ namespace chess
         uint32_t get_half_move_clock(void) const;
 
         /**
-         * @brief Generate FEN string from current position state.
-         * @returns Complete FEN notation string.
+         * @brief Get board placement string (the rank/file portion of FEN).
+         * @returns Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
          */
-        std::string generate_fen(void) const;
-
-        /**
-         * @brief Set board placement string (rank/file portion of FEN).
-         * @param placement_string Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
-         */
-        void set_placement(const std::string &placement_string);
+        std::string get_placement(void) const;
 
         /**
          * @brief Set castling rights.
@@ -126,5 +120,11 @@ namespace chess
          * @param half_move_clock_value Half-move clock value (0-50 for draw rule).
          */
         void set_half_move_clock(uint32_t half_move_clock_value);
+
+        /**
+         * @brief Set board placement string (rank/file portion of FEN).
+         * @param placement_string Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
+         */
+        void set_placement(const std::string &placement_string);
     };
 }

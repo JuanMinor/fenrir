@@ -49,13 +49,11 @@ namespace mcts
         std::mutex expand_mutex;
 
         void add_dirichlet_noise(double epsilon, double alpha);
-
+        void backpropagate(double result);
         void expand(chess::Engine& engine, const std::vector<double>& policy = {});
-        MCTSNode* select_child();
-        void backpropagate(double result); 
-
-        double puct_value(int total_visits) const;
         int get_max_depth() const;
+        double puct_value(int total_visits) const;
+        MCTSNode* select_child();
     };
 
     class MCTSSearch
@@ -64,10 +62,10 @@ namespace mcts
         MCTSSearch(nn::NNEvaluator* evaluator = nullptr, int threads = 16, size_t pipeline_target = 32);
         ~MCTSSearch();
 
+        int benchmark_search(chess::Engine& engine, int time_limit_ms);
         chess::Move find_best_move(chess::Engine& engine, int time_limit_ms, int max_simulations = -1);
         std::pair<chess::Move, std::vector<std::pair<chess::Move, double>>> find_best_move_with_policy(chess::Engine& engine, int simulations, bool apply_noise = false);
-        int benchmark_search(chess::Engine& engine, int time_limit_ms);
-        
+
     private:
         void search_worker(std::unique_ptr<chess::Engine> thread_engine, MCTSNode* root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time);
         double simulate(chess::Engine& engine);

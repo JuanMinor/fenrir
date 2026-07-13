@@ -26,8 +26,8 @@ namespace chess
 {
     class UCI
     {
-        void parse_position(const std::string &command);
         void parse_go(const std::string &command);
+        void parse_position(const std::string &command);
 
         std::unique_ptr<chess::Engine> engine;
         std::unique_ptr<nn::NNEvaluator> evaluator;
