@@ -343,13 +343,11 @@ namespace chess
      */
     Engine::TerminalState Engine::get_terminal_state()
     {
-        // --- Cheap checks first (no move generation required) ---
-
-        // 1. 50-move rule: half-move clock is maintained by apply_move/undo_move.
         if (board.get_half_move_clock() >= 100)
+        {
             return {true, 0.5};
+        }
 
-        // 2. Three-fold repetition: walk the undo stack (same logic as is_draw()).
         {
             UndoState current_state;
             for (int i = 0; i < 12; ++i)
@@ -386,26 +384,19 @@ namespace chess
             }
         }
 
-        // --- Single generate_all_moves() call covers both checkmate and stalemate ---
-        // Previously the pipeline called is_stalemate() followed by is_draw() (which
-        // calls is_stalemate() again internally), resulting in two generate_all_moves()
-        // calls per leaf for every normal position. This collapses both into one.
         auto all_moves = generate_all_moves();
         if (all_moves.empty())
         {
             uint8_t active_color = board.get_color();
             if (board.is_in_check(active_color))
-                return {true, 0.0}; // checkmate: side to move has lost
+                return {true, 0.0};
             else
-                return {true, 0.5}; // stalemate: draw
+                return {true, 0.5};
         }
 
-        return {false, 0.5}; // not a terminal position
+        return {false, 0.5};
     }
 
-    /**
-     * @brief Print the current board state in text format.
-     */
     void Engine::print_board(void) const
     {
         board.print();

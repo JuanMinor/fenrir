@@ -21,12 +21,14 @@
 #include <cstring>
 #include <stdexcept>
 
-extern "C" {
+extern "C"
+{
     /**
      * @brief Create a new Fenrir chess engine instance.
      * @returns Opaque pointer to engine (void*). Must be freed with fenrir_destroy().
      */
-    void* fenrir_create() {
+    void *fenrir_create()
+    {
         return new chess::Engine();
     }
 
@@ -34,8 +36,9 @@ extern "C" {
      * @brief Destroy a Fenrir chess engine instance and free its resources.
      * @param engine Engine pointer returned by fenrir_create().
      */
-    void fenrir_destroy(void* engine) {
-        delete static_cast<chess::Engine*>(engine);
+    void fenrir_destroy(void *engine)
+    {
+        delete static_cast<chess::Engine *>(engine);
     }
 
     /**
@@ -45,12 +48,16 @@ extern "C" {
      * @param to Destination square in algebraic notation (e.g., "e4").
      * @returns True if move was legal and applied, false otherwise.
      */
-    bool fenrir_make_move(void* engine, const char* from, const char* to) {
-        auto* eng = static_cast<chess::Engine*>(engine);
-        try {
+    bool fenrir_make_move(void *engine, const char *from, const char *to)
+    {
+        auto *eng = static_cast<chess::Engine *>(engine);
+        try
+        {
             eng->make_move(chess::Move(from, to));
             return true;
-        } catch (const std::invalid_argument&) {
+        }
+        catch (const std::invalid_argument &)
+        {
             return false;
         }
     }
@@ -62,15 +69,18 @@ extern "C" {
      * @param max_len Maximum buffer size in bytes.
      * @returns Number of characters written, or -1 on error.
      */
-    int fenrir_generate_all_moves(void* engine, char* out_buffer, size_t max_len) {
-        auto* eng = static_cast<chess::Engine*>(engine);
+    int fenrir_generate_all_moves(void *engine, char *out_buffer, size_t max_len)
+    {
+        auto *eng = static_cast<chess::Engine *>(engine);
         auto moves = eng->generate_all_moves();
         std::string result = "";
-        for (const auto& m : moves) {
+        for (const auto &m : moves)
+        {
             result += m.to_uci_notation() + ",";
         }
-        if (!result.empty()) {
-            result.pop_back(); // remove last comma
+        if (!result.empty())
+        {
+            result.pop_back();
         }
 #ifdef _MSC_VER
         strncpy_s(out_buffer, max_len, result.c_str(), max_len - 1);
@@ -87,8 +97,9 @@ extern "C" {
      * @param out_buffer Buffer to write FEN string.
      * @param max_len Maximum buffer size in bytes.
      */
-    void fenrir_get_fen(void* engine, char* out_buffer, size_t max_len) {
-        auto* eng = static_cast<chess::Engine*>(engine);
+    void fenrir_get_fen(void *engine, char *out_buffer, size_t max_len)
+    {
+        auto *eng = static_cast<chess::Engine *>(engine);
         std::string fen = eng->get_fen();
 #ifdef _MSC_VER
         strncpy_s(out_buffer, max_len, fen.c_str(), max_len - 1);
@@ -102,8 +113,9 @@ extern "C" {
      * @brief Print the current board state to stdout.
      * @param engine Engine pointer.
      */
-    void fenrir_print_board(void* engine) {
-        auto* eng = static_cast<chess::Engine*>(engine);
+    void fenrir_print_board(void *engine)
+    {
+        auto *eng = static_cast<chess::Engine *>(engine);
         eng->print_board();
     }
 }

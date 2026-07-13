@@ -77,7 +77,7 @@ namespace chess
         struct TerminalState
         {
             bool is_terminal;
-            double score; // 0.0 = loss for side to move, 0.5 = draw
+            double score;
         };
         TerminalState get_terminal_state();
 
