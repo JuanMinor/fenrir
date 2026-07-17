@@ -67,6 +67,23 @@ if [ ! -f "$ROOT/fenrir.cfg" ]; then
     exit 1
 fi
 
+# Refuse layouts that reference GPUs this machine doesn't have: those
+# workers would silently fall back to CPU and corrupt the measurement.
+if command -v nvidia-smi >/dev/null 2>&1; then
+    GPU_COUNT=$(nvidia-smi --list-gpus 2>/dev/null | wc -l)
+    if [ "$GPU_COUNT" -gt 0 ]; then
+        for SPEC in $LAYOUT; do
+            GPU=${SPEC%%:*}
+            if [ "$GPU" -ge "$GPU_COUNT" ]; then
+                echo "ERROR: layout references GPU $GPU but only $GPU_COUNT GPU(s) present."
+                echo "Override the default 8-GPU layout, e.g.:"
+                echo "  LAYOUT=\"0:2:12\" $0"
+                exit 1
+            fi
+        done
+    fi
+fi
+
 BATCH_SIZE=$(grep -oP '^BatchSize=\K[0-9]+' fenrir.cfg || echo 256)
 PIPELINE_TARGET=$(grep -oP '^PipelineTarget=\K[0-9]+' fenrir.cfg || echo 512)
 BATCH_TIMEOUT_MS=$(grep -oP '^BatchTimeoutMs=\K[0-9]+' fenrir.cfg || echo 4)
