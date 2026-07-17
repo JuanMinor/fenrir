@@ -30,12 +30,15 @@ namespace tuner
 
     class TuningParameters
     {
-        uint16_t batch_size;
-        uint16_t batch_timeout_ms;
-        uint8_t gpu_count;
+        /* Zero-initialized so a fenrir.cfg missing any key (e.g. an old file
+         * without BatchTimeoutMs) reads as incomplete and falls back to
+         * hardware detection, instead of testing uninitialized memory. */
+        uint16_t batch_size = 0;
+        uint16_t batch_timeout_ms = 0;
+        uint8_t gpu_count = 0;
         std::optional<hardware::HostInfo> host_info;
-        uint16_t pipeline_target;
-        uint8_t search_threads;
+        uint16_t pipeline_target = 0;
+        uint8_t search_threads = 0;
 
         /**
          * @brief Computes optimal inference batch size based on available GPU count and VRAM.

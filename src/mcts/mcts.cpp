@@ -318,6 +318,13 @@ namespace mcts
     Tree::Tree(nn::NN *eval, int threads, size_t pipeline_t)
         : evaluator(eval), num_threads(threads), pipeline_target(pipeline_t) {}
 
+    std::unique_ptr<chess::Engine> Tree::make_thread_engine(chess::Engine &engine)
+    {
+        auto thread_engine = std::make_unique<chess::Engine>(engine.get_fen());
+        thread_engine->set_history(engine.get_history());
+        return thread_engine;
+    }
+
     Tree::~Tree() = default;
 
     int Tree::benchmark_search(chess::Engine &engine, int time_limit_ms)
@@ -351,7 +358,7 @@ namespace mcts
         {
             try
             {
-                workers.emplace_back(&Tree::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
+                workers.emplace_back(&Tree::search_worker, this, make_thread_engine(engine), root.get(), -1, end_time, true);
             }
             catch (...)
             {
@@ -361,7 +368,7 @@ namespace mcts
 
         if (workers.empty())
         {
-            search_worker(std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
+            search_worker(make_thread_engine(engine), root.get(), -1, end_time, true);
         }
         else
         {
@@ -417,7 +424,7 @@ namespace mcts
 
         for (int i = 0; i < num_threads; ++i)
         {
-            workers.emplace_back(&Tree::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), sims_per_thread, end_time, use_time);
+            workers.emplace_back(&Tree::search_worker, this, make_thread_engine(engine), root.get(), sims_per_thread, end_time, use_time);
         }
 
         for (auto &w : workers)
@@ -489,7 +496,7 @@ namespace mcts
         {
             try
             {
-                workers.emplace_back(&Tree::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), sims_per_thread, std::chrono::steady_clock::now(), false);
+                workers.emplace_back(&Tree::search_worker, this, make_thread_engine(engine), root.get(), sims_per_thread, std::chrono::steady_clock::now(), false);
             }
             catch (const std::exception &e)
             {
@@ -501,7 +508,7 @@ namespace mcts
         if (workers.empty())
         {
             std::cerr << "Warning: Falling back to synchronous search!\n";
-            search_worker(std::make_unique<chess::Engine>(engine.get_fen()), root.get(), simulations, std::chrono::steady_clock::now(), false);
+            search_worker(make_thread_engine(engine), root.get(), simulations, std::chrono::steady_clock::now(), false);
         }
 
         for (auto &w : workers)
@@ -567,7 +574,7 @@ namespace mcts
         {
             if (use_time)
             {
-                if ((sim_count & 15) == 0 && std::chrono::steady_clock::now() >= end_time)
+                if (std::chrono::steady_clock::now() >= end_time)
                     break;
             }
             else
@@ -581,6 +588,19 @@ namespace mcts
 
             for (size_t p = 0; p < local_pipeline_target; ++p)
             {
+                /* The pipeline batch can be hundreds of simulations; check
+                 * the budget per slot or short time controls overshoot. */
+                if (use_time)
+                {
+                    if (std::chrono::steady_clock::now() >= end_time)
+                        break;
+                }
+                else
+                {
+                    if (sim_count >= simulations)
+                        break;
+                }
+
                 sim_count++;
                 Node *node = root;
                 std::vector<VirtualLossGuard> guards;

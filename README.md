@@ -11,7 +11,7 @@ Fenrir is a high-performance C++ **Neural Network Chess Engine**. It also export
 
 > **Architecture**: Fenrir is the base of a three-layer system: **Fenrir** (rules, validation, move generation) -> **Agents** (Python, JS, or any language - they search and decide) -> **UIs** (mobile, web, desktop - they present and explain). Fenrir's job is to be correct, fast, and stable so everything built on top of it can be trusted.
 
-> **Current Status**: Version 0.3.0 (Feature Complete). Full legal move enforcement (check detection, castling, promotion, pinned pieces, checkmate/stalemate) is 100% complete and mathematically validated via deep Perft tests.
+> **Current Status**: Version 0.3.2. Full legal move enforcement (check detection, castling, promotion, pinned pieces, checkmate/stalemate) is complete and mathematically validated via deep Perft tests. The engine now also includes a built-in AlphaZero-style MCTS + neural network search, UCI support, a self-play training pipeline, and a hardware auto-tuner.
 
 > **🔧 Build System**: CMake is the supported build system. See [Build System](#build-system) for details.
 
@@ -62,10 +62,12 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j
 - ✅ **100% Test Coverage**: 300+ unit tests, all passing, plus multi-million node Perft suite validation
 - ✅ **Memory Safety**: `unique_ptr<Piece>` ownership, Rule of Five enforced on `Board`
 
-### ❌ Out of Scope / Not Implemented
+### 🧠 Engine Features
 
-- 🚫 **No Built-in AI**: Fenrir is purely a rules and validation engine. Building search agents, bots, or position evaluators is the responsibility of client applications linking against `libfenrir.so`.
-- 🚫 **No UCI Protocol (Yet)**: Cannot interface directly with chess GUIs. UCI standard I/O is planned for v0.4.0.
+- ✅ **Built-in AI**: AlphaZero-style MCTS search (PUCT, virtual loss, pipelined batching) backed by an ONNX neural network evaluator with hot model reload.
+- ✅ **UCI Protocol**: `position`, `go` (movetime / nodes / clock-based time management), works with standard chess GUIs. Async `stop` support is not implemented yet.
+- ✅ **Self-Play & Training**: `--selfplay` generates training data (JSONL); the `training/` PyTorch pipeline consumes it and exports ONNX models.
+- ✅ **Auto-Tuner**: `--auto-tune` benchmarks batch size, thread count, and pipeline depth for your hardware and persists them to `fenrir.cfg`.
 
 ## 🚀 Performance Benchmarks
 

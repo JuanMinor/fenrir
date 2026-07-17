@@ -363,8 +363,10 @@ namespace chess
     }
 
     /**
-     * @brief Make a move without recording undo state (for performance-critical paths).
-     * @param move Move to apply.
+     * @brief Make a move without legality validation (for performance-critical
+     * search paths). Undo state is still recorded; passing a move that is
+     * not legal in the current position corrupts the board.
+     * @param move Move to apply. Must be legal.
      */
     void Engine::make_move_fast(const Move &move)
     {

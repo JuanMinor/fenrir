@@ -18,11 +18,9 @@ export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:
 
 echo "Starting 16 Fenrir instances across 8 GPUs (2 instances per GPU to maximize utilization)..."
 
-for GPU in {0..7}; do
-    for INSTANCE in {1..2}; do
-        echo "Launching Fenrir instance $INSTANCE on GPU $GPU..."
-        env CUDA_VISIBLE_DEVICES=$GPU ./bin/fenrir --selfplay --gpu-id 0 --simulations 50000 --games 500000 > logs/gpu${GPU}_inst${INSTANCE}.log 2>&1 &
-    done
+for GPU in {1..7}; do
+    echo "Launching single instance of Fenrir to run on $GPU..."
+    env CUDA_VISIBLE_DEVICES=$GPU ./bin/fenrir --selfplay --gpu-id $GPU --simulations 50000 --games 500000 > logs/gpu_$GPU.log 2>&1 &
 done
 
 echo "All 16 instances have been launched in the background!"

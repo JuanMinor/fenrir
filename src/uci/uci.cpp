@@ -26,16 +26,19 @@ namespace chess
      * Handles the UCI "go" command and derives a time/simulation budget for
      * the search. Priority: explicit "movetime" wins outright; otherwise
      * "wtime"/"btime" allocate 1/30th of the side-to-move's remaining clock
-     * (floored at 100ms); otherwise an explicit "nodes" count is used as a
-     * simulation limit with no time bound. When only a time budget is known,
-     * it's converted to an estimated simulation count (at ~25000 nodes/sec,
-     * floored at 1200) for reporting/consistency purposes.
+     * plus 3/4 of its increment (floored at 100ms); otherwise an explicit
+     * "nodes" count is used as a simulation limit with no time bound. If the
+     * GUI omits the side-to-move's own clock, the 1000ms default applies.
+     * When only a time budget is known, it's converted to an estimated
+     * simulation count (at ~25000 nodes/sec, floored at 1200) for
+     * reporting/consistency purposes.
      */
     void UCI::parse_go(const std::string &command)
     {
         int simulations = -1;
         int move_time = -1;
         int wtime = -1, btime = -1;
+        int winc = 0, binc = 0;
         std::istringstream is(command);
         std::string token;
         is >> token;
@@ -50,17 +53,24 @@ namespace chess
                 is >> wtime;
             else if (token == "btime")
                 is >> btime;
+            else if (token == "winc")
+                is >> winc;
+            else if (token == "binc")
+                is >> binc;
         }
 
         int allocated_time_ms = 1000;
+        bool white_to_move = engine->get_board_view().get_color() == 0;
+        int time_left = white_to_move ? wtime : btime;
+        int increment = white_to_move ? winc : binc;
+
         if (move_time != -1)
         {
             allocated_time_ms = move_time;
         }
-        else if (wtime != -1 || btime != -1)
+        else if (time_left > 0)
         {
-            int time_left = (engine->get_board_view().get_color() == 0) ? wtime : btime;
-            allocated_time_ms = time_left / 30;
+            allocated_time_ms = time_left / 30 + (increment * 3) / 4;
             if (allocated_time_ms < 100)
                 allocated_time_ms = 100;
         }
@@ -95,7 +105,10 @@ namespace chess
         is >> token;
         if (token == "startpos")
         {
-            engine->reset();
+            /* Engine::reset() returns to the FEN the engine was constructed
+             * with, which may be a custom position from an earlier
+             * "position fen" command — so rebuild from the standard start. */
+            engine = std::make_unique<Engine>();
             is >> token;
         }
         else if (token == "fen")
@@ -115,14 +128,24 @@ namespace chess
             if (token == "moves")
                 continue;
 
+            bool applied = false;
             std::vector<Move> legal_moves = engine->generate_all_moves();
             for (const auto &move : legal_moves)
             {
                 if (move.to_uci_notation() == token)
                 {
                     engine->make_move(move);
+                    applied = true;
                     break;
                 }
+            }
+
+            /* Stop instead of skipping: applying later moves to a board that
+             * is missing this one would silently desync from the GUI. */
+            if (!applied)
+            {
+                std::cout << "info string illegal move '" << token << "' in position command; ignoring rest of move list" << std::endl;
+                break;
             }
         }
     }
@@ -159,7 +182,9 @@ namespace chess
             }
             else if (token == "ucinewgame")
             {
-                engine->reset();
+                /* Fresh engine, not reset(): reset() returns to the FEN this
+                 * engine was constructed with, not the standard start. */
+                engine = std::make_unique<Engine>();
             }
             else if (token == "position")
             {

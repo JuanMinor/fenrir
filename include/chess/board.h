@@ -48,7 +48,7 @@ namespace chess
         uint8_t en_passant_square; /* 64 = none */
         uint8_t color;
         uint8_t half_move_clock;
-        uint8_t full_moves;
+        uint16_t full_moves; /* uint8_t overflows in games longer than 255 full moves */
     };
 
     /*
@@ -79,7 +79,7 @@ namespace chess
 
         uint8_t color;
         uint8_t half_move_clock;
-        uint8_t full_moves;
+        uint16_t full_moves;
         Fen fen;
 
         void build_board(const std::string &placement);

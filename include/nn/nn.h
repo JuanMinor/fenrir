@@ -41,6 +41,13 @@
 
 namespace nn
 {
+    /*
+     * Width of the model's policy head: AlphaZero 73-plane move encoding,
+     * indexed as (from_square * 73) + channel. Must match policy_fc in
+     * training/model.py and move_index() in src/mcts/mcts.cpp.
+     */
+    constexpr size_t POLICY_SIZE = 4672;
+
     struct Result
     {
         double value;
@@ -81,6 +88,10 @@ namespace nn
         int batch_timeout_ms;
 
         std::deque<Request> request_queue;
+        /* Serializes access to `session` between the batch worker thread
+         * (evaluate_batch/try_reload_model can swap the session) and public
+         * callers such as measure_latency_ms(). */
+        std::mutex session_mutex;
         std::mutex queue_mutex;
         std::condition_variable queue_cv;
         bool stop_worker;

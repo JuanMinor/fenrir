@@ -126,7 +126,10 @@ namespace nn
         while (true)
         {
             /* TODO check with flag if we're training, if not, skip this line. Performance issue, small but adds up. */
-            try_reload_model();
+            {
+                std::lock_guard<std::mutex> session_lock(session_mutex);
+                try_reload_model();
+            }
 
             std::vector<Request> requests;
             {
@@ -168,6 +171,7 @@ namespace nn
 
                 try
                 {
+                    std::lock_guard<std::mutex> session_lock(session_mutex);
                     evaluate_batch(batch_features, promises);
                 }
                 catch (const std::exception &e)
@@ -179,7 +183,7 @@ namespace nn
                         {
                             Result result;
                             result.value = 0.5;
-                            result.policy.resize(4096, 0.01);
+                            result.policy.resize(POLICY_SIZE, 0.01);
                             promise.set_value(result);
                         }
                         catch (...)
@@ -200,7 +204,7 @@ namespace nn
             {
                 Result result;
                 result.value = 0.5;
-                result.policy.resize(4096, 0.01);
+                result.policy.resize(POLICY_SIZE, 0.01);
                 promises[i].set_value(result);
             }
             return;
@@ -231,9 +235,11 @@ namespace nn
 
             auto policy_info = output_tensors[0].GetTensorTypeAndShapeInfo();
             auto value_info = output_tensors[1].GetTensorTypeAndShapeInfo();
-            size_t policy_size = 4096;
+            size_t policy_size = POLICY_SIZE;
 
-            if (policy_info.GetElementCount() < batch_size_actual * policy_size || value_info.GetElementCount() < batch_size_actual)
+            /* Exact match required: a policy head wider than POLICY_SIZE
+             * would silently misalign every batch item after the first. */
+            if (policy_info.GetElementCount() != batch_size_actual * policy_size || value_info.GetElementCount() != batch_size_actual)
             {
                 throw std::runtime_error("ONNX model returned unexpected tensor size.");
             }
@@ -244,7 +250,10 @@ namespace nn
             for (size_t i = 0; i < batch_size_actual; ++i)
             {
                 Result result;
-                result.value = static_cast<double>(value_data[i]);
+                /* The model's value head is tanh in [-1, 1] (train.py maps
+                 * results to that range); MCTS consumes win probability in
+                 * [0, 1] alongside terminal scores of 0.0/0.5/1.0. */
+                result.value = (static_cast<double>(value_data[i]) + 1.0) / 2.0;
                 result.policy.assign(policy_data + i * policy_size, policy_data + (i + 1) * policy_size);
                 promises[i].set_value(result);
                 promise_set[i] = true;
@@ -261,7 +270,7 @@ namespace nn
                     {
                         Result result;
                         result.value = 0.5;
-                        result.policy.resize(4096, 0.01);
+                        result.policy.resize(POLICY_SIZE, 0.01);
                         promises[i].set_value(result);
                     }
                     catch (...)
@@ -280,6 +289,8 @@ namespace nn
      */
     int NN::measure_latency_ms()
     {
+        std::lock_guard<std::mutex> session_lock(session_mutex);
+
         if (!session)
             return 4;
 

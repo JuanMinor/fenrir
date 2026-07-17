@@ -11,6 +11,6 @@ using namespace chess;
 TEST(MCTSTestFallback, FallbackToSynchronous)
 {
     Engine engine;
-    MCTSSearch search(nullptr, 100000);
+    mcts::Tree search(nullptr, 100000, 8);
     search.find_best_move_with_policy(engine, 10, false);
 }

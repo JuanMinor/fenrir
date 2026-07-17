@@ -59,7 +59,7 @@ namespace chess
 
         this->color = fen.get_color();
         this->half_move_clock = static_cast<uint8_t>(fen.get_half_move_clock());
-        this->full_moves = static_cast<uint8_t>(fen.get_full_moves());
+        this->full_moves = static_cast<uint16_t>(fen.get_full_moves());
 
         this->build_board(fen.get_placement());
 
@@ -438,7 +438,7 @@ namespace chess
 
         if (this->color == WHITE) /* after toggle, if now white it means black just moved */
         {
-            this->full_moves = static_cast<uint8_t>(this->full_moves + 1);
+            this->full_moves = static_cast<uint16_t>(this->full_moves + 1);
         }
 
         return state;
@@ -720,7 +720,7 @@ namespace chess
 
         this->color = fen.get_color();
         this->half_move_clock = static_cast<uint8_t>(fen.get_half_move_clock());
-        this->full_moves = static_cast<uint8_t>(fen.get_full_moves());
+        this->full_moves = static_cast<uint16_t>(fen.get_full_moves());
         this->build_board(fen.get_placement());
         logger::INFO("Board reset to FEN: " + fen_string);
     }

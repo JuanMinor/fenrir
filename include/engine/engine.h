@@ -65,6 +65,21 @@ namespace chess
         std::string get_fen(void);
 
         /**
+         * @brief Get the undo-state history of all moves made on this engine.
+         * @returns Const reference to the undo stack, oldest state first.
+         */
+        const std::vector<UndoState> &get_history() const { return undo_stack; }
+
+        /**
+         * @brief Seed this engine's undo-state history from another engine,
+         * so repetition detection in get_terminal_state() can see positions
+         * that occurred before this engine's starting FEN (e.g., search
+         * threads inheriting the game history).
+         * @param history Undo states to copy in, oldest first.
+         */
+        void set_history(const std::vector<UndoState> &history) { undo_stack = history; }
+
+        /**
          * @brief Get combined terminal state information in a single query.
          * @returns TerminalState struct with is_terminal flag and game score.
          */
@@ -100,8 +115,10 @@ namespace chess
         void make_move(const Move &move);
 
         /**
-         * @brief Make a move without recording undo state (for performance-critical paths).
-         * @param move Move to apply.
+         * @brief Make a move without legality validation (for performance-critical
+         * search paths). Undo state is still recorded; passing a move that is
+         * not legal in the current position corrupts the board.
+         * @param move Move to apply. Must be legal.
          */
         void make_move_fast(const Move &move);
 

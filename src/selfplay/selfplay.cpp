@@ -84,8 +84,14 @@ namespace chess
 
             std::cout << "Game " << i << " started...\n";
 
-            while (!engine.is_checkmate() && !engine.is_stalemate() && !engine.is_draw() && moves_played < 200)
+            while (moves_played < 200)
             {
+                /* One combined terminal query instead of is_checkmate() +
+                 * is_stalemate() + is_draw(), which each regenerate all
+                 * legal moves for the position. */
+                if (engine.get_terminal_state().is_terminal)
+                    break;
+
                 bool apply_noise = (moves_played < 30);
 
                 auto [best_move, raw_policy] = search->find_best_move_with_policy(engine, simulations, apply_noise);

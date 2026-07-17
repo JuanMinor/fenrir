@@ -80,8 +80,29 @@ namespace mcts
     struct VirtualLossGuard
     {
         Node *node;
-        VirtualLossGuard(Node *n) : node(n) { node->virtual_loss++; }
-        ~VirtualLossGuard() { node->virtual_loss--; }
+        explicit VirtualLossGuard(Node *n) : node(n) { node->virtual_loss++; }
+        ~VirtualLossGuard()
+        {
+            if (node)
+                node->virtual_loss--;
+        }
+
+        /* Move-only: an implicit copy would not increment, so the pair of
+         * destructors would decrement virtual_loss twice. */
+        VirtualLossGuard(const VirtualLossGuard &) = delete;
+        VirtualLossGuard &operator=(const VirtualLossGuard &) = delete;
+        VirtualLossGuard(VirtualLossGuard &&other) noexcept : node(other.node) { other.node = nullptr; }
+        VirtualLossGuard &operator=(VirtualLossGuard &&other) noexcept
+        {
+            if (this != &other)
+            {
+                if (node)
+                    node->virtual_loss--;
+                node = other.node;
+                other.node = nullptr;
+            }
+            return *this;
+        }
     };
 
     /**
@@ -110,6 +131,12 @@ namespace mcts
         std::pair<chess::Move, std::vector<std::pair<chess::Move, double>>> find_best_move_with_policy(chess::Engine &engine, int simulations, bool apply_noise = false);
 
     private:
+        /**
+         * Builds a per-thread Engine copy of @p engine, carrying over its
+         * move history so get_terminal_state() can detect repetitions that
+         * involve positions from before the search root.
+         */
+        std::unique_ptr<chess::Engine> make_thread_engine(chess::Engine &engine);
         void search_worker(std::unique_ptr<chess::Engine> thread_engine, Node *root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time);
         double simulate(chess::Engine &engine);
 
