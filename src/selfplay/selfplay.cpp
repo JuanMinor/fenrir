@@ -21,6 +21,7 @@
 #include <fstream>
 #include <filesystem>
 #include <random>
+#include <cstdlib>
 #include <chrono>
 
 #ifdef _WIN32
@@ -61,6 +62,22 @@ namespace chess
 
         std::mt19937 rng(std::random_device{}());
 
+        /* How many plies to keep temperature sampling and Dirichlet noise
+         * active. AlphaZero's classic 30 assumes a competent net; during a
+         * cold start, switching to deterministic play with a value head
+         * that rates everything ~0.5 walks straight into repetition draws
+         * (observed: 0 decisive games in 800+ once training began), which
+         * starves value learning. Default to sampling the whole game;
+         * lower FENRIR_TEMPERATURE_MOVES as the net matures. */
+        int temperature_moves = 100000;
+        if (const char *env_val = std::getenv("FENRIR_TEMPERATURE_MOVES"))
+        {
+            int parsed = std::atoi(env_val);
+            if (parsed >= 0)
+                temperature_moves = parsed;
+        }
+        std::cout << "Temperature sampling plies: " << temperature_moves << "\n";
+
         int games_in_batch = 0;
         std::string temp_filename;
         std::ofstream batch_out;
@@ -92,7 +109,7 @@ namespace chess
                 if (engine.get_terminal_state().is_terminal)
                     break;
 
-                bool apply_noise = (moves_played < 30);
+                bool apply_noise = (moves_played < temperature_moves);
 
                 auto [best_move, raw_policy] = search->find_best_move_with_policy(engine, simulations, apply_noise);
 
@@ -149,7 +166,7 @@ namespace chess
                 game_data.push_back(pd);
 
                 Move chosen_move = best_move;
-                if (chosen_move.get_from_square() == chosen_move.get_to_square() || moves_played < 30)
+                if (chosen_move.get_from_square() == chosen_move.get_to_square() || moves_played < temperature_moves)
                 {
                     std::vector<double> weights;
                     for (const auto &p : legal_policy)
