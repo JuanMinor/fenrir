@@ -63,7 +63,9 @@ namespace chess
 
         this->build_board(fen.get_placement());
 
-        logger::INFO("Board initialized with FEN: " + fen.get_placement());
+        /* DEBUG, not INFO: constructed per thread-engine in the search hot
+         * path; INFO would cost a filesystem write per construction. */
+        logger::DEBUG("Board initialized with FEN: " + fen.get_placement());
     }
 
     /* Private */

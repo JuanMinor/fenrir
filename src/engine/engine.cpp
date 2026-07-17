@@ -28,7 +28,11 @@ namespace chess
     Engine::Engine(const std::string &fen_string) : fen(fen_string), board(fen_string)
     {
         init_attack_tables();
-        logger::INFO("Engine initialized with FEN: " + fen_string);
+        /* DEBUG, not INFO: the MCTS search constructs one Engine per worker
+         * thread per move (28+ at production settings); at INFO level each
+         * construction cost a log-file open/stat/write/flush, which stalled
+         * self-play to ~10% GPU utilization on network-volume hosts. */
+        logger::DEBUG("Engine initialized with FEN: " + fen_string);
     }
 
     Engine::~Engine() {}

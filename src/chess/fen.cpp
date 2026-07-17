@@ -54,7 +54,9 @@ namespace chess
             LOG_THROW_ERROR("Invalid FEN: fullmoves must be at least 1", true);
         }
 
-        logger::INFO("FEN initialized: " + fen_string);
+        /* DEBUG, not INFO: constructed per thread-engine in the search hot
+         * path; INFO would cost a filesystem write per construction. */
+        logger::DEBUG("FEN initialized: " + fen_string);
     }
 
     Fen::~Fen() {}
