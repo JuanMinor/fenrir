@@ -122,9 +122,10 @@ class ChessDataset(Dataset):
                     except:
                         pass
 
-        # Keep only the latest 100,000 samples (replay buffer)
-        # Keep only the latest 100,000 samples (replay buffer)
-        buffer_size_limit = 500000
+        # Replay buffer: keep the freshest N positions. At production rates
+        # (~20k games/hr x ~30 positions) 2M spans roughly a 3-hour window;
+        # 500k was only ~45 minutes, too short a memory to train against.
+        buffer_size_limit = 2000000
         if len(self.samples) > buffer_size_limit:
             self.samples = self.samples[-buffer_size_limit:]
             self.buffer = self.samples  # FIXED: Keep the reference pointer synchronized!
@@ -215,6 +216,12 @@ def train():
 
     dataset = ChessDataset(data_dir)
 
+    # Every export makes every self-play worker hot-reload the ~86MB ONNX
+    # session; exporting after each cycle (observed: every ~8.5s under load)
+    # taxes the whole fleet. Gate exports to a minimum interval instead.
+    export_interval_seconds = float(os.environ.get("EXPORT_INTERVAL_SECONDS", "60"))
+    last_export_time = 0.0
+
     while True:
         new_files = dataset.update()
         if len(dataset) < 4096 or new_files == 0:
@@ -252,6 +259,10 @@ def train():
 
         avg_loss = total_loss / max(1, batches_processed)
         print(f"Training cycle finished. Loss: {avg_loss:.4f} (over {batches_processed} batches)")
+
+        if time.time() - last_export_time < export_interval_seconds:
+            continue
+        last_export_time = time.time()
 
         # Export back to ONNX for C++ Engine atomically
         dummy_input = torch.randn(1, 14, 8, 8, device=device)
