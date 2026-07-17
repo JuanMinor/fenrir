@@ -222,8 +222,9 @@ namespace mcts
             }
             else
             {
+                /* Raw logit for now; converted to a probability below. */
                 uint32_t idx = move_index(moves[i]);
-                children.back()->prior = (idx < policy.size()) ? policy[idx] : 0.0;
+                children.back()->prior = (idx < policy.size()) ? policy[idx] : -1e9;
             }
         }
 
@@ -232,6 +233,27 @@ namespace mcts
             double sum = 0.0;
             for (const auto &child : children)
                 sum += child->prior;
+            if (sum > 0.0)
+                for (auto &child : children)
+                    child->prior /= sum;
+        }
+        else if (!children.empty())
+        {
+            /* The model's policy head outputs raw logits (training uses
+             * cross_entropy on logits; nothing softmaxes them upstream), so
+             * normalize with a softmax over the legal moves. Using logits
+             * directly as priors made them negative/unnormalized and let one
+             * confident move drown out every alternative in PUCT. */
+            double max_logit = children.front()->prior;
+            for (const auto &child : children)
+                max_logit = std::max(max_logit, child->prior);
+
+            double sum = 0.0;
+            for (auto &child : children)
+            {
+                child->prior = std::exp(child->prior - max_logit);
+                sum += child->prior;
+            }
             if (sum > 0.0)
                 for (auto &child : children)
                     child->prior /= sum;
@@ -266,12 +288,13 @@ namespace mcts
      *
      * The visit count feeding the U-term denominator, v, depends on node
      * state: for a node with real visits, v = real_visits + virtual_loss
-     * (virtual loss is normally 0 on interior nodes and only nonzero for a
-     * leaf currently being evaluated by another walk in the same pipeline);
-     * for an in-flight leaf with no backpropagated result yet, v = virtual_loss
-     * alone, so U shrinks each time another walk lands here, naturally
-     * diverting concurrent walks to sibling nodes; for an untouched leaf,
-     * v = 0 and U is maximised, the standard MCTS exploration behaviour.
+     * (virtual loss marks every node on an in-flight walk's path, so busy
+     * interior nodes and leaves alike carry it until their result is
+     * backpropagated); for an in-flight node with no backpropagated result
+     * yet, v = virtual_loss alone, so U shrinks each time another walk lands
+     * here, naturally diverting concurrent walks to sibling nodes; for an
+     * untouched leaf, v = 0 and U is maximised, the standard MCTS
+     * exploration behaviour.
      *
      * Q is computed only from real backpropagated results, never diluted by
      * virtual loss; since a child's win_score is the child's (opponent's) win
@@ -301,7 +324,11 @@ namespace mcts
     {
         Node *best_child = nullptr;
         double best_value = -1e9;
-        int parent_visits = visits.load();
+        /* Include in-flight walks (virtual loss) in the parent total:
+         * within a pipelined batch no results have been backpropagated yet,
+         * so real visits alone would keep sqrt(total)=0, zeroing the U term
+         * and collapsing every tied selection onto the first child. */
+        int parent_visits = visits.load() + virtual_loss.load();
 
         for (auto &child : children)
         {
@@ -545,11 +572,12 @@ namespace mcts
      * PUCT to a leaf, recording the move path taken so the leaf position can
      * be cheaply re-reached later without reconstructing an Engine (which
      * would re-parse FEN, rebuild attack tables, and log). Virtual loss is
-     * applied only to the leaf, never to interior nodes on the path — marking
-     * every node en route would make PUCT treat the whole line as "in use"
-     * and force purely horizontal tree growth; leaving interior nodes clean
-     * lets subsequent walks keep following the same best line to different
-     * leaves. Each leaf's terminal status is resolved with a single
+     * applied to EVERY node on the walked path, root included: no results
+     * are backpropagated until phase 2, so path virtual loss is the only
+     * signal that diversifies the batch's selections — it feeds the parent
+     * total (making the U term nonzero) and penalizes in-flight children so
+     * successive walks spread across siblings in proportion to their priors.
+     * Each leaf's terminal status is resolved with a single
      * get_terminal_state() call (checks the 50-move rule and repetition
      * first, then calls generate_all_moves() at most once), replacing the
      * old is_stalemate() + is_draw() pattern that generated moves twice per
@@ -604,8 +632,16 @@ namespace mcts
                 sim_count++;
                 Node *node = root;
                 std::vector<VirtualLossGuard> guards;
+                guards.reserve(16);
                 std::vector<chess::Move> path;
 
+                /* Virtual loss goes on EVERY node of the walked path, root
+                 * included — not just the leaf. Within a pipeline batch no
+                 * results are backpropagated, so path virtual loss is the
+                 * only signal that steers subsequent walks toward siblings;
+                 * leaf-only marking left selection frozen and sent an entire
+                 * batch down one line. */
+                guards.emplace_back(node);
                 while (node->is_expanded.load() && !node->children.empty())
                 {
                     Node *next_node = node->select_child();
@@ -614,10 +650,10 @@ namespace mcts
                         break;
 
                     node = next_node;
+                    guards.emplace_back(node);
                     path.push_back(node->move);
                     thread_engine.make_move_fast(node->move);
                 }
-                guards.emplace_back(node);
 
                 PipelineItem item;
                 item.node = node;
