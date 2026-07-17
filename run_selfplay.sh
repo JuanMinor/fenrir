@@ -2,10 +2,12 @@
 # Production launcher for Fenrir training: self-play workers on every GPU
 # plus train.py co-located on GPU 0, with periodic weight checkpoints.
 #
-# Defaults follow the measured probe results (2 instances x 5 threads per
-# GPU won at ~2,950 games/hr per 4090). Override via environment:
-#   SIMULATIONS=800 INSTANCES_PER_GPU=2 GPUS="0 1 2 3" ./run_selfplay.sh
-#   TRAIN=0                 skip launching train.py (self-play only)
+# Defaults follow the measured production shakedowns (3 instances x 4
+# threads per GPU at BatchTimeoutMs=4 won at ~3,300 games/hr per 4090).
+# Override via environment:
+#   SIMULATIONS=800 INSTANCES_PER_GPU=3 GPUS="0 1 2 3" ./run_selfplay.sh
+#   SEARCH_THREADS=4         per-instance threads written into fenrir.cfg
+#   TRAIN=0                  skip launching train.py (self-play only)
 #   CHECKPOINT_INTERVAL=3600 seconds between fenrir.pth snapshots (0 = off)
 
 # Compile first to ensure we have the latest binary
@@ -28,9 +30,20 @@ fi
 # Training search: game volume matters far more than per-move depth.
 SIMULATIONS=${SIMULATIONS:-800}
 GAMES=${GAMES:-1000000}
-INSTANCES_PER_GPU=${INSTANCES_PER_GPU:-2}
+INSTANCES_PER_GPU=${INSTANCES_PER_GPU:-3}
+SEARCH_THREADS=${SEARCH_THREADS:-4}
 TRAIN=${TRAIN:-1}
 CHECKPOINT_INTERVAL=${CHECKPOINT_INTERVAL:-3600}
+
+# Workers read SearchThreads from fenrir.cfg (cwd); pin it to the layout's
+# per-instance thread count so cfg and layout can't drift apart. The other
+# cfg values (batch size/pipeline/timeout) come from --auto-tune.
+if [ -f fenrir.cfg ]; then
+    sed -i "s/^SearchThreads=.*/SearchThreads=${SEARCH_THREADS}/" fenrir.cfg
+    echo "fenrir.cfg: SearchThreads pinned to ${SEARCH_THREADS}"
+else
+    echo "WARNING: fenrir.cfg not found — run 'CUDA_VISIBLE_DEVICES=0 ./bin/fenrir --auto-tune' first for tuned batch parameters."
+fi
 
 # Default to every GPU the machine actually has.
 if [ -z "${GPUS:-}" ]; then
