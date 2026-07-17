@@ -38,17 +38,17 @@ import os
 import re
 import time
 
-GAME_RE = re.compile(r"Game \d+ finished in (\d+) moves\. Result: ([\d.]+)")
+GAME_RE = re.compile(r"Game \d+ finished in (\d+) moves\. Result: ([\d.]+)(?: \((\w+)\))?")
 
 
 def analyze_logs(log_glob, recent):
-    games = []  # (moves, result) in per-file order
+    games = []  # (moves, result, end_reason) in per-file order
     for path in sorted(glob.glob(log_glob)):
         with open(path, errors="replace") as f:
             for line in f:
                 m = GAME_RE.search(line)
                 if m:
-                    games.append((int(m.group(1)), float(m.group(2))))
+                    games.append((int(m.group(1)), float(m.group(2)), m.group(3) or "?"))
 
     print("=" * 62)
     print("GAMES (from worker logs — full run history)")
@@ -64,9 +64,15 @@ def analyze_logs(log_glob, recent):
         losses = sum(1 for g in subset if g[1] == 0.0)
         draws = n - wins - losses
         capped = sum(1 for mv in moves if mv >= 200)
+        # Staged-withdrawal metric: among decisive games, how many were won
+        # by actual checkmate vs material adjudication? When mates outgrow
+        # adjudications, raise/disable FENRIR_ADJUDICATE_MATERIAL.
+        mates = sum(1 for g in subset if g[2] == "mate")
+        adjudicated = sum(1 for g in subset if g[2] == "material")
+        reason = f" | mate {mates} vs adjud {adjudicated}" if (mates or adjudicated) else ""
         print(f"{label:<16} {n:>6} games | decisive {100.0*(wins+losses)/n:5.1f}% "
               f"(W {wins} / D {draws} / L {losses}) | avg len {sum(moves)/n:6.1f} "
-              f"| at 200-cap {100.0*capped/n:5.1f}%")
+              f"| at 200-cap {100.0*capped/n:5.1f}%{reason}")
 
     summarize("all", games)
     if len(games) > 2 * recent:

@@ -202,9 +202,14 @@ namespace chess
                 moves_played++;
             }
 
+            /* End reason feeds the staged-withdrawal metric: once "mate"
+             * outgrows "material" among decisive games, the adjudication
+             * scaffolding can be raised or removed. */
+            const char *end_reason = "draw";
             double white_result = 0.5;
             if (engine.is_checkmate())
             {
+                end_reason = "mate";
                 if (engine.get_board_view().get_color() == 0)
                 {
                     white_result = 0.0;
@@ -229,14 +234,16 @@ namespace chess
                 if (material_balance >= adjudicate_material)
                 {
                     white_result = 1.0;
+                    end_reason = "material";
                 }
                 else if (material_balance <= -adjudicate_material)
                 {
                     white_result = 0.0;
+                    end_reason = "material";
                 }
             }
 
-            std::cout << "GPU " << gpu_id_ << " Game " << i << " finished in " << moves_played << " moves. Result: " << white_result << "\n";
+            std::cout << "GPU " << gpu_id_ << " Game " << i << " finished in " << moves_played << " moves. Result: " << white_result << " (" << end_reason << ")\n";
 
             for (const auto &pos : game_data)
             {
