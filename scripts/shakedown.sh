@@ -91,6 +91,16 @@ BATCH_TIMEOUT_MS=$(grep -oP '^BatchTimeoutMs=\K[0-9]+' fenrir.cfg || echo 4)
 export LD_LIBRARY_PATH=$ROOT/build/_deps/onnxruntime-src/lib:${LD_LIBRARY_PATH:-}
 export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH
 
+# Sweep strays from a previous/aborted run before measuring: an orphaned
+# train.py keeps consuming data files and overwriting the model alongside
+# the new run's trainer, and orphaned workers pollute throughput numbers.
+if pgrep -f "fenrir --selfplay" >/dev/null 2>&1 || pgrep -f "training/train.py" >/dev/null 2>&1; then
+    echo "Killing stray fenrir/train.py processes from a previous run..."
+    pkill -f "fenrir --selfplay" 2>/dev/null
+    pkill -f "training/train.py" 2>/dev/null
+    sleep 2
+fi
+
 rm -rf "$RUN_DIR"
 mkdir -p "$RUN_DIR" "$ROOT/data/selfplay"
 
