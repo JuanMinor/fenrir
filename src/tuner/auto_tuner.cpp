@@ -76,6 +76,12 @@ namespace tuner
             std::cout << magenta_modifier << "CPU logical cores: " << yellow_modifier << cpu.get_logical_cores() << "\n";
         }
 
+        uint32_t effective_cpu_limit = hardware::get_effective_cpu_limit();
+        if (effective_cpu_limit > 0)
+        {
+            std::cout << magenta_modifier << "Effective CPU limit (cgroup/affinity): " << yellow_modifier << effective_cpu_limit << "\n";
+        }
+
         /* Gpu */
         for (hardware::Gpu gpu : gpus)
         {

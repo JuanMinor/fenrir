@@ -29,6 +29,8 @@
 #include <sys/utsname.h>
 #include <fstream>
 #include <cstdio>
+#include <sched.h>
+#include <string>
 #elif defined(__APPLE__)
 #include <sys/types.h>
 #include <sys/sysctl.h>
@@ -291,6 +293,71 @@ namespace hardware
      * @returns Capacity rounded up in gigabytes.
      */
     uint32_t convert_bytes_to_gb(uint64_t bytes) { return static_cast<uint32_t>(bytes / BYTES_PER_GB) + 1; }
+
+    /**
+     * @brief Detects the effective CPU allowance of this process (affinity
+     * mask and cgroup v1/v2 quotas), which containers cap well below the
+     * physical core count reported by /proc/cpuinfo.
+     * @returns Effective core limit, or 0 when no limit could be detected.
+     */
+    uint32_t get_effective_cpu_limit()
+    {
+        uint32_t limit = 0;
+#ifdef __linux__
+        auto consider = [&limit](uint64_t candidate)
+        {
+            if (candidate > 0 && (limit == 0 || candidate < limit))
+            {
+                limit = static_cast<uint32_t>(candidate);
+            }
+        };
+
+        /* Affinity mask: respects taskset pinning and container cpusets. */
+        {
+            cpu_set_t mask;
+            CPU_ZERO(&mask);
+            if (sched_getaffinity(0, sizeof(mask), &mask) == 0)
+            {
+                int count = CPU_COUNT(&mask);
+                if (count > 0)
+                {
+                    consider(static_cast<uint64_t>(count));
+                }
+            }
+        }
+
+        /* cgroup v2: "cpu.max" holds "<quota_us> <period_us>" or "max ...". */
+        {
+            std::ifstream cpu_max("/sys/fs/cgroup/cpu.max");
+            std::string quota_str;
+            uint64_t period = 0;
+            if ((cpu_max >> quota_str >> period) && quota_str != "max" && period > 0)
+            {
+                try
+                {
+                    uint64_t quota = std::stoull(quota_str);
+                    consider((quota + period - 1) / period);
+                }
+                catch (const std::exception &)
+                {
+                }
+            }
+        }
+
+        /* cgroup v1: quota of -1 means unlimited. */
+        {
+            std::ifstream quota_file("/sys/fs/cgroup/cpu/cpu.cfs_quota_us");
+            std::ifstream period_file("/sys/fs/cgroup/cpu/cpu.cfs_period_us");
+            long long quota = 0;
+            long long period = 0;
+            if ((quota_file >> quota) && (period_file >> period) && quota > 0 && period > 0)
+            {
+                consider(static_cast<uint64_t>((quota + period - 1) / period));
+            }
+        }
+#endif
+        return limit;
+    }
 
     /**
      * @brief Automatically queries system APIs to discover host CPU, GPU, RAM, and OS parameters.

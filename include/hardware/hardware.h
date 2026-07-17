@@ -312,6 +312,18 @@ namespace hardware
     uint32_t convert_bytes_to_gb(uint64_t bytes);
 
     /**
+     * @brief Detects the effective CPU allowance of THIS process, as opposed
+     * to the CPUs physically present. In containers /proc/cpuinfo reports the
+     * host's cores, but the scheduler enforces the cgroup CPU quota (v1 or
+     * v2) and the process affinity mask; sizing thread pools from the
+     * physical count oversubscribes the real allowance. Returns the tightest
+     * of: affinity-mask CPU count, cgroup v2 cpu.max, cgroup v1
+     * cfs_quota/cfs_period (quotas rounded up to whole cores).
+     * @returns Effective core limit, or 0 when no limit could be detected.
+     */
+    uint32_t get_effective_cpu_limit();
+
+    /**
      * @brief Automatically queries system APIs to discover host CPU, GPU, RAM, and OS parameters.
      * @returns A fully populated HostInfo object.
      */

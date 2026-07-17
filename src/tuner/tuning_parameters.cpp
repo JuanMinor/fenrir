@@ -136,6 +136,15 @@ namespace tuner
             cores = static_cast<uint8_t>(host_info->get_cpus().at(0).get_logical_cores());
         }
 
+        /* In containers /proc/cpuinfo shows the host's cores, but the cgroup
+         * quota / affinity mask is what the scheduler actually grants; sizing
+         * threads from the physical count oversubscribes the allowance. */
+        uint32_t effective_limit = hardware::get_effective_cpu_limit();
+        if (effective_limit > 0 && effective_limit < static_cast<uint32_t>(cores))
+        {
+            cores = static_cast<uint8_t>(effective_limit);
+        }
+
         if (cores > 4)
         {
             return cores - 2;
