@@ -22,6 +22,7 @@
 #include <filesystem>
 #include <random>
 #include <cstdlib>
+#include <bit>
 #include <chrono>
 
 #ifdef _WIN32
@@ -77,6 +78,26 @@ namespace chess
                 temperature_moves = parsed;
         }
         std::cout << "Temperature sampling plies: " << temperature_moves << "\n";
+
+        /* Cold-start curriculum: games that end without checkmate (200-ply
+         * cap, repetition, 50-move) but with a lopsided material count are
+         * scored as wins for the side that is ahead, instead of 0.5. A
+         * from-scratch net produces ~85% marathon "draws" that are really
+         * unconverted wins; labeling them 0.5 starves the value head and
+         * the whole system settles into a uniform fixed point (observed:
+         * policy loss pinned at the target-entropy floor, hour-1 vs hour-4
+         * checkpoints drawing 23/23 arena games). Material adjudication
+         * multiplies the value signal and teaches material worth first.
+         * Set FENRIR_ADJUDICATE_MATERIAL=0 to disable once the net converts
+         * wins on its own; default threshold is 5 (a rook or more). */
+        int adjudicate_material = 5;
+        if (const char *env_val = std::getenv("FENRIR_ADJUDICATE_MATERIAL"))
+        {
+            int parsed = std::atoi(env_val);
+            if (parsed >= 0)
+                adjudicate_material = parsed;
+        }
+        std::cout << "Material adjudication threshold: " << adjudicate_material << (adjudicate_material == 0 ? " (off)" : "") << "\n";
 
         int games_in_batch = 0;
         std::string temp_filename;
@@ -191,6 +212,27 @@ namespace chess
                 else
                 {
                     white_result = 1.0;
+                }
+            }
+            else if (adjudicate_material > 0)
+            {
+                /* Bitboards 0-4 are white P,N,B,R,Q; 6-10 black. Kings excluded. */
+                static constexpr int piece_values[5] = {1, 3, 3, 5, 9};
+                const AbstractBoard &board = engine.get_board_view();
+                int material_balance = 0;
+                for (int piece = 0; piece < 5; ++piece)
+                {
+                    material_balance += piece_values[piece] * std::popcount(board.get_bitboard(piece));
+                    material_balance -= piece_values[piece] * std::popcount(board.get_bitboard(piece + 6));
+                }
+
+                if (material_balance >= adjudicate_material)
+                {
+                    white_result = 1.0;
+                }
+                else if (material_balance <= -adjudicate_material)
+                {
+                    white_result = 0.0;
                 }
             }
 
