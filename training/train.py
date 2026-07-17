@@ -90,6 +90,12 @@ class ChessDataset(Dataset):
         self.data_dir = data_dir
         self.samples = []
         self.buffer = self.samples
+        # Archive every Nth consumed file (instead of deleting) so
+        # scripts/data_health.py can analyze policy quality over the whole
+        # run; a 1-in-20 sample keeps disk use small. 0 disables archiving.
+        self.archive_every = int(os.environ.get("ARCHIVE_EVERY", "20"))
+        self.archive_dir = os.path.join(data_dir, "archive")
+        self.consumed_count = 0
         self.load_data()
 
     def update(self):
@@ -113,7 +119,12 @@ class ChessDataset(Dataset):
                                 self.buffer.append(data)
                             except (json.JSONDecodeError, ValueError):
                                 pass # Skip partially flushed lines or corrupted FENs
-                    os.remove(filepath)
+                    self.consumed_count += 1
+                    if self.archive_every > 0 and self.consumed_count % self.archive_every == 0:
+                        os.makedirs(self.archive_dir, exist_ok=True)
+                        os.replace(filepath, os.path.join(self.archive_dir, filename))
+                    else:
+                        os.remove(filepath)
                     new_files_count += 1
                 except Exception as e:
                     print(f"Error reading {filename}: {e}")
