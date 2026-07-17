@@ -93,29 +93,17 @@ namespace mcts
 
             return static_cast<uint32_t>((from_sq * 73) + channel);
         }
-
-        /**
-         * RAII helper that increments a node's virtual loss on construction and
-         * decrements it on destruction, guaranteeing balance even if an
-         * exception unwinds the stack mid-search.
-         */
-        struct VirtualLossGuard
-        {
-            MCTSNode *node;
-            VirtualLossGuard(MCTSNode *n) : node(n) { node->virtual_loss++; }
-            ~VirtualLossGuard() { node->virtual_loss--; }
-        };
     }
 
-    MCTSNode::MCTSNode(MCTSNode *parent_node, const chess::Move &m, uint8_t color)
+    Node::Node(Node *parent_node, const chess::Move &m, uint8_t color)
         : parent(parent_node), move(m), color_to_move(color),
           visits(0), win_score(0.0), virtual_loss(0), prior(0.0), is_expanded(false)
     {
     }
 
-    MCTSNode::~MCTSNode() = default;
+    Node::~Node() = default;
 
-    void MCTSNode::add_dirichlet_noise(double epsilon, double alpha)
+    void Node::add_dirichlet_noise(double epsilon, double alpha)
     {
         if (children.empty())
             return;
@@ -151,7 +139,7 @@ namespace mcts
         }
     }
 
-    void MCTSNode::backpropagate(double result)
+    void Node::backpropagate(double result)
     {
         visits++;
         double current = win_score.load();
@@ -171,7 +159,7 @@ namespace mcts
      * centipawns, P=100 N=320 B=330 R=500 Q=900 K=20000), clamped to a floor
      * of 1.0. Heuristic priors are then normalized to sum to 1.0.
      */
-    void MCTSNode::expand(chess::Engine &engine, const std::vector<double> &policy)
+    void Node::expand(chess::Engine &engine, const std::vector<double> &policy)
     {
         std::lock_guard<std::mutex> lock(expand_mutex);
         if (is_expanded.load())
@@ -183,7 +171,7 @@ namespace mcts
         for (size_t i = 0; i < moves.size(); ++i)
         {
             uint8_t next_color = 1 - color_to_move;
-            children.push_back(std::make_unique<MCTSNode>(this, moves[i], next_color));
+            children.push_back(std::make_unique<Node>(this, moves[i], next_color));
 
             if (policy.empty())
             {
@@ -192,17 +180,17 @@ namespace mcts
                     switch (std::tolower(static_cast<unsigned char>(pc)))
                     {
                     case 'p':
-                        return 100.0;
+                        return PIECE_VALUE_PAWN;
                     case 'n':
-                        return 320.0;
+                        return PIECE_VALUE_KNIGHT;
                     case 'b':
-                        return 330.0;
+                        return PIECE_VALUE_BISHOP;
                     case 'r':
-                        return 500.0;
+                        return PIECE_VALUE_ROOK;
                     case 'q':
-                        return 900.0;
+                        return PIECE_VALUE_QUEEN;
                     case 'k':
-                        return 20000.0;
+                        return PIECE_VALUE_KING;
                     default:
                         return 0.0;
                     }
@@ -223,11 +211,11 @@ namespace mcts
                 }
                 else if (mt == chess::MoveType::EN_PASSANT)
                 {
-                    base = 1.0 + 100.0 - 100.0 / 10.0;
+                    base = 1.0 + PIECE_VALUE_PAWN - PIECE_VALUE_PAWN / 10.0;
                 }
                 else if (mt == chess::MoveType::PROMOTION)
                 {
-                    base = 1.0 + piece_value(moves[i].get_promotion_piece()) / 100.0;
+                    base = 1.0 + piece_value(moves[i].get_promotion_piece()) / PIECE_VALUE_PAWN;
                 }
 
                 children.back()->prior = base;
@@ -257,7 +245,7 @@ namespace mcts
      * explored if it has real visits or a nonzero virtual loss, so in-flight
      * (currently evaluating) branches aren't underreported.
      */
-    int MCTSNode::get_max_depth() const
+    int Node::get_max_depth() const
     {
         if (!is_expanded.load() || children.empty())
             return 0;
@@ -289,7 +277,7 @@ namespace mcts
      * virtual loss; since a child's win_score is the child's (opponent's) win
      * rate, the parent's win rate is 1.0 - q.
      */
-    double MCTSNode::puct_value(int total_visits) const
+    double Node::puct_value(int total_visits) const
     {
         const int real_visits = visits.load();
         const int vl = virtual_loss.load();
@@ -302,18 +290,16 @@ namespace mcts
             q = 1.0 - (win_score.load() / real_visits);
         }
 
-        double c_init = 1.25;
-        double c_base = 19652.0;
-        double c = std::log((1.0 + total_visits + c_base) / c_base) + c_init;
+        double c = std::log((1.0 + total_visits + PUCT_C_BASE) / PUCT_C_BASE) + PUCT_C_INIT;
 
         double u = c * prior * std::sqrt(static_cast<double>(total_visits)) / (1 + v);
 
         return q + u;
     }
 
-    MCTSNode *MCTSNode::select_child()
+    Node *Node::select_child()
     {
-        MCTSNode *best_child = nullptr;
+        Node *best_child = nullptr;
         double best_value = -1e9;
         int parent_visits = visits.load();
 
@@ -329,23 +315,23 @@ namespace mcts
         return best_child;
     }
 
-    MCTSSearch::MCTSSearch(nn::NNEvaluator *eval, int threads, size_t pipeline_t)
+    Tree::Tree(nn::NN *eval, int threads, size_t pipeline_t)
         : evaluator(eval), num_threads(threads), pipeline_target(pipeline_t) {}
 
-    MCTSSearch::~MCTSSearch() = default;
+    Tree::~Tree() = default;
 
-    int MCTSSearch::benchmark_search(chess::Engine &engine, int time_limit_ms)
+    int Tree::benchmark_search(chess::Engine &engine, int time_limit_ms)
     {
         uint8_t root_color = engine.get_board_view().get_color();
         chess::Move empty_move(0, 0);
-        auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
+        auto root = std::make_unique<Node>(nullptr, empty_move, root_color);
 
         if (evaluator)
         {
             try
             {
                 auto future = evaluator->request_evaluation(engine.get_board_view());
-                nn::NNResult res = future.get();
+                nn::Result res = future.get();
                 root->expand(engine, res.policy);
             }
             catch (...)
@@ -365,7 +351,7 @@ namespace mcts
         {
             try
             {
-                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
+                workers.emplace_back(&Tree::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), -1, end_time, true);
             }
             catch (...)
             {
@@ -396,16 +382,16 @@ namespace mcts
      * the best child's win_score, since that value represents the opponent's
      * win rate.
      */
-    chess::Move MCTSSearch::find_best_move(chess::Engine &engine, int time_limit_ms, int max_simulations)
+    chess::Move Tree::find_best_move(chess::Engine &engine, int time_limit_ms, int max_simulations)
     {
         uint8_t root_color = engine.get_board_view().get_color();
         chess::Move empty_move(0, 0);
-        auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
+        auto root = std::make_unique<Node>(nullptr, empty_move, root_color);
 
         if (evaluator)
         {
             auto future = evaluator->request_evaluation(engine.get_board_view());
-            nn::NNResult res = future.get();
+            nn::Result res = future.get();
             root->expand(engine, res.policy);
         }
         else
@@ -431,7 +417,7 @@ namespace mcts
 
         for (int i = 0; i < num_threads; ++i)
         {
-            workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), sims_per_thread, end_time, use_time);
+            workers.emplace_back(&Tree::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), sims_per_thread, end_time, use_time);
         }
 
         for (auto &w : workers)
@@ -460,18 +446,18 @@ namespace mcts
         return best_move;
     }
 
-    std::pair<chess::Move, std::vector<std::pair<chess::Move, double>>> MCTSSearch::find_best_move_with_policy(chess::Engine &engine, int simulations, bool apply_noise)
+    std::pair<chess::Move, std::vector<std::pair<chess::Move, double>>> Tree::find_best_move_with_policy(chess::Engine &engine, int simulations, bool apply_noise)
     {
         uint8_t root_color = engine.get_board_view().get_color();
         chess::Move empty_move(0, 0);
-        auto root = std::make_unique<MCTSNode>(nullptr, empty_move, root_color);
+        auto root = std::make_unique<Node>(nullptr, empty_move, root_color);
 
         if (evaluator)
         {
             try
             {
                 auto future = evaluator->request_evaluation(engine.get_board_view());
-                nn::NNResult res = future.get();
+                nn::Result res = future.get();
                 root->expand(engine, res.policy);
             }
             catch (const std::exception &e)
@@ -488,7 +474,7 @@ namespace mcts
 
         if (apply_noise)
         {
-            root->add_dirichlet_noise(0.25, 0.3);
+            root->add_dirichlet_noise(DIRICHLET_EPSILON, DIRICHLET_ALPHA);
         }
 
         if (root->children.empty())
@@ -503,7 +489,7 @@ namespace mcts
         {
             try
             {
-                workers.emplace_back(&MCTSSearch::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), sims_per_thread, std::chrono::steady_clock::now(), false);
+                workers.emplace_back(&Tree::search_worker, this, std::make_unique<chess::Engine>(engine.get_fen()), root.get(), sims_per_thread, std::chrono::steady_clock::now(), false);
             }
             catch (const std::exception &e)
             {
@@ -570,22 +556,12 @@ namespace mcts
      * again, cheaply, via make_move_fast), expand the node with the
      * resulting policy, and backpropagate the value up the tree.
      */
-    void MCTSSearch::search_worker(std::unique_ptr<chess::Engine> thread_engine_ptr, MCTSNode *root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
+    void Tree::search_worker(std::unique_ptr<chess::Engine> thread_engine_ptr, Node *root, int simulations, std::chrono::steady_clock::time_point end_time, bool use_time)
     {
         chess::Engine &thread_engine = *thread_engine_ptr;
         int sim_count = 0;
 
         const size_t local_pipeline_target = pipeline_target;
-
-        struct PipelineItem
-        {
-            MCTSNode *node;
-            std::vector<VirtualLossGuard> path_guards;
-            std::future<nn::NNResult> eval_future;
-            bool is_terminal;
-            double terminal_result;
-            std::vector<chess::Move> path_moves;
-        };
 
         while (true)
         {
@@ -606,13 +582,13 @@ namespace mcts
             for (size_t p = 0; p < local_pipeline_target; ++p)
             {
                 sim_count++;
-                MCTSNode *node = root;
+                Node *node = root;
                 std::vector<VirtualLossGuard> guards;
                 std::vector<chess::Move> path;
 
                 while (node->is_expanded.load() && !node->children.empty())
                 {
-                    MCTSNode *next_node = node->select_child();
+                    Node *next_node = node->select_child();
 
                     if (!next_node)
                         break;
@@ -649,7 +625,7 @@ namespace mcts
 
                 pipeline.push_back(std::move(item));
 
-                MCTSNode *curr = node;
+                Node *curr = node;
                 while (curr != root)
                 {
                     thread_engine.undo_move();
@@ -669,7 +645,7 @@ namespace mcts
                 {
                     try
                     {
-                        nn::NNResult res = item.eval_future.get();
+                        nn::Result res = item.eval_future.get();
                         for (const auto &m : item.path_moves)
                             thread_engine.make_move_fast(m);
                         item.node->expand(thread_engine, res.policy);
@@ -694,14 +670,14 @@ namespace mcts
         }
     }
 
-    double MCTSSearch::simulate(chess::Engine &engine)
+    double Tree::simulate(chess::Engine &engine)
     {
         int moves_played = 0;
         uint8_t start_color = engine.get_board_view().get_color();
 
         std::mt19937 local_rng(std::random_device{}());
 
-        while (!engine.is_checkmate() && !engine.is_stalemate() && !engine.is_draw() && moves_played < 100)
+        while (!engine.is_checkmate() && !engine.is_stalemate() && !engine.is_draw() && moves_played < MAX_ROLLOUT_MOVES)
         {
             std::vector<chess::Move> legal_moves = engine.generate_all_moves();
             if (legal_moves.empty())

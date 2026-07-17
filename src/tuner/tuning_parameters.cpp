@@ -43,9 +43,11 @@ namespace tuner
                         batch_size = static_cast<uint16_t>(std::stoi(line.substr(10)));
                     else if (line.find("PipelineTarget=") == 0)
                         pipeline_target = static_cast<uint16_t>(std::stoi(line.substr(15)));
+                    else if (line.find("BatchTimeoutMs=") == 0)
+                        batch_timeout_ms = static_cast<uint16_t>(std::stoi(line.substr(15)));
                 }
 
-                if (search_threads > 0 && batch_size > 0 && pipeline_target > 0)
+                if (search_threads > 0 && batch_size > 0 && pipeline_target > 0 && batch_timeout_ms > 0)
                 {
                     loaded = true;
                     std::cout << "info string Loaded hardware parameters from fenrir.cfg\n";
@@ -60,6 +62,7 @@ namespace tuner
             search_threads = calculate_search_threads();
             batch_size = calculate_batch_size();
             pipeline_target = calculate_pipeline_target();
+            batch_timeout_ms = DEFAULT_BATCH_TIMEOUT_MS;
         }
         else
         {

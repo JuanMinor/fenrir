@@ -30,8 +30,8 @@ namespace chess
         void parse_position(const std::string &command);
 
         std::unique_ptr<chess::Engine> engine;
-        std::unique_ptr<nn::NNEvaluator> evaluator;
-        std::unique_ptr<mcts::MCTSSearch> search;
+        std::unique_ptr<nn::NN> evaluator;
+        std::unique_ptr<mcts::Tree> search;
 
     public:
         UCI();

@@ -26,10 +26,12 @@ namespace tuner
     const uint8_t DEFAULT_CPU_BATCH_SIZE = 48;
     const uint8_t DEFAULT_CPU_CORES = 2;
     const uint8_t DEFAULT_THREAD_MINIMUM_PIPELINE_BATCH = 4;
+    const uint16_t DEFAULT_BATCH_TIMEOUT_MS = 8;
 
     class TuningParameters
     {
         uint16_t batch_size;
+        uint16_t batch_timeout_ms;
         uint8_t gpu_count;
         std::optional<hardware::HostInfo> host_info;
         uint16_t pipeline_target;
@@ -72,6 +74,12 @@ namespace tuner
         inline uint16_t get_batch_size() const { return batch_size; }
 
         /**
+         * @brief Gets the NN batch worker's partial-batch flush timeout.
+         * @returns The batch timeout in milliseconds.
+         */
+        inline uint16_t get_batch_timeout_ms() const { return batch_timeout_ms; }
+
+        /**
          * @brief Gets the number of detected neural-network execution GPUs.
          * @returns The number of GPUs.
          */
@@ -107,6 +115,12 @@ namespace tuner
          * @param size The new batch size value.
          */
         inline void set_batch_size(uint16_t size) { batch_size = size; }
+
+        /**
+         * @brief Updates the NN batch worker's partial-batch flush timeout manually.
+         * @param timeout_ms The new batch timeout value in milliseconds.
+         */
+        inline void set_batch_timeout_ms(uint16_t timeout_ms) { batch_timeout_ms = timeout_ms; }
 
         /**
          * @brief Updates the active execution pipeline limit manually.

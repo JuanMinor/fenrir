@@ -16,6 +16,7 @@
  */
 
 #include "include/selfplay/selfplay.h"
+#include "include/tuner/tuning_parameters.h"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -54,8 +55,9 @@ namespace chess
         std::cout << "Games: " << max_games << "\n";
         std::cout << "Output Directory: " << get_output_dir() << "\n\n";
 
-        auto evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", gpu_id_);
-        auto search = std::make_unique<mcts::MCTSSearch>(evaluator.get(), 16);
+        tuner::TuningParameters tuning(true);
+        auto evaluator = std::make_unique<nn::NN>("onnx/fenrir.onnx", gpu_id_, tuning.get_batch_size(), tuning.get_batch_timeout_ms());
+        auto search = std::make_unique<mcts::Tree>(evaluator.get(), tuning.get_search_threads(), tuning.get_pipeline_target());
 
         std::mt19937 rng(std::random_device{}());
 

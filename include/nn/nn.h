@@ -18,6 +18,7 @@
 #pragma once
 
 #include "include/abstract/board.h"
+#include "include/logger/logger.h"
 #include <vector>
 #include <deque>
 #include <future>
@@ -40,54 +41,46 @@
 
 namespace nn
 {
-    struct NNResult
+    struct Result
     {
         double value;
         std::vector<double> policy;
     };
 
-    struct HardwareProfile
+    struct Request
     {
-        int logical_cores;
-        int search_threads;
-        size_t batch_size;
-        size_t pipeline_target;
-        int batch_timeout_ms;
-        int inference_latency_ms;
+        std::vector<float> features;
+        std::promise<Result> promise;
     };
 
-    class NNEvaluator
+    class NN
     {
     public:
-        NNEvaluator(const std::string &model_path, int gpu_id = 0, size_t batch_size = 512);
-        ~NNEvaluator();
+        NN(const std::string &onnx_file_path, int gpu, size_t batch_size, int batch_timeout_ms);
+        ~NN();
 
         static std::vector<float> board_to_tensor(const chess::AbstractBoard &board);
 
-        HardwareProfile get_hardware_profile() const { return hw_profile; }
+        /**
+         * @brief Runs one dummy full-size batch through evaluate_batch() and times it.
+         * @returns The measured latency in milliseconds, so callers (the auto-tuner)
+         * can calibrate batch_timeout_ms from a real measurement.
+         */
+        int measure_latency_ms();
 
-        std::future<NNResult> request_evaluation(const chess::AbstractBoard &board);
+        std::future<Result> request_evaluation(const chess::AbstractBoard &board);
 
     private:
         void batch_worker_loop();
-        void detect_hardware();
-        void evaluate_batch(const std::vector<std::vector<float>> &batch_features, std::vector<std::promise<NNResult>> &promises);
-        int measure_latency_ms();
+        void evaluate_batch(const std::vector<std::vector<float>> &batch_features, std::vector<std::promise<Result>> &promises);
         void try_reload_model();
 
-        std::string model_path;
+        std::string onnx_file_path;
         size_t batch_size;
-        int gpu_id_;
-        HardwareProfile hw_profile;
+        int gpu;
         int batch_timeout_ms;
 
-        struct EvalRequest
-        {
-            std::vector<float> features;
-            std::promise<NNResult> promise;
-        };
-
-        std::deque<EvalRequest> request_queue;
+        std::deque<Request> request_queue;
         std::mutex queue_mutex;
         std::condition_variable queue_cv;
         bool stop_worker;

@@ -132,8 +132,8 @@ namespace chess
         engine = std::make_unique<Engine>();
 
         tuner::TuningParameters tuning(true);
-        evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", tuning.get_gpu_id(0), tuning.get_batch_size());
-        search = std::make_unique<mcts::MCTSSearch>(evaluator.get(), tuning.get_search_threads(), tuning.get_pipeline_target());
+        evaluator = std::make_unique<nn::NN>("onnx/fenrir.onnx", tuning.get_gpu_id(0), tuning.get_batch_size(), tuning.get_batch_timeout_ms());
+        search = std::make_unique<mcts::Tree>(evaluator.get(), tuning.get_search_threads(), tuning.get_pipeline_target());
     }
 
     UCI::~UCI() = default;

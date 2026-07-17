@@ -106,6 +106,7 @@ namespace tuner
         const uint8_t baseline_search_threads = baseline_tuning_parameters.get_search_threads();
         const uint16_t baseline_batch_size = baseline_tuning_parameters.get_batch_size();
         const uint16_t baseline_pipeline_target = baseline_tuning_parameters.get_pipeline_target();
+        const uint16_t baseline_batch_timeout_ms = baseline_tuning_parameters.get_batch_timeout_ms();
 
         std::cout << "info string [Auto-Tuner] Baseline configured by hardware: Threads = " << static_cast<int>(baseline_search_threads)
                   << ", Batch Size = " << baseline_batch_size << "\n";
@@ -128,8 +129,8 @@ namespace tuner
 
             try
             {
-                auto evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", baseline_tuning_parameters.get_gpu_id(0), current_batch_size);
-                mcts::MCTSSearch search(evaluator.get(), baseline_search_threads, current_pipeline_target);
+                auto evaluator = std::make_unique<nn::NN>("onnx/fenrir.onnx", baseline_tuning_parameters.get_gpu_id(0), current_batch_size, baseline_batch_timeout_ms);
+                mcts::Tree search(evaluator.get(), baseline_search_threads, current_pipeline_target);
                 chess::Engine engine(BENCHMARK_KIWIPETE_FEN);
 
                 /* Run test */
@@ -182,8 +183,8 @@ namespace tuner
 
             try
             {
-                auto evaluator = std::make_unique<nn::NNEvaluator>("onnx/fenrir.onnx", baseline_tuning_parameters.get_gpu_id(0), best_batch_size);
-                mcts::MCTSSearch search(evaluator.get(), current_search_threads, current_pipeline_target);
+                auto evaluator = std::make_unique<nn::NN>("onnx/fenrir.onnx", baseline_tuning_parameters.get_gpu_id(0), best_batch_size, baseline_batch_timeout_ms);
+                mcts::Tree search(evaluator.get(), current_search_threads, current_pipeline_target);
                 chess::Engine engine(BENCHMARK_KIWIPETE_FEN);
 
                 auto start = std::chrono::steady_clock::now();
@@ -206,6 +207,18 @@ namespace tuner
             }
         }
 
+        /* Phase 3: batch timeout calibration, measured once at the winning batch size */
+        uint16_t best_batch_timeout_ms = baseline_batch_timeout_ms;
+        try
+        {
+            auto evaluator = std::make_unique<nn::NN>("onnx/fenrir.onnx", baseline_tuning_parameters.get_gpu_id(0), best_batch_size, baseline_batch_timeout_ms);
+            int latency_ms = evaluator->measure_latency_ms();
+            best_batch_timeout_ms = static_cast<uint16_t>(std::max(2, latency_ms / 4));
+        }
+        catch (const std::exception &)
+        {
+        }
+
         std::cout << "[Auto-Tuner] ==================================================\n";
         std::cout << "[Auto-Tuner]            FINAL TUNING RESULTS COMPARISON        \n";
         std::cout << "[Auto-Tuner] ==================================================\n";
@@ -214,6 +227,7 @@ namespace tuner
         std::cout << "[Auto-Tuner] Threads       | " << std::left << std::setw(18) << static_cast<int>(baseline_search_threads) << " | " << static_cast<int>(best_search_threads) << "\n";
         std::cout << "[Auto-Tuner] Batch Size    | " << std::left << std::setw(18) << baseline_batch_size << " | " << best_batch_size << "\n";
         std::cout << "[Auto-Tuner] Pipeline      | " << std::left << std::setw(18) << static_cast<int>(baseline_pipeline_target) << " | " << static_cast<int>(best_pipeline_target) << "\n";
+        std::cout << "[Auto-Tuner] Batch Timeout | " << std::left << std::setw(18) << baseline_batch_timeout_ms << " | " << best_batch_timeout_ms << "\n";
         std::cout << "[Auto-Tuner] Peak NPS      | " << std::left << std::setw(18) << "N/A" << " | " << static_cast<int>(max_nodes_per_second) << "\n";
         std::cout << "[Auto-Tuner] ==================================================\n";
 
@@ -233,6 +247,7 @@ namespace tuner
         real_tuning_parameters.set_batch_size(best_batch_size);
         real_tuning_parameters.set_search_threads(final_search_threads);
         real_tuning_parameters.set_pipeline_target(best_pipeline_target);
+        real_tuning_parameters.set_batch_timeout_ms(best_batch_timeout_ms);
 
         std::ofstream cfg("fenrir.cfg");
         if (cfg.is_open())
@@ -241,6 +256,7 @@ namespace tuner
             cfg << "SearchThreads=" << static_cast<int>(final_search_threads) << "\n";
             cfg << "BatchSize=" << best_batch_size << "\n";
             cfg << "PipelineTarget=" << static_cast<int>(best_pipeline_target) << "\n";
+            cfg << "BatchTimeoutMs=" << best_batch_timeout_ms << "\n";
             cfg << "PeakNPS=" << static_cast<int>(max_nodes_per_second) << "\n";
             cfg.close();
             std::cout << "[Auto-Tuner] Successfully saved configuration to fenrir.cfg\n";

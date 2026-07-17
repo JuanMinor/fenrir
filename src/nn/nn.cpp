@@ -28,13 +28,13 @@
 namespace nn
 {
     /**
-     * Loads the ONNX model, detects hardware, and starts the batch worker
-     * thread. batch_timeout_ms is set to 25% of the measured inference
-     * latency (minimum 2ms). @p b_size overrides the hardware-recommended
-     * batch size when nonzero.
+     * Loads the ONNX model, and starts the batch worker thread. batch_timeout_ms
+     * is supplied by the caller (the auto-tuner measures it once via
+     * measure_latency_ms() and persists it) rather than self-calibrated here,
+     * since this constructor runs on every NN instantiation.
      */
-    NNEvaluator::NNEvaluator(const std::string &path, int gpu_id, size_t b_size)
-        : model_path(path), gpu_id_(gpu_id), stop_worker(false)
+    NN::NN(const std::string &onnx_file_path, int gpu, size_t batch_size, int batch_timeout_ms)
+        : onnx_file_path(onnx_file_path), batch_size(batch_size), gpu(gpu), batch_timeout_ms(batch_timeout_ms), stop_worker(false)
     {
         env = std::make_unique<Ort::Env>(ORT_LOGGING_LEVEL_WARNING, "Fenrir_NN");
         last_model_load_time = std::filesystem::file_time_type::min();
@@ -42,17 +42,10 @@ namespace nn
 
         try_reload_model();
 
-        detect_hardware();
-        int latency = measure_latency_ms();
-        hw_profile.inference_latency_ms = latency;
-        batch_timeout_ms = std::max(2, latency / 4);
-
-        batch_size = (b_size > 0) ? b_size : hw_profile.batch_size;
-
-        worker_thread = std::thread(&NNEvaluator::batch_worker_loop, this);
+        worker_thread = std::thread(&NN::batch_worker_loop, this);
     }
 
-    NNEvaluator::~NNEvaluator()
+    NN::~NN()
     {
         {
             std::lock_guard<std::mutex> lock(queue_mutex);
@@ -73,7 +66,7 @@ namespace nn
      * exactly mirror Python's `float(ord(castling_rights[0])) if len > 0 else
      * 0.0`.
      */
-    std::vector<float> NNEvaluator::board_to_tensor(const chess::AbstractBoard &board)
+    std::vector<float> NN::board_to_tensor(const chess::AbstractBoard &board)
     {
         std::vector<float> tensor(14 * 8 * 8, 0.0f);
 
@@ -113,28 +106,29 @@ namespace nn
         return tensor;
     }
 
-    std::future<NNResult> NNEvaluator::request_evaluation(const chess::AbstractBoard &board)
+    std::future<Result> NN::request_evaluation(const chess::AbstractBoard &board)
     {
-        EvalRequest req;
-        req.features = board_to_tensor(board);
-        auto future = req.promise.get_future();
+        Request request;
+        request.features = board_to_tensor(board);
+        std::future<nn::Result> future = request.promise.get_future();
 
         {
             std::lock_guard<std::mutex> lock(queue_mutex);
-            request_queue.push_back(std::move(req));
+            request_queue.emplace_back(std::move(request));
         }
 
         queue_cv.notify_one();
         return future;
     }
 
-    void NNEvaluator::batch_worker_loop()
+    void NN::batch_worker_loop()
     {
         while (true)
         {
+            /* TODO check with flag if we're training, if not, skip this line. Performance issue, small but adds up. */
             try_reload_model();
 
-            std::vector<EvalRequest> batch;
+            std::vector<Request> requests;
             {
                 std::unique_lock<std::mutex> lock(queue_mutex);
                 queue_cv.wait_for(lock, std::chrono::milliseconds(batch_timeout_ms), [this]
@@ -151,25 +145,25 @@ namespace nn
                 }
 
                 size_t take_count = std::min(request_queue.size(), batch_size);
-                batch.reserve(take_count);
+                requests.reserve(take_count);
                 for (size_t i = 0; i < take_count; ++i)
                 {
-                    batch.push_back(std::move(request_queue.front()));
+                    requests.emplace_back(std::move(request_queue.front()));
                     request_queue.pop_front();
                 }
             }
 
-            if (!batch.empty())
+            if (!requests.empty())
             {
                 std::vector<std::vector<float>> batch_features;
-                batch_features.reserve(batch.size());
-                std::vector<std::promise<NNResult>> promises;
-                promises.reserve(batch.size());
+                batch_features.reserve(requests.size());
+                std::vector<std::promise<Result>> promises;
+                promises.reserve(requests.size());
 
-                for (auto &req : batch)
+                for (Request &request : requests)
                 {
-                    batch_features.push_back(std::move(req.features));
-                    promises.push_back(std::move(req.promise));
+                    batch_features.emplace_back(std::move(request.features));
+                    promises.emplace_back(std::move(request.promise));
                 }
 
                 try
@@ -179,17 +173,18 @@ namespace nn
                 catch (const std::exception &e)
                 {
                     std::cerr << "Unhandled exception in evaluate_batch: " << e.what() << "\n";
-                    for (auto &p : promises)
+                    for (std::promise<nn::Result> &promise : promises)
                     {
                         try
                         {
-                            NNResult res;
-                            res.value = 0.5;
-                            res.policy.resize(4096, 0.01);
-                            p.set_value(res);
+                            Result result;
+                            result.value = 0.5;
+                            result.policy.resize(4096, 0.01);
+                            promise.set_value(result);
                         }
                         catch (...)
                         {
+                            /* TODO: Maybe we can do something here but leave blank for now. */
                         }
                     }
                 }
@@ -197,36 +192,16 @@ namespace nn
         }
     }
 
-    /**
-     * Populates hw_profile from the detected core count: search_threads
-     * reserves one core for the OS and one for the NN batch worker,
-     * pipeline_target is fixed at 32 (enough in-flight items to saturate the
-     * GPU), and batch_size scales with search_threads * pipeline_target.
-     */
-    void NNEvaluator::detect_hardware()
-    {
-        int logical_cores = static_cast<int>(std::thread::hardware_concurrency());
-        if (logical_cores <= 0) logical_cores = 4;
-
-        hw_profile.logical_cores = logical_cores;
-
-        hw_profile.search_threads = std::max(1, logical_cores - 2);
-
-        hw_profile.pipeline_target = 32;
-
-        hw_profile.batch_size = static_cast<size_t>(hw_profile.search_threads) * hw_profile.pipeline_target;
-    }
-
-    void NNEvaluator::evaluate_batch(const std::vector<std::vector<float>> &batch_features, std::vector<std::promise<NNResult>> &promises)
+    void NN::evaluate_batch(const std::vector<std::vector<float>> &batch_features, std::vector<std::promise<Result>> &promises)
     {
         if (!session)
         {
             for (size_t i = 0; i < batch_features.size(); ++i)
             {
-                NNResult res;
-                res.value = 0.5;
-                res.policy.resize(4096, 0.01);
-                promises[i].set_value(res);
+                Result result;
+                result.value = 0.5;
+                result.policy.resize(4096, 0.01);
+                promises[i].set_value(result);
             }
             return;
         }
@@ -268,10 +243,10 @@ namespace nn
 
             for (size_t i = 0; i < batch_size_actual; ++i)
             {
-                NNResult res;
-                res.value = static_cast<double>(value_data[i]);
-                res.policy.assign(policy_data + i * policy_size, policy_data + (i + 1) * policy_size);
-                promises[i].set_value(res);
+                Result result;
+                result.value = static_cast<double>(value_data[i]);
+                result.policy.assign(policy_data + i * policy_size, policy_data + (i + 1) * policy_size);
+                promises[i].set_value(result);
                 promise_set[i] = true;
             }
         }
@@ -284,10 +259,10 @@ namespace nn
                 {
                     try
                     {
-                        NNResult res;
-                        res.value = 0.5;
-                        res.policy.resize(4096, 0.01);
-                        promises[i].set_value(res);
+                        Result result;
+                        result.value = 0.5;
+                        result.policy.resize(4096, 0.01);
+                        promises[i].set_value(result);
                     }
                     catch (...)
                     {
@@ -300,29 +275,31 @@ namespace nn
 
     /**
      * Runs one dummy full-size batch through evaluate_batch() and times it,
-     * to calibrate batch_timeout_ms. Returns 4ms if no model is loaded yet.
+     * so callers can calibrate batch_timeout_ms from a real measurement.
+     * Returns 4ms if no model is loaded yet.
      */
-    int NNEvaluator::measure_latency_ms()
+    int NN::measure_latency_ms()
     {
-        if (!session) return 4;
+        if (!session)
+            return 4;
 
-        std::vector<std::vector<float>> dummy_batch;
-        for (size_t i = 0; i < hw_profile.batch_size; ++i) {
-            dummy_batch.push_back(std::vector<float>(14 * 8 * 8, 0.0f));
-        }
-        std::vector<std::promise<NNResult>> dummy_promises(hw_profile.batch_size);
+        std::vector<std::vector<float>> dummy_batch(batch_size, std::vector<float>(14 * 8 * 8, 0.0f));
+        std::vector<std::promise<Result>> dummy_promises(batch_size);
 
         auto start = std::chrono::steady_clock::now();
-
-        try {
+        try
+        {
             evaluate_batch(dummy_batch, dummy_promises);
-        } catch (...) {}
-
+        }
+        catch (...)
+        {
+        }
         auto end = std::chrono::steady_clock::now();
+
         return static_cast<int>(std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
     }
 
-    void NNEvaluator::try_reload_model()
+    void NN::try_reload_model()
     {
         auto now = std::chrono::steady_clock::now();
         if (std::chrono::duration_cast<std::chrono::seconds>(now - last_reload_check_time).count() < 1 && session)
@@ -331,29 +308,39 @@ namespace nn
         }
         last_reload_check_time = now;
 
-        if (!std::filesystem::exists(model_path))
+        if (!std::filesystem::exists(onnx_file_path))
+        {
             return;
+        }
 
-        std::error_code ec;
-        auto write_time = std::filesystem::last_write_time(model_path, ec);
-        if (ec)
+        std::error_code error_code;
+        auto write_time = std::filesystem::last_write_time(onnx_file_path, error_code);
+        if (error_code)
+        {
             return;
+        }
 
         if (write_time > last_model_load_time || !session)
         {
             try
             {
-                std::ifstream file(model_path, std::ios::binary | std::ios::ate);
+                std::ifstream file(onnx_file_path, std::ios::binary | std::ios::ate);
                 if (!file.is_open())
+                {
                     return;
+                }
 
                 std::streamsize size = file.tellg();
                 if (size <= 0)
+                {
                     return;
+                }
                 file.seekg(0, std::ios::beg);
                 std::vector<char> temp_buffer(static_cast<size_t>(size));
                 if (!file.read(temp_buffer.data(), size))
+                {
                     return;
+                }
 
                 Ort::SessionOptions session_options;
                 session_options.SetIntraOpNumThreads(1);
@@ -374,13 +361,15 @@ namespace nn
                 try
                 {
                     OrtCUDAProviderOptions cuda_options;
-                    cuda_options.device_id = gpu_id_;
+                    cuda_options.device_id = gpu;
                     session_options.AppendExecutionProvider_CUDA(cuda_options);
                 }
                 catch (const std::exception &e)
                 {
-                    std::cerr << "Warning: Could not enable CUDA for GPU " << gpu_id_ << ". Falling back to CPU.\n";
-                    std::cerr << "ONNX Runtime Error: " << e.what() << "\n";
+                    std::string error = "Could not enable CUDA for GPU " + std::to_string(gpu) + ". Falling back to CPU.";
+                    error += "ONNX Runtime error: " + std::string(e.what());
+                    std::cerr << error << "\n";
+                    logger::CRITICAL(error);
                 }
 #endif
 
@@ -390,11 +379,12 @@ namespace nn
 
                 auto new_session = std::make_unique<Ort::Session>(*env, model_buffer.data(), model_buffer.size(), session_options);
                 session = std::move(new_session);
-                std::cout << "Successfully loaded ONNX model: " << model_path << "\n";
             }
             catch (const std::exception &e)
             {
-                std::cerr << "Failed to reload ONNX model: " << e.what() << "\n";
+                std::string error = "Failed to reload ONNX model: " + std::string(e.what());
+                std::cerr << error << "\n";
+                logger::CRITICAL(error);
             }
         }
     }
