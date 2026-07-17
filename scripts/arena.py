@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+#   Copyright (c) 2026 Juan Minor
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+Arena: play two Fenrir models against each other and report the score.
+
+Fenrir loads its weights from onnx/fenrir.onnx relative to its working
+directory, so each side gets a private working directory containing its own
+onnx/fenrir.onnx (and a copy of fenrir.cfg when present). Games are played
+in color-swapped pairs from a shared randomized opening so neither side
+benefits from opening luck.
+
+Usage (from the repo root, LD_LIBRARY_PATH already set as for self-play):
+  python3 scripts/arena.py --model-a checkpoints/fenrir_A.onnx \
+                           --model-b checkpoints/fenrir_B.onnx \
+                           --games 100 --nodes 800
+
+Smoke test (fast, tiny searches, adjudicates early):
+  python3 scripts/arena.py --model-a onnx/fenrir.onnx --model-b onnx/fenrir.onnx \
+                           --games 2 --nodes 8 --max-plies 20
+"""
+
+import argparse
+import os
+import random
+import shutil
+import sys
+import tempfile
+
+import chess
+import chess.engine
+
+
+def make_engine_dir(base_dir, name, model_path, cfg_path):
+    work_dir = os.path.join(base_dir, name)
+    os.makedirs(os.path.join(work_dir, "onnx"))
+    os.makedirs(os.path.join(work_dir, "logs"))
+    shutil.copy(model_path, os.path.join(work_dir, "onnx", "fenrir.onnx"))
+    if cfg_path and os.path.exists(cfg_path):
+        shutil.copy(cfg_path, os.path.join(work_dir, "fenrir.cfg"))
+    return work_dir
+
+
+def random_opening(plies, seed):
+    rng = random.Random(seed)
+    board = chess.Board()
+    for _ in range(plies):
+        moves = list(board.legal_moves)
+        if not moves:
+            break
+        board.push(rng.choice(moves))
+    return board
+
+
+def play_game(white, black, opening_board, nodes, max_plies):
+    """Returns 1.0 if white wins, 0.0 if black wins, 0.5 for a draw."""
+    board = opening_board.copy()
+    limit = chess.engine.Limit(nodes=nodes)
+    while not board.is_game_over(claim_draw=True) and board.ply() < max_plies:
+        engine = white if board.turn == chess.WHITE else black
+        try:
+            result = engine.play(board, limit)
+        except chess.engine.EngineError as e:
+            # Engine produced an illegal/null move in a live position:
+            # forfeit for the side to move.
+            print(f"  engine error ({e}); forfeit for {'white' if board.turn else 'black'}")
+            return 0.0 if board.turn == chess.WHITE else 1.0
+        if result.move is None or result.move not in board.legal_moves:
+            return 0.0 if board.turn == chess.WHITE else 1.0
+        board.push(result.move)
+
+    outcome = board.outcome(claim_draw=True)
+    if outcome is None:
+        return 0.5  # max-plies adjudication
+    if outcome.winner is None:
+        return 0.5
+    return 1.0 if outcome.winner == chess.WHITE else 0.0
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Fenrir model-vs-model arena")
+    parser.add_argument("--model-a", required=True, help="ONNX weights for side A")
+    parser.add_argument("--model-b", required=True, help="ONNX weights for side B")
+    parser.add_argument("--games", type=int, default=100, help="total games (rounded down to pairs)")
+    parser.add_argument("--nodes", type=int, default=800, help="fixed simulations per move")
+    parser.add_argument("--binary", default="bin/fenrir", help="engine binary path")
+    parser.add_argument("--cfg", default="fenrir.cfg", help="tuning cfg copied to both engines")
+    parser.add_argument("--max-plies", type=int, default=400, help="draw adjudication cap")
+    parser.add_argument("--random-plies", type=int, default=4, help="shared random opening plies per pair")
+    parser.add_argument("--seed", type=int, default=0, help="opening seed base")
+    args = parser.parse_args()
+
+    binary = os.path.abspath(args.binary)
+    if not os.path.exists(binary):
+        sys.exit(f"engine binary not found: {binary}")
+
+    pairs = max(1, args.games // 2)
+    base_dir = tempfile.mkdtemp(prefix="fenrir_arena_")
+    dir_a = make_engine_dir(base_dir, "A", args.model_a, args.cfg)
+    dir_b = make_engine_dir(base_dir, "B", args.model_b, args.cfg)
+
+    print(f"Arena: {args.model_a} (A) vs {args.model_b} (B)")
+    print(f"{pairs * 2} games, {args.nodes} nodes/move, openings: {args.random_plies} random plies\n")
+
+    engine_a = chess.engine.SimpleEngine.popen_uci(binary, cwd=dir_a)
+    engine_b = chess.engine.SimpleEngine.popen_uci(binary, cwd=dir_b)
+
+    score_a = 0.0
+    wins_a = draws = wins_b = 0
+    try:
+        for pair in range(pairs):
+            opening = random_opening(args.random_plies, args.seed + pair)
+            for a_is_white in (True, False):
+                white, black = (engine_a, engine_b) if a_is_white else (engine_b, engine_a)
+                white_result = play_game(white, black, opening, args.nodes, args.max_plies)
+                a_result = white_result if a_is_white else 1.0 - white_result
+                score_a += a_result
+                if a_result == 1.0:
+                    wins_a += 1
+                elif a_result == 0.0:
+                    wins_b += 1
+                else:
+                    draws += 1
+                game_no = pair * 2 + (1 if a_is_white else 2)
+                print(f"game {game_no:3d}: A as {'white' if a_is_white else 'black'} -> "
+                      f"{'A wins' if a_result == 1.0 else 'B wins' if a_result == 0.0 else 'draw'}"
+                      f"   [A {wins_a} / D {draws} / B {wins_b}]")
+    finally:
+        engine_a.quit()
+        engine_b.quit()
+        shutil.rmtree(base_dir, ignore_errors=True)
+
+    total = wins_a + draws + wins_b
+    pct = 100.0 * score_a / total
+    # Two-sigma band on the score percentage, treating each game as a trial.
+    p = score_a / total
+    sigma = (p * (1.0 - p) / total) ** 0.5
+    print(f"\n=== RESULT: A scores {score_a:.1f}/{total} = {pct:.1f}%  (+/- {200.0 * sigma:.1f}% at 2-sigma)")
+    print(f"    A wins {wins_a}, draws {draws}, B wins {wins_b}")
+    if pct - 200.0 * sigma > 50.0:
+        print("    A is significantly stronger.")
+    elif pct + 200.0 * sigma < 50.0:
+        print("    B is significantly stronger.")
+    else:
+        print("    No significant difference at this sample size.")
+
+
+if __name__ == "__main__":
+    main()
