@@ -1,8 +1,12 @@
 #!/bin/bash
-# Multi-GPU Self-Play Launcher for Fenrir
-# Launches INSTANCES_PER_GPU self-play processes on each GPU in GPUS.
-# Override defaults via environment, e.g.:
-#   SIMULATIONS=800 INSTANCES_PER_GPU=2 GPUS="0 1 2 3 4 5 6 7" ./run_selfplay.sh
+# Production launcher for Fenrir training: self-play workers on every GPU
+# plus train.py co-located on GPU 0, with periodic weight checkpoints.
+#
+# Defaults follow the measured probe results (2 instances x 5 threads per
+# GPU won at ~2,950 games/hr per 4090). Override via environment:
+#   SIMULATIONS=800 INSTANCES_PER_GPU=2 GPUS="0 1 2 3" ./run_selfplay.sh
+#   TRAIN=0                 skip launching train.py (self-play only)
+#   CHECKPOINT_INTERVAL=3600 seconds between fenrir.pth snapshots (0 = off)
 
 # Compile first to ensure we have the latest binary
 echo "Building Fenrir with GPU support..."
@@ -12,37 +16,77 @@ make -j$(nproc)
 cd ..
 
 echo "Creating directories..."
-mkdir -p data/selfplay
-mkdir -p logs
+mkdir -p data/selfplay logs checkpoints
 
-export LD_LIBRARY_PATH=$PWD/build/_deps/onnxruntime-src/lib:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/usr/local/lib/python3.12/dist-packages/nvidia/cudnn/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$PWD/build/_deps/onnxruntime-src/lib:${LD_LIBRARY_PATH:-}
+# Locate torch's bundled cuDNN wherever pip put it (python version varies by image)
+CUDNN_LIB=$(python3 -c "import nvidia.cudnn, os; print(os.path.join(os.path.dirname(nvidia.cudnn.__file__), 'lib'))" 2>/dev/null)
+if [ -n "$CUDNN_LIB" ]; then
+    export LD_LIBRARY_PATH=$CUDNN_LIB:$LD_LIBRARY_PATH
+fi
 
 # Training search: game volume matters far more than per-move depth.
-# AlphaZero self-play used 800 simulations per move.
 SIMULATIONS=${SIMULATIONS:-800}
-GAMES=${GAMES:-500000}
+GAMES=${GAMES:-1000000}
 INSTANCES_PER_GPU=${INSTANCES_PER_GPU:-2}
-# GPU 0 is shared with train.py; its training cycles are short and bursty,
-# so co-locating self-play there is a net win. Set GPUS="1 2 3 4 5 6 7"
-# to give training a dedicated GPU instead.
-GPUS=${GPUS:-"0 1 2 3 4 5 6 7"}
+TRAIN=${TRAIN:-1}
+CHECKPOINT_INTERVAL=${CHECKPOINT_INTERVAL:-3600}
+
+# Default to every GPU the machine actually has.
+if [ -z "${GPUS:-}" ]; then
+    if command -v nvidia-smi >/dev/null 2>&1; then
+        GPU_COUNT=$(nvidia-smi --list-gpus 2>/dev/null | wc -l)
+        GPUS=$(seq 0 $((GPU_COUNT - 1)) | tr '\n' ' ')
+    else
+        GPUS="0"
+    fi
+fi
+
+# Sweep strays from a previous/aborted run: an orphaned trainer keeps
+# consuming data and overwriting the model alongside the new one.
+if pgrep -f "fenrir --selfplay" >/dev/null 2>&1 || pgrep -f "training/train.py" >/dev/null 2>&1; then
+    echo "Killing stray fenrir/train.py processes from a previous run..."
+    pkill -f "fenrir --selfplay" 2>/dev/null
+    pkill -f "training/train.py" 2>/dev/null
+    sleep 2
+fi
 
 TOTAL=0
 for GPU in $GPUS; do
     for INST in $(seq 1 "$INSTANCES_PER_GPU"); do
         echo "Launching Fenrir self-play instance $INST on GPU $GPU..."
         # CUDA_VISIBLE_DEVICES remaps the selected GPU to ordinal 0 inside
-        # the process, so --gpu-id must always be 0 here. Passing the real
-        # index would target a nonexistent device and fall back to CPU.
-        env CUDA_VISIBLE_DEVICES=$GPU ./bin/fenrir --selfplay --gpu-id 0 \
+        # the process, so --gpu-id must always be 0 here. stdbuf keeps
+        # per-game log lines flowing for live monitoring.
+        env CUDA_VISIBLE_DEVICES=$GPU stdbuf -oL ./bin/fenrir --selfplay --gpu-id 0 \
             --simulations "$SIMULATIONS" --games "$GAMES" \
             > "logs/gpu${GPU}_inst${INST}.log" 2>&1 &
         TOTAL=$((TOTAL + 1))
     done
 done
+echo "Launched $TOTAL self-play instances ($INSTANCES_PER_GPU per GPU) on GPUs: $GPUS"
 
-echo "Launched $TOTAL instances ($INSTANCES_PER_GPU per GPU) on GPUs: $GPUS"
-echo "Monitor progress: tail -f logs/gpu1_inst1.log"
-echo "Monitor GPUs:     watch -n 2 nvidia-smi"
-echo "Stop everything:  pkill fenrir"
+if [ "$TRAIN" = "1" ]; then
+    echo "Launching train.py on GPU 0..."
+    env CUDA_VISIBLE_DEVICES=0 python3 training/train.py > logs/train.log 2>&1 &
+    echo "Trainer PID: $!"
+fi
+
+if [ "$CHECKPOINT_INTERVAL" -gt 0 ] 2>/dev/null; then
+    (
+        while true; do
+            sleep "$CHECKPOINT_INTERVAL"
+            if [ -f onnx/fenrir.pth ]; then
+                cp onnx/fenrir.pth "checkpoints/fenrir_$(date +%Y%m%d_%H%M).pth"
+            fi
+        done
+    ) > /dev/null 2>&1 &
+    echo "Checkpointing onnx/fenrir.pth to checkpoints/ every ${CHECKPOINT_INTERVAL}s (PID: $!)"
+fi
+
+echo ""
+echo "Monitor games:   tail -f logs/gpu1_inst1.log"
+echo "Monitor trainer: tail -f logs/train.log"
+echo "Monitor GPUs:    watch -n 2 nvidia-smi"
+echo "Game rate:       grep -h 'finished in' logs/gpu*_inst*.log | wc -l   (run twice, 60s apart)"
+echo "Stop everything: pkill -f 'fenrir --selfplay'; pkill -f training/train.py"
