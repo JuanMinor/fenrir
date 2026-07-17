@@ -21,6 +21,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <atomic>
+#include <algorithm>
 #ifdef _WIN32
 #define NOMINMAX
 #include <dml_provider_factory.h>
@@ -261,8 +262,15 @@ namespace nn
                 Result result;
                 /* The model's value head is tanh in [-1, 1] (train.py maps
                  * results to that range); MCTS consumes win probability in
-                 * [0, 1] alongside terminal scores of 0.0/0.5/1.0. */
-                result.value = (static_cast<double>(value_data[i]) + 1.0) / 2.0;
+                 * [0, 1] alongside terminal scores of 0.0/0.5/1.0. Clamp
+                 * away from the exact extremes: a saturated estimate of
+                 * 1.0 would tie with a PROVEN in-search checkmate, leaving
+                 * the search indifferent between mating and shuffling in
+                 * won positions (observed: queen-up arena games wandering
+                 * into the 50-move rule). A proven terminal must always
+                 * outbid an estimate. */
+                double win_probability = (static_cast<double>(value_data[i]) + 1.0) / 2.0;
+                result.value = std::clamp(win_probability, 0.005, 0.995);
                 result.policy.assign(policy_data + i * policy_size, policy_data + (i + 1) * policy_size);
                 promises[i].set_value(result);
                 promise_set[i] = true;
