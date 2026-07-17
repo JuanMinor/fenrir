@@ -20,6 +20,7 @@
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
+#include <atomic>
 #ifdef _WIN32
 #define NOMINMAX
 #include <dml_provider_factory.h>
@@ -200,6 +201,14 @@ namespace nn
     {
         if (!session)
         {
+            /* Serving uniform fallbacks looks like a very fast evaluator from
+             * the outside; say so once, loudly, so benchmarks and searches
+             * can't silently measure fake evaluations. */
+            static std::atomic<bool> warned{false};
+            if (!warned.exchange(true))
+            {
+                std::cerr << "WARNING: NN has no model session loaded; serving uniform fallback evaluations (not real inference).\n";
+            }
             for (size_t i = 0; i < batch_features.size(); ++i)
             {
                 Result result;
