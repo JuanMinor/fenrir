@@ -94,8 +94,10 @@ namespace tuner
     /**
      * @brief Run the auto-tuning process to find optimal parameters.
      * @returns Optimized TuningParameters based on hardware benchmarks. The
-     * final search thread count scales the best single-GPU thread count by
-     * the detected GPU count so all available GPUs stay saturated.
+     * results describe a single-process, single-GPU worker: each Fenrir
+     * process drives exactly one ONNX session on one device, so multi-GPU
+     * machines scale by launching one process per GPU (see run_selfplay.sh),
+     * not by inflating one process's thread count.
      */
     TuningParameters AutoTuner::run()
     {
@@ -231,21 +233,8 @@ namespace tuner
         std::cout << "[Auto-Tuner] Peak NPS      | " << std::left << std::setw(18) << "N/A" << " | " << static_cast<int>(max_nodes_per_second) << "\n";
         std::cout << "[Auto-Tuner] ==================================================\n";
 
-        uint8_t system_gpus = baseline_tuning_parameters.get_gpu_count();
-        if (system_gpus == 0)
-        {
-            system_gpus = 1;
-        }
-
-        uint8_t final_search_threads = best_search_threads * system_gpus;
-
-        if (final_search_threads < best_search_threads)
-        {
-            final_search_threads = 255;
-        }
-
         real_tuning_parameters.set_batch_size(best_batch_size);
-        real_tuning_parameters.set_search_threads(final_search_threads);
+        real_tuning_parameters.set_search_threads(best_search_threads);
         real_tuning_parameters.set_pipeline_target(best_pipeline_target);
         real_tuning_parameters.set_batch_timeout_ms(best_batch_timeout_ms);
 
@@ -253,7 +242,7 @@ namespace tuner
         if (cfg.is_open())
         {
             cfg << "[Tuning]\n";
-            cfg << "SearchThreads=" << static_cast<int>(final_search_threads) << "\n";
+            cfg << "SearchThreads=" << static_cast<int>(best_search_threads) << "\n";
             cfg << "BatchSize=" << best_batch_size << "\n";
             cfg << "PipelineTarget=" << static_cast<int>(best_pipeline_target) << "\n";
             cfg << "BatchTimeoutMs=" << best_batch_timeout_ms << "\n";
