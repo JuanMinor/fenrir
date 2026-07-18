@@ -23,6 +23,7 @@
 #include <random>
 #include <cstdlib>
 #include <bit>
+#include <cmath>
 #include <chrono>
 
 #ifdef _WIN32
@@ -98,6 +99,23 @@ namespace chess
                 adjudicate_material = parsed;
         }
         std::cout << "Material adjudication threshold: " << adjudicate_material << (adjudicate_material == 0 ? " (off)" : "") << "\n";
+
+        /* Temporal result discount: a position N plies before the game's end
+         * is labeled 0.5 + (result - 0.5) * gamma^N, so wins that arrive
+         * sooner carry a stronger target than distant ones. This de-saturates
+         * the value head (which otherwise rates every won position ~1.0,
+         * leaving the search no gradient to prefer mating over shuffling —
+         * observed as +material games never converting) and rewards faster
+         * finishing without removing the material signal that keeps games
+         * decisive. 1.0 disables it. */
+        double result_discount = 0.99;
+        if (const char *env_val = std::getenv("FENRIR_RESULT_DISCOUNT"))
+        {
+            double parsed = std::atof(env_val);
+            if (parsed > 0.0 && parsed <= 1.0)
+                result_discount = parsed;
+        }
+        std::cout << "Result discount (gamma): " << result_discount << (result_discount >= 1.0 ? " (off)" : "") << "\n";
 
         int games_in_batch = 0;
         std::string temp_filename;
@@ -245,9 +263,21 @@ namespace chess
 
             std::cout << "GPU " << gpu_id_ << " Game " << i << " finished in " << moves_played << " moves. Result: " << white_result << " (" << end_reason << ")\n";
 
-            for (const auto &pos : game_data)
+            const size_t recorded = game_data.size();
+            for (size_t idx = 0; idx < recorded; ++idx)
             {
+                const auto &pos = game_data[idx];
                 double res = (pos.color_to_move == 0) ? white_result : (1.0 - white_result);
+
+                /* Distance from the game's end in plies: the last recorded
+                 * position is closest to the result, the first is furthest. */
+                if (result_discount < 1.0)
+                {
+                    size_t plies_from_end = recorded - 1 - idx;
+                    double factor = std::pow(result_discount, static_cast<double>(plies_from_end));
+                    res = 0.5 + (res - 0.5) * factor;
+                }
+
                 batch_out << "{\"fen\":\"" << pos.fen << "\",\"result\":" << res << ",\"policy\":{";
                 bool first = true;
                 for (const auto &p : pos.policy)
