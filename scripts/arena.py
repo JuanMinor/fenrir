@@ -112,6 +112,7 @@ def main():
     parser.add_argument("--max-plies", type=int, default=400, help="draw adjudication cap")
     parser.add_argument("--random-plies", type=int, default=4, help="shared random opening plies per pair")
     parser.add_argument("--seed", type=int, default=0, help="opening seed base")
+    parser.add_argument("--pgn", help="append played games to this PGN file (review in any chess GUI)")
     args = parser.parse_args()
 
     binary = os.path.abspath(args.binary)
@@ -152,6 +153,15 @@ def main():
                 a_material = material_balance(final_board) * (1 if a_is_white else -1)
                 material_sum += a_material
                 game_no = pair * 2 + (1 if a_is_white else 2)
+                if args.pgn:
+                    import chess.pgn
+                    game = chess.pgn.Game.from_board(final_board)
+                    game.headers["Event"] = "Fenrir arena"
+                    game.headers["White"] = "A" if a_is_white else "B"
+                    game.headers["Black"] = "B" if a_is_white else "A"
+                    game.headers["Result"] = "1-0" if white_result == 1.0 else "0-1" if white_result == 0.0 else "1/2-1/2"
+                    with open(args.pgn, "a") as pgn_file:
+                        print(game, file=pgn_file, end="\n\n")
                 print(f"game {game_no:3d}: A as {'white' if a_is_white else 'black'} -> "
                       f"{'A wins' if a_result == 1.0 else 'B wins' if a_result == 0.0 else 'draw':7s}"
                       f"  final material A{a_material:+3d}   [A {wins_a} / D {draws} / B {wins_b}]")
