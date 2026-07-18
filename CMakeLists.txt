@@ -129,6 +129,13 @@ target_compile_definitions(fenrir_core PRIVATE
     FENRIR_VERSION="${FENRIR_VERSION}"
 )
 
+# MSVC deprecates std::getenv and other C-library calls in favor of _s
+# variants; our usage is safe (immediate read into a local), so silence
+# the proprietary C4996 nags that /WX would otherwise make fatal.
+if(MSVC)
+    target_compile_definitions(fenrir_core PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif()
+
 target_compile_options(fenrir_core PRIVATE ${COMMON_WARNING_FLAGS})
 target_include_directories(fenrir_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}

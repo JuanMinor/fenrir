@@ -24,6 +24,11 @@
 #include <algorithm>
 #ifdef _WIN32
 #define NOMINMAX
+/* logger.h defines an ERROR() macro; wingdi.h (pulled in transitively by
+ * the DirectML header) defines ERROR too, which is a fatal C4005 under
+ * /WX. NOGDI excludes the GDI section of wingdi.h — DirectML/D3D12 don't
+ * need it — leaving the logger macro intact. */
+#define NOGDI
 #include <dml_provider_factory.h>
 #endif
 
