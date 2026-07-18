@@ -44,8 +44,9 @@ REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 # untrained one.
 PROBE_POSITIONS = [
     ("start position (expect value ~0)", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"),
-    ("white +4Q, white to move (expect >> 0)", "k7/8/8/8/8/8/8/QQQQK3 w - - 0 1"),
-    ("white +4Q, black to move (expect << 0)", "k7/8/8/8/8/8/8/QQQQK3 b - - 0 1"),
+    ("white +Q, white to move (expect >> 0)", "4k3/pppppppp/8/8/8/8/PPPPPPPP/3QK3 w - - 0 1"),
+    ("white +Q, black to move (expect << 0)", "4k3/pppppppp/8/8/8/8/PPPPPPPP/3QK3 b - - 0 1"),
+    ("black +Q, white to move (expect << 0)", "3qk3/pppppppp/8/8/8/8/PPPPPPPP/4K3 w - - 0 1"),
     ("white +1R midgame, white to move (expect > 0)", "1k1r4/pp3ppp/8/8/8/8/PP3PPP/1K1R3R w - - 0 1"),
     ("white +1N, white to move (expect > 0)", "1k6/pp3ppp/8/8/8/5N2/PP3PPP/1K6 w - - 0 1"),
     ("mate in 1 available (back rank)", "6k1/5ppp/8/8/8/8/5PPP/R5K1 w - - 0 1"),
@@ -290,10 +291,14 @@ def report_parameters(state_dict, all_tensors):
     print("health flags:")
     flagged = False
     for name, shape, s in rows:
+        # running_mean/running_var are activation statistics, not weights;
+        # in a ResNet their magnitude legitimately grows with depth, so the
+        # magnitude check would only produce false alarms on them.
+        is_buffer = name.endswith(("running_mean", "running_var"))
         if not math.isfinite(s["mean"]) or not math.isfinite(s["absmax"]):
             print(f"  !! {name}: contains NaN or Inf")
             flagged = True
-        elif s["absmax"] > 20.0:
+        elif not is_buffer and s["absmax"] > 20.0:
             print(f"  !  {name}: very large weight magnitude ({s['absmax']:.1f}) — possible instability")
             flagged = True
         elif s["near_zero"] > 0.9 and "num_batches" not in name:
@@ -455,6 +460,10 @@ def report_behavior(path):
 
             legal = [(m.uci(), logits[0][uci_to_index(m.uci(), turn)].item())
                      for m in board.legal_moves]
+            if not legal:
+                # Mate or stalemate: no distribution to summarize.
+                print(f"{label:<46}{value:>+9.4f}{'-':>9}{'-':>8}  (no legal moves)")
+                continue
             legal.sort(key=lambda x: -x[1])
             probs = torch.softmax(torch.tensor([v for _, v in legal]), dim=0)
             entropy = float(-(probs * probs.clamp_min(1e-12).log()).sum())
