@@ -268,9 +268,13 @@ namespace nn
                  * the search indifferent between mating and shuffling in
                  * won positions (observed: queen-up arena games wandering
                  * into the 50-move rule). A proven terminal must always
-                 * outbid an estimate. */
+                 * outbid an estimate — by MORE than PUCT's exploration
+                 * noise: a 0.005 margin measurably failed (tactics exam
+                 * missed mate-in-1s exactly where the head saturates to
+                 * 1.0000; U-term jitter at 800 sims is ~0.05), so the gap
+                 * must be on that order. */
                 double win_probability = (static_cast<double>(value_data[i]) + 1.0) / 2.0;
-                result.value = std::clamp(win_probability, 0.005, 0.995);
+                result.value = std::clamp(win_probability, 0.03, 0.97);
                 result.policy.assign(policy_data + i * policy_size, policy_data + (i + 1) * policy_size);
                 promises[i].set_value(result);
                 promise_set[i] = true;
