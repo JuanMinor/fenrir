@@ -71,8 +71,16 @@ namespace chess
         else if (time_left > 0)
         {
             allocated_time_ms = time_left / 30 + (increment * 3) / 4;
-            if (allocated_time_ms < 100)
-                allocated_time_ms = 100;
+
+            /* Never budget into the flag: after the search deadline the
+             * engine still pays for thread joins and in-flight NN batches
+             * (~100-300ms), so keep a reserve off the remaining clock and
+             * let the floor drop in scrambles instead of overspending. */
+            const int reserve_ms = 200;
+            if (allocated_time_ms > time_left - reserve_ms)
+                allocated_time_ms = time_left - reserve_ms;
+            if (allocated_time_ms < 50)
+                allocated_time_ms = 50;
         }
         else if (simulations != -1)
         {
