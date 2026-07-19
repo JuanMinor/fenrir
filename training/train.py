@@ -5,7 +5,7 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-from model import AlphaZeroNet
+from model import AlphaZeroNet, infer_value_channels
 
 # Map algebraic moves to AlphaZero 4672-channel actions
 # Takes the active turn side ('w' or 'b') to properly map string castling text
@@ -211,14 +211,23 @@ def train():
 
     print(f"Using device: {device}")
 
-    model = AlphaZeroNet().to(device)
+    # Build the model to match the checkpoint's value-head width so training
+    # resumes across a head migration; VALUE_CHANNELS sets it for a fresh
+    # start (3 = the width everything has been trained with so far).
+    checkpoint_path = "onnx/fenrir.pth"
+    checkpoint = None
+    if os.path.exists(checkpoint_path):
+        checkpoint = torch.load(checkpoint_path, weights_only=True)
+        value_channels = infer_value_channels(checkpoint)
+    else:
+        value_channels = int(os.environ.get("VALUE_CHANNELS", "3"))
+
+    model = AlphaZeroNet(value_channels=value_channels).to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
-    # Check for PyTorch checkpoint to resume training
-    checkpoint_path = "onnx/fenrir.pth"
-    if os.path.exists(checkpoint_path):
-        print(f"Loading existing weights from {checkpoint_path}...")
-        model.load_state_dict(torch.load(checkpoint_path, weights_only=True))
+    if checkpoint is not None:
+        print(f"Loading existing weights from {checkpoint_path} (value head width {value_channels})...")
+        model.load_state_dict(checkpoint)
 
     # Path logic mirroring C++ output
     data_dir = "data/selfplay/"

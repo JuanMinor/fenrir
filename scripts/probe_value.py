@@ -16,7 +16,7 @@ import sys
 import torch
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "training"))
-from model import AlphaZeroNet  # noqa: E402
+from model import AlphaZeroNet, infer_value_channels  # noqa: E402
 from train import ChessDataset  # noqa: E402
 
 POSITIONS = [
@@ -37,8 +37,9 @@ def main():
 
     models = []
     for path in sys.argv[1:]:
-        model = AlphaZeroNet()
-        model.load_state_dict(torch.load(path, map_location="cpu", weights_only=True))
+        state = torch.load(path, map_location="cpu", weights_only=True)
+        model = AlphaZeroNet(value_channels=infer_value_channels(state))
+        model.load_state_dict(state)
         model.eval()
         models.append((os.path.basename(path), model))
 

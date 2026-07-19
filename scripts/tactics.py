@@ -74,11 +74,12 @@ def run_intuition_mode(pth_path):
     import torch
 
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "training"))
-    from model import AlphaZeroNet
+    from model import AlphaZeroNet, infer_value_channels
     from train import ChessDataset, uci_to_index
 
-    net = AlphaZeroNet()
-    net.load_state_dict(torch.load(pth_path, map_location="cpu", weights_only=True))
+    state = torch.load(pth_path, map_location="cpu", weights_only=True)
+    net = AlphaZeroNet(value_channels=infer_value_channels(state))
+    net.load_state_dict(state)
     net.eval()
     encoder = ChessDataset("__no_data_dir__")
 

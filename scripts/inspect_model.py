@@ -435,13 +435,14 @@ def report_behavior(path):
     import chess
 
     sys.path.insert(0, os.path.join(REPO_ROOT, "training"))
-    from model import AlphaZeroNet
+    from model import AlphaZeroNet, infer_value_channels
     from train import ChessDataset, uci_to_index
 
     section("BEHAVIORAL PROBE  (network output, no search)")
 
-    net = AlphaZeroNet()
-    net.load_state_dict(torch.load(path, map_location="cpu", weights_only=True))
+    state = torch.load(path, map_location="cpu", weights_only=True)
+    net = AlphaZeroNet(value_channels=infer_value_channels(state))
+    net.load_state_dict(state)
     net.eval()
     encoder = ChessDataset("__no_data_dir__")
 
