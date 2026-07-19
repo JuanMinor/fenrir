@@ -38,6 +38,7 @@ import random
 import shutil
 import sys
 import tempfile
+from collections import Counter
 
 import chess
 import chess.engine
@@ -78,7 +79,12 @@ def material_balance(board):
 
 
 def play_game(white, black, opening_board, nodes, max_plies):
-    """Returns (white_result, final_board); result 1.0/0.0/0.5."""
+    """Returns (white_result, final_board, termination); result 1.0/0.0/0.5.
+
+    termination distinguishes a real checkmate from a technical win
+    (forfeit) and from each drawing rule, so "did it actually mate?" is
+    answerable from the match output.
+    """
     board = opening_board.copy()
     limit = chess.engine.Limit(nodes=nodes)
     while not board.is_game_over(claim_draw=True) and board.ply() < max_plies:
@@ -89,17 +95,18 @@ def play_game(white, black, opening_board, nodes, max_plies):
             # Engine produced an illegal/null move in a live position:
             # forfeit for the side to move.
             print(f"  engine error ({e}); forfeit for {'white' if board.turn else 'black'}")
-            return (0.0 if board.turn == chess.WHITE else 1.0), board
+            return (0.0 if board.turn == chess.WHITE else 1.0), board, "forfeit"
         if result.move is None or result.move not in board.legal_moves:
-            return (0.0 if board.turn == chess.WHITE else 1.0), board
+            return (0.0 if board.turn == chess.WHITE else 1.0), board, "forfeit"
         board.push(result.move)
 
     outcome = board.outcome(claim_draw=True)
     if outcome is None:
-        return 0.5, board  # max-plies adjudication
+        return 0.5, board, "ply-cap"
+    reason = outcome.termination.name.lower().replace("_", "-")
     if outcome.winner is None:
-        return 0.5, board
-    return (1.0 if outcome.winner == chess.WHITE else 0.0), board
+        return 0.5, board, reason
+    return (1.0 if outcome.winner == chess.WHITE else 0.0), board, reason
 
 
 def main():
@@ -134,12 +141,15 @@ def main():
     score_a = 0.0
     wins_a = draws = wins_b = 0
     material_sum = 0
+    terminations = Counter()
     try:
         for pair in range(pairs):
             opening = random_opening(args.random_plies, args.seed + pair)
             for a_is_white in (True, False):
                 white, black = (engine_a, engine_b) if a_is_white else (engine_b, engine_a)
-                white_result, final_board = play_game(white, black, opening, args.nodes, args.max_plies)
+                white_result, final_board, termination = play_game(
+                    white, black, opening, args.nodes, args.max_plies)
+                terminations[termination] += 1
                 a_result = white_result if a_is_white else 1.0 - white_result
                 score_a += a_result
                 if a_result == 1.0:
@@ -164,14 +174,23 @@ def main():
                         print(game, file=pgn_file, end="\n\n")
                 print(f"game {game_no:3d}: A as {'white' if a_is_white else 'black'} -> "
                       f"{'A wins' if a_result == 1.0 else 'B wins' if a_result == 0.0 else 'draw':7s}"
-                      f"  final material A{a_material:+3d}   [A {wins_a} / D {draws} / B {wins_b}]")
+                      f"  {termination:<18} material A{a_material:+3d}"
+                      f"   [A {wins_a} / D {draws} / B {wins_b}]")
     finally:
         engine_a.quit()
         engine_b.quit()
         shutil.rmtree(base_dir, ignore_errors=True)
 
     total = wins_a + draws + wins_b
+    print()
+    print("how games ended:")
+    for reason, count in terminations.most_common():
+        print(f"  {reason:<20}{count:>4}  ({100.0 * count / total:.0f}%)")
+    if terminations.get("forfeit"):
+        print("  !! forfeits are illegal/null engine moves, not chess wins — investigate")
     print(f"\naverage final material from A's perspective: {material_sum / total:+.1f}")
+    print("  (near 0 once games end decisively: material at a checkmate is incidental,")
+    print("   unlike an unconverted win that parks at +15)")
     pct = 100.0 * score_a / total
     # Two-sigma band on the score percentage, treating each game as a trial.
     p = score_a / total
