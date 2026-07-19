@@ -38,7 +38,7 @@ POSITIONS = [
     ("take the hanging queen, knight (w)", "k7/8/8/3q4/5N2/8/8/K7 w - - 0 1", ["f4d5"]),
     ("take the rook, not the pawn (w)", "k7/8/8/1r3p2/8/3B4/8/K7 w - - 0 1", ["d3b5"]),
     ("queen mate in 1 (b)", "3q2k1/5ppp/8/8/8/8/5PPP/6K1 b - - 0 1", ["d8d1"]),
-    ("rook mate in 1, cornered king (b)", "K7/PP6/8/8/8/8/8/k6r b - - 0 1", ["h1h8"]),
+    ("rook mate in 1, cornered king (b)", "k6r/8/8/8/8/8/PP6/K7 b - - 0 1", ["h8h1"]),
     ("take the hanging queen, rook (b)", "K7/8/8/3Q4/8/8/3r4/k7 b - - 0 1", ["d2d5"]),
 ]
 
