@@ -30,11 +30,9 @@ def infer_value_channels(state_dict, default=3):
 
 class AlphaZeroNet(nn.Module):
     def __init__(self, num_blocks=10, channels=256, value_channels=3):
-        """value_channels defaults to 3 — the width everything has been
-        trained with so far, so constructing AlphaZeroNet() is unchanged.
-        Widening it (e.g. 32) grows the value head's capacity to rank
-        degrees of winning; use scripts/migrate_value_head.py to carry
-        existing weights across the change."""
+        """value_channels sizes the value head. Checkpoints carry their own
+        width (see infer_value_channels), so tools load any of them; the
+        default only matters when starting from scratch."""
         super().__init__()
         # Input: 14 channels (12 pieces, 1 color, 1 castling rights), 8x8 board
         self.conv_input = nn.Conv2d(14, channels, kernel_size=3, padding=1, bias=False)
