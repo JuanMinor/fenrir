@@ -1,6 +1,7 @@
 import os
 import json
 import time
+import onnx
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
@@ -301,12 +302,30 @@ def train():
                           'policy': {0: 'batch_size'},
                           'value': {0: 'batch_size'}}
         )
-        while True:
-            try:
-                os.replace(onnx_tmp_path, onnx_path)
-                break
-            except PermissionError:
-                time.sleep(0.01)
+        # The engine builds its ONNX Runtime session from a memory buffer, so
+        # it cannot resolve external-data references — but PyTorch >= 2.9
+        # writes weights to a side-car .onnx.data by default, leaving a graph
+        # file of a few hundred KB that loads as nothing. Consolidate into one
+        # self-contained file BEFORE the atomic swap, so a model the engine
+        # cannot read never becomes the live one.
+        onnx.save_model(onnx.load(onnx_tmp_path), onnx_tmp_path, save_as_external_data=False)
+        sidecar = onnx_tmp_path + ".data"
+        if os.path.exists(sidecar):
+            os.remove(sidecar)
+
+        exported_mb = os.path.getsize(onnx_tmp_path) / (1024 * 1024)
+        if exported_mb < 10:
+            # Keep serving the previous model rather than a weightless one.
+            print(f"WARNING: ONNX export produced only {exported_mb:.1f} MB (weights missing); "
+                  f"keeping the previous {onnx_path}")
+            os.remove(onnx_tmp_path)
+        else:
+            while True:
+                try:
+                    os.replace(onnx_tmp_path, onnx_path)
+                    break
+                except PermissionError:
+                    time.sleep(0.01)
 
         # Save PyTorch checkpoint for resuming
         torch.save(model.state_dict(), "onnx/fenrir.pth")
