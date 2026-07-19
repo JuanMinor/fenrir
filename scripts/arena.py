@@ -41,6 +41,7 @@ import tempfile
 
 import chess
 import chess.engine
+import chess.pgn  # module level: a function-local import would shadow `chess`
 
 
 def make_engine_dir(base_dir, name, model_path, cfg_path):
@@ -154,7 +155,6 @@ def main():
                 material_sum += a_material
                 game_no = pair * 2 + (1 if a_is_white else 2)
                 if args.pgn:
-                    import chess.pgn
                     game = chess.pgn.Game.from_board(final_board)
                     game.headers["Event"] = "Fenrir arena"
                     game.headers["White"] = "A" if a_is_white else "B"
