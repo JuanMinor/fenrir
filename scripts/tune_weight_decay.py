@@ -92,10 +92,14 @@ def fen_to_tensor(fen):
     return tensor
 
 
-def make_batch(samples, batch_size, device):
-    batch = random.sample(samples, min(batch_size, len(samples)))
+def precompute_tensors(samples):
+    """Parse every sample's FEN/policy exactly once. The same finite pool
+    gets resampled thousands of times across steps x configs; paying the
+    python-chess parsing cost per-batch instead of once turns a one-time
+    cost into tens of millions of redundant re-parses -- slow enough on a
+    single CPU thread to leave the GPU sitting idle for the whole sweep."""
     tensors, policies, values = [], [], []
-    for sample in batch:
+    for sample in samples:
         tensors.append(fen_to_tensor(sample["fen"]))
         turn = sample["fen"].split(" ")[1]
         policy = torch.zeros(4672, dtype=torch.float32)
@@ -103,12 +107,19 @@ def make_batch(samples, batch_size, device):
             policy[uci_to_index(move, turn)] = prob
         policies.append(policy)
         values.append((sample["result"] * 2) - 1)
-    return (torch.stack(tensors).to(device),
-            torch.stack(policies).to(device),
-            torch.tensor(values, dtype=torch.float32).unsqueeze(1).to(device))
+    return (torch.stack(tensors),
+            torch.stack(policies),
+            torch.tensor(values, dtype=torch.float32).unsqueeze(1))
 
 
-def run_config(checkpoint_state, value_channels, samples, device, steps,
+def make_batch(precomputed, batch_size, device):
+    all_tensors, all_policies, all_values = precomputed
+    n = all_tensors.shape[0]
+    idx = torch.randint(0, n, (min(batch_size, n),))
+    return all_tensors[idx].to(device), all_policies[idx].to(device), all_values[idx].to(device)
+
+
+def run_config(checkpoint_state, value_channels, precomputed, device, steps,
                 weight_decay, lr_decay, log_every):
     torch.manual_seed(0)
     model = AlphaZeroNet(value_channels=value_channels).to(device)
@@ -120,7 +131,7 @@ def run_config(checkpoint_state, value_channels, samples, device, steps,
 
     trend = []
     for step in range(1, steps + 1):
-        tensors, policies, values = make_batch(samples, BATCH_SIZE, device)
+        tensors, policies, values = make_batch(precomputed, BATCH_SIZE, device)
         optimizer.zero_grad()
         pred_policies, pred_values = model(tensors)
         loss = F.cross_entropy(pred_policies, policies) + F.mse_loss(pred_values, values)
@@ -158,7 +169,10 @@ def main():
     print(f"starting policy_fc.weight absmax: {start_absmax:.3f}\n")
 
     samples = load_samples_readonly(args.data_dir, args.max_files)
-    print()
+    t0 = time.time()
+    precomputed = precompute_tensors(samples)
+    print(f"precomputed {precomputed[0].shape[0]} tensors once ({time.time() - t0:.0f}s) -- "
+          f"every config below reuses these instead of re-parsing FEN/policy per batch\n")
 
     results = {}
     for wd in args.weight_decay:
@@ -166,7 +180,7 @@ def main():
             label = f"wd={wd:g}" + (" +cosine_lr" if lr_decay else "")
             print(f"=== {label} ===")
             t0 = time.time()
-            trend = run_config(state, value_channels, samples, device, args.steps, wd, lr_decay, args.log_every)
+            trend = run_config(state, value_channels, precomputed, device, args.steps, wd, lr_decay, args.log_every)
             for step, absmax, loss in trend:
                 print(f"  step {step:>5}  absmax {absmax:>8.3f}  loss {loss:.4f}")
             print(f"  ({time.time() - t0:.0f}s)\n")
