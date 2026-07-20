@@ -95,7 +95,9 @@ def run_pth_check(fen, pth_path):
     print(f"\n{len(traps)} of {len(rows)} legal moves stalemate the opponent: {sorted(traps)}")
 
 
-def run_engine_check(fen, model_path, binary, cfg, node_counts):
+def run_engine_check(fens, model_path, binary, cfg, node_counts):
+    """fens: list of FEN strings. One engine process, reused across all of
+    them and all node counts -- much faster than relaunching per position."""
     base_dir = tempfile.mkdtemp(prefix="fenrir_diag_")
     work_dir = os.path.join(base_dir, "engine")
     os.makedirs(os.path.join(work_dir, "onnx"))
@@ -104,44 +106,65 @@ def run_engine_check(fen, model_path, binary, cfg, node_counts):
     if cfg and os.path.exists(cfg):
         shutil.copy(cfg, os.path.join(work_dir, "fenrir.cfg"))
 
-    board = chess.Board(fen)
-    traps = stalemating_moves(board)
-
     engine = chess.engine.SimpleEngine.popen_uci(os.path.abspath(binary), cwd=work_dir)
+    results = []
     try:
-        print(f"{'nodes':>8} {'played':>8}  verdict")
-        print("-" * 40)
-        for nodes in node_counts:
-            result = engine.play(board.copy(), chess.engine.Limit(nodes=nodes))
-            played = result.move.uci() if result.move else "none"
-            verdict = "STALEMATE TRAP" if played in traps else "safe"
-            print(f"{nodes:>8} {played:>8}  {verdict}")
+        header = f"{'#':>3} {'nodes':>8} {'played':>8}  verdict"
+        print(header)
+        print("-" * len(header))
+        for i, fen in enumerate(fens, 1):
+            board = chess.Board(fen)
+            traps = stalemating_moves(board)
+            for nodes in node_counts:
+                result = engine.play(board.copy(), chess.engine.Limit(nodes=nodes))
+                played = result.move.uci() if result.move else "none"
+                is_trap = played in traps
+                verdict = "STALEMATE TRAP" if is_trap else "safe"
+                print(f"{i:>3} {nodes:>8} {played:>8}  {verdict}")
+                results.append((i, fen, nodes, played, is_trap))
     finally:
         engine.quit()
         shutil.rmtree(base_dir, ignore_errors=True)
+    return results
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Diagnose one move at one position")
-    parser.add_argument("--fen", required=True)
-    parser.add_argument("--pth", help="raw value/policy dump over every legal move")
+    parser = argparse.ArgumentParser(description="Diagnose one or many positions")
+    parser.add_argument("--fen", help="single FEN")
+    parser.add_argument("--fen-file", help="file with one FEN per line, for batch testing")
+    parser.add_argument("--pth", help="raw value/policy dump over every legal move "
+                                       "(single --fen only)")
     parser.add_argument("--model", help="ONNX weights: run the real engine via UCI")
     parser.add_argument("--nodes", type=int, nargs="+", default=[800, 5000, 20000, 50000])
     parser.add_argument("--binary", default="bin/fenrir")
     parser.add_argument("--cfg", default="fenrir.cfg")
     args = parser.parse_args()
 
+    if not args.fen and not args.fen_file:
+        sys.exit("pass --fen or --fen-file")
     if not args.pth and not args.model:
         sys.exit("pass --pth and/or --model")
 
+    fens = [args.fen] if args.fen else [
+        line.strip() for line in open(args.fen_file) if line.strip() and not line.startswith("#")
+    ]
+
     if args.pth:
+        if len(fens) > 1:
+            sys.exit("--pth is single-position only; use --fen, not --fen-file, with it")
         print("=== raw policy/value over every legal move ===")
-        run_pth_check(args.fen, args.pth)
+        run_pth_check(fens[0], args.pth)
         print()
 
     if args.model:
-        print("=== engine move choice vs node budget ===")
-        run_engine_check(args.fen, args.model, args.binary, args.cfg, args.nodes)
+        print(f"=== engine move choice vs node budget ({len(fens)} position(s)) ===")
+        results = run_engine_check(fens, args.model, args.binary, args.cfg, args.nodes)
+        if len(fens) > 1:
+            traps_hit = sum(1 for *_, is_trap in results if is_trap)
+            positions_ever_trapped = len({i for i, *_, is_trap in results if is_trap})
+            print(f"\n{traps_hit} of {len(results)} (position, node-count) pairs still walked "
+                  f"into a trap; {positions_ever_trapped} of {len(fens)} positions failed at "
+                  f"at least one tested node count")
 
 
 if __name__ == "__main__":
