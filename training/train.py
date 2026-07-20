@@ -224,7 +224,13 @@ def train():
         value_channels = int(os.environ.get("VALUE_CHANNELS", "3"))
 
     model = AlphaZeroNet(value_channels=value_channels).to(device)
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
+    # Plain Adam with no weight_decay and no gradient clipping let parameter
+    # magnitudes drift upward for the run's whole ~338M-sample history (see
+    # policy_fc.weight's absmax: 33 -> 45 across five checks, value head
+    # weight norm 0.30 -> 1.00) until basic value calibration broke (a
+    # position up a whole queen scored negative). AdamW's weight_decay pulls
+    # magnitudes back down every step instead of leaving them unconstrained.
+    optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
 
     if checkpoint is not None:
         print(f"Loading existing weights from {checkpoint_path} (value head width {value_channels})...")
@@ -273,6 +279,7 @@ def train():
 
             loss = policy_loss + value_loss
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
             optimizer.step()
 
             total_loss += loss.item()
