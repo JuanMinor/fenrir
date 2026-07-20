@@ -228,9 +228,13 @@ def train():
     # magnitudes drift upward for the run's whole ~338M-sample history (see
     # policy_fc.weight's absmax: 33 -> 45 across five checks, value head
     # weight norm 0.30 -> 1.00) until basic value calibration broke (a
-    # position up a whole queen scored negative). AdamW's weight_decay pulls
-    # magnitudes back down every step instead of leaving them unconstrained.
-    optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=1e-4)
+    # position up a whole queen scored negative). 1e-4 was tried first and
+    # confirmed (via scripts/tune_weight_decay.py against real archived data)
+    # too weak at this lr to net decay at all -- breakeven is ~0.0022. 0.03
+    # gives a ~33k-step time constant (vs ~100k at the 0.01 default), pulling
+    # absmax down within a realistic training run, with no measured loss cost
+    # up to 0.1 in the offline sweep.
+    optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.03)
 
     if checkpoint is not None:
         print(f"Loading existing weights from {checkpoint_path} (value head width {value_channels})...")
