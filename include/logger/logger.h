@@ -29,28 +29,47 @@
 
 namespace logger
 {
-	class Logger
-	{
-	private:
-		mutable std::mutex log_mutex;
-		Logger();
-		~Logger();
+    class Logger
+    {
+    private:
+        /**
+         * @brief Private constructor to enforce the Singleton pattern.
+         */
+        Logger();
 
-	public:
-		static Logger &get_instance();
+        /**
+         * @brief Private destructor for the Singleton instance.
+         */
+        ~Logger();
 
-		Logger(const Logger &) = delete;
-		Logger &operator=(const Logger &) = delete;
-		Logger(Logger &&) = delete;
-		Logger &operator=(Logger &&) = delete;
+        mutable std::mutex log_mutex;
 
-		void log(const std::string &message, const char *file, uint32_t line_number, LEVEL level) const;
-	};
+    public:
+        Logger(const Logger &) = delete;
+        Logger(Logger &&) = delete;
+        Logger &operator=(const Logger &) = delete;
+        Logger &operator=(Logger &&) = delete;
 
+        /**
+         * @brief Retrieves the single global instance of the Logger.
+         * @returns Reference to the Logger instance.
+         */
+        static Logger &get_instance();
+
+        /**
+         * @brief Writes a formatted log entry to the log file.
+         * @param message The log message string.
+         * @param file The name of the file where the log is generated.
+         * @param line_number The line number in the source file.
+         * @param level The severity level of the log message.
+         */
+        void log(const std::string &message, const char *file, uint32_t line_number, LEVEL level) const;
+    };
+
+#define CRITICAL(MESSAGE) Logger::get_instance().log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::CRITICAL)
 #define DEBUG(MESSAGE) Logger::get_instance().log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::DEBUG)
+#define ERROR(MESSAGE) Logger::get_instance().log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::ERROR)
 #define INFO(MESSAGE) Logger::get_instance().log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::INFO)
 #define WARN(MESSAGE) Logger::get_instance().log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::WARN)
-#define ERROR(MESSAGE) Logger::get_instance().log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::ERROR)
-#define CRITICAL(MESSAGE) Logger::get_instance().log(MESSAGE, __FILE__, __LINE__, logger::LEVEL::CRITICAL)
 
 }

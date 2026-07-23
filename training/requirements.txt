@@ -1,4 +1,12 @@
+# Training pipeline dependencies (training/train.py, training/model.py)
 torch>=2.0.0
 numpy
+# train.py `import chess` = the python-chess package (FEN validation/encoding)
+python-chess>=1.9.0
+# torch.onnx.export toolchain
 onnx
 onnxscript
+
+# Optional, Windows-only GPU backend probed at runtime by train.py;
+# not needed on Linux/CUDA pods:
+# torch-directml

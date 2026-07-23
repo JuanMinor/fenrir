@@ -1,37 +1,65 @@
+/*
+ *   Copyright (c) 2026 Juan Minor
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation, either version 3 of the License, or
+ *   (at your option) any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "include/abi/c_api.h"
 #include "include/engine/engine.h"
 #include <string>
 #include <cstring>
 #include <stdexcept>
 
-extern "C" {
-    void* fenrir_create() {
-        return new fenrir::Engine();
+extern "C"
+{
+    /**
+     * @brief Create a new Fenrir chess engine instance.
+     * @returns Opaque pointer to engine (void*). Must be freed with fenrir_destroy().
+     */
+    void *fenrir_create()
+    {
+        return new chess::Engine();
     }
 
-    void fenrir_destroy(void* engine) {
-        delete static_cast<fenrir::Engine*>(engine);
+    /**
+     * @brief Destroy a Fenrir chess engine instance and free its resources.
+     * @param engine Engine pointer returned by fenrir_create().
+     */
+    void fenrir_destroy(void *engine)
+    {
+        delete static_cast<chess::Engine *>(engine);
     }
 
-    bool fenrir_make_move(void* engine, const char* from, const char* to) {
-        auto* eng = static_cast<fenrir::Engine*>(engine);
-        try {
-            eng->make_move(fenrir::Move(from, to));
-            return true;
-        } catch (const std::invalid_argument&) {
-            return false;
-        }
-    }
-
-    int fenrir_generate_all_moves(void* engine, char* out_buffer, size_t max_len) {
-        auto* eng = static_cast<fenrir::Engine*>(engine);
+    /**
+     * @brief Generate all legal moves for the side to move.
+     * @param engine Engine pointer.
+     * @param out_buffer Buffer to write move strings (format: "e2e4 e7e5 ...").
+     * @param max_len Maximum buffer size in bytes.
+     * @returns Number of characters written, or -1 on error.
+     */
+    int fenrir_generate_all_moves(void *engine, char *out_buffer, size_t max_len)
+    {
+        auto *eng = static_cast<chess::Engine *>(engine);
         auto moves = eng->generate_all_moves();
         std::string result = "";
-        for (const auto& m : moves) {
+        for (const auto &m : moves)
+        {
             result += m.to_uci_notation() + ",";
         }
-        if (!result.empty()) {
-            result.pop_back(); // remove last comma
+        if (!result.empty())
+        {
+            result.pop_back();
         }
 #ifdef _MSC_VER
         strncpy_s(out_buffer, max_len, result.c_str(), max_len - 1);
@@ -42,8 +70,15 @@ extern "C" {
         return static_cast<int>(moves.size());
     }
 
-    void fenrir_get_fen(void* engine, char* out_buffer, size_t max_len) {
-        auto* eng = static_cast<fenrir::Engine*>(engine);
+    /**
+     * @brief Get FEN notation of current board position.
+     * @param engine Engine pointer.
+     * @param out_buffer Buffer to write FEN string.
+     * @param max_len Maximum buffer size in bytes.
+     */
+    void fenrir_get_fen(void *engine, char *out_buffer, size_t max_len)
+    {
+        auto *eng = static_cast<chess::Engine *>(engine);
         std::string fen = eng->get_fen();
 #ifdef _MSC_VER
         strncpy_s(out_buffer, max_len, fen.c_str(), max_len - 1);
@@ -53,8 +88,34 @@ extern "C" {
 #endif
     }
 
-    void fenrir_print_board(void* engine) {
-        auto* eng = static_cast<fenrir::Engine*>(engine);
+    /**
+     * @brief Make a move on the board.
+     * @param engine Engine pointer.
+     * @param from Source square in algebraic notation (e.g., "e2").
+     * @param to Destination square in algebraic notation (e.g., "e4").
+     * @returns True if move was legal and applied, false otherwise.
+     */
+    bool fenrir_make_move(void *engine, const char *from, const char *to)
+    {
+        auto *eng = static_cast<chess::Engine *>(engine);
+        try
+        {
+            eng->make_move(chess::Move(from, to));
+            return true;
+        }
+        catch (const std::invalid_argument &)
+        {
+            return false;
+        }
+    }
+
+    /**
+     * @brief Print the current board state to stdout.
+     * @param engine Engine pointer.
+     */
+    void fenrir_print_board(void *engine)
+    {
+        auto *eng = static_cast<chess::Engine *>(engine);
         eng->print_board();
     }
 }

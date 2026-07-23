@@ -24,7 +24,6 @@
 #include <intrin.h>
 #endif
 
-/* Export dll symbols */
 #if defined(_WIN32) || defined(_WIN64)
 #ifdef FENRIR_BUILD_DLL
 #define FENRIR_API __declspec(dllexport)
@@ -37,114 +36,103 @@
 #define FENRIR_API
 #endif
 
-namespace color
+namespace chess
 {
-	enum class Color : uint8_t
-	{
-		RESET = 0,
-		FG_BLACK = 30,
-		BG_BLACK = 40,
-		FG_RED = 31,
-		BG_RED = 41,
-		FG_GREEN = 32,
-		BG_GREEN = 42,
-		FG_YELLOW = 33,
-		BG_YELLOW = 43,
-		FG_BLUE = 34,
-		BG_BLUE = 44,
-		FG_MAGENTA = 35,
-		BG_MAGENTA = 45,
-		FG_CYAN = 36,
-		BG_CYAN = 46,
-		FG_WHITE = 37,
-		BG_WHITE = 47
-	};
-}
+    /**
+     * @brief Performs a forward bitscan to find the index of the least significant set bit (LSB).
+     * @param bb The 64-bit bitboard to scan.
+     * @returns The 0-indexed position of the least significant set bit.
+     */
+    inline uint8_t bitscan_forward(uint64_t bb)
+    {
+#if defined(_MSC_VER)
+        unsigned long index;
+        _BitScanForward64(&index, bb);
+        return static_cast<uint8_t>(index);
+#else
+        return static_cast<uint8_t>(__builtin_ctzll(bb));
+#endif
+    }
 
-namespace fenrir
-{
+    /**
+     * @brief Performs a reverse bitscan to find the index of the most significant set bit (MSB).
+     * @param bb The 64-bit bitboard to scan.
+     * @returns The 0-indexed position of the most significant set bit.
+     */
+    inline uint8_t bitscan_reverse(uint64_t bb)
+    {
+#if defined(_MSC_VER)
+        unsigned long index;
+        _BitScanReverse64(&index, bb);
+        return static_cast<uint8_t>(index);
+#else
+        return static_cast<uint8_t>(63 - __builtin_clzll(bb));
+#endif
+    }
+
+    constexpr uint8_t BLACK = 1;
+
+    constexpr int BOARD_MAX_LEFT = 0;
+    constexpr int BOARD_MAX_RIGHT = 7;
+    constexpr int BOARD_SIZE = 8;
+
 #ifdef NDEBUG
-	constexpr bool DEBUG = false;
+    constexpr bool DEBUG = false;
 #else
-	constexpr bool DEBUG = true;
+    constexpr bool DEBUG = true;
 #endif
 
-	constexpr int BOARD_SIZE = 8;
-	constexpr int BOARD_MAX_LEFT = 0;
-	constexpr int BOARD_MAX_RIGHT = 7;
+    enum class MoveType : uint8_t
+    {
+        CAPTURE,
+        CASTLE_KINGSIDE,
+        CASTLE_QUEENSIDE,
+        EN_PASSANT,
+        NORMAL,
+        PROMOTION
+    };
 
-	constexpr uint8_t WHITE = 0;
-	constexpr uint8_t BLACK = 1;
-
-
-
-	enum class MoveType : uint8_t
-	{
-		NORMAL,
-		CAPTURE,
-		EN_PASSANT,
-		CASTLE_KINGSIDE,
-		CASTLE_QUEENSIDE,
-		PROMOTION
-	};
-
-	// Cross-platform bitscan utilities
-	inline uint8_t bitscan_forward(uint64_t bb) {
-#if defined(_MSC_VER)
-		unsigned long index;
-		_BitScanForward64(&index, bb);
-		return static_cast<uint8_t>(index);
-#else
-		return static_cast<uint8_t>(__builtin_ctzll(bb));
-#endif
-	}
-
-	inline uint8_t bitscan_reverse(uint64_t bb) {
-#if defined(_MSC_VER)
-		unsigned long index;
-		_BitScanReverse64(&index, bb);
-		return static_cast<uint8_t>(index);
-#else
-		return static_cast<uint8_t>(63 - __builtin_clzll(bb));
-#endif
-	}
+    constexpr uint8_t WHITE = 0;
 }
 
 namespace io
 {
-	constexpr const char *PGN_FILE = "pgn/fenrir.pgn";
-	constexpr const char *PGN_FILE_STORE = "pgn/fenrir.store.txt";
+    constexpr const char *PGN_FILE = "pgn/fenrir.pgn";
+    constexpr const char *PGN_FILE_STORE = "pgn/fenrir.store.txt";
 }
 
 namespace logger
 {
-	constexpr const char *LOG_FILE = "logs/fenrir.log";
-	constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024;
+    enum class LEVEL : uint8_t
+    {
+        CRITICAL,
+        DEBUG,
+        ERROR,
+        INFO,
+        WARN
+    };
 
-	enum class LEVEL : uint8_t
-	{
-		DEBUG,
-		INFO,
-		WARN,
-		ERROR,
-		CRITICAL
-	};
+    constexpr const char *LOG_FILE = "logs/fenrir.log";
+    constexpr const long MAX_LOG_SIZE = 5 * 1024 * 1024;
 }
 
 namespace test
 {
-	inline const char *get_ci()
-	{
+    /**
+     * @brief Retrieves the value of the "CI" environment variable.
+     * @returns A pointer to the CI environment variable's value string, or nullptr if not defined.
+     */
+    inline const char *get_ci()
+    {
 #ifdef _MSC_VER
-		char* val = nullptr;
-		size_t len = 0;
-		_dupenv_s(&val, &len, "CI");
-		static const char* CI = val;
-		return CI;
+        char *val = nullptr;
+        size_t len = 0;
+        _dupenv_s(&val, &len, "CI");
+        static const char *CI = val;
+        return CI;
 #else
-		static const char *CI = getenv("CI");
-		return CI;
+        static const char *CI = getenv("CI");
+        return CI;
 #endif
-	}
+    }
 }
-

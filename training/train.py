@@ -1,11 +1,27 @@
+#   Copyright (c) 2026 Juan Minor
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 import os
 import json
 import time
+import onnx
 import torch
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
-from model import AlphaZeroNet
+from model import AlphaZeroNet, infer_value_channels
 
 # Map algebraic moves to AlphaZero 4672-channel actions
 # Takes the active turn side ('w' or 'b') to properly map string castling text
@@ -90,6 +106,12 @@ class ChessDataset(Dataset):
         self.data_dir = data_dir
         self.samples = []
         self.buffer = self.samples
+        # Archive every Nth consumed file (instead of deleting) so
+        # tools/data_health.py can analyze policy quality over the whole
+        # run; a 1-in-20 sample keeps disk use small. 0 disables archiving.
+        self.archive_every = int(os.environ.get("ARCHIVE_EVERY", "20"))
+        self.archive_dir = os.path.join(data_dir, "archive")
+        self.consumed_count = 0
         self.load_data()
 
     def update(self):
@@ -113,7 +135,12 @@ class ChessDataset(Dataset):
                                 self.buffer.append(data)
                             except (json.JSONDecodeError, ValueError):
                                 pass # Skip partially flushed lines or corrupted FENs
-                    os.remove(filepath)
+                    self.consumed_count += 1
+                    if self.archive_every > 0 and self.consumed_count % self.archive_every == 0:
+                        os.makedirs(self.archive_dir, exist_ok=True)
+                        os.replace(filepath, os.path.join(self.archive_dir, filename))
+                    else:
+                        os.remove(filepath)
                     new_files_count += 1
                 except Exception as e:
                     print(f"Error reading {filename}: {e}")
@@ -122,9 +149,10 @@ class ChessDataset(Dataset):
                     except:
                         pass
 
-        # Keep only the latest 100,000 samples (replay buffer)
-        # Keep only the latest 100,000 samples (replay buffer)
-        buffer_size_limit = 500000
+        # Replay buffer: keep the freshest N positions. At production rates
+        # (~20k games/hr x ~30 positions) 2M spans roughly a 3-hour window;
+        # 500k was only ~45 minutes, too short a memory to train against.
+        buffer_size_limit = 2000000
         if len(self.samples) > buffer_size_limit:
             self.samples = self.samples[-buffer_size_limit:]
             self.buffer = self.samples  # FIXED: Keep the reference pointer synchronized!
@@ -199,14 +227,33 @@ def train():
 
     print(f"Using device: {device}")
 
-    model = AlphaZeroNet().to(device)
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-    # Check for PyTorch checkpoint to resume training
+    # Build the model to match the checkpoint's value-head width so training
+    # resumes across a head migration; VALUE_CHANNELS sets it for a fresh
+    # start (3 = the width everything has been trained with so far).
     checkpoint_path = "onnx/fenrir.pth"
+    checkpoint = None
     if os.path.exists(checkpoint_path):
-        print(f"Loading existing weights from {checkpoint_path}...")
-        model.load_state_dict(torch.load(checkpoint_path, weights_only=True))
+        checkpoint = torch.load(checkpoint_path, weights_only=True)
+        value_channels = infer_value_channels(checkpoint)
+    else:
+        value_channels = int(os.environ.get("VALUE_CHANNELS", "3"))
+
+    model = AlphaZeroNet(value_channels=value_channels).to(device)
+    # Plain Adam with no weight_decay and no gradient clipping let parameter
+    # magnitudes drift upward for the run's whole ~338M-sample history (see
+    # policy_fc.weight's absmax: 33 -> 45 across five checks, value head
+    # weight norm 0.30 -> 1.00) until basic value calibration broke (a
+    # position up a whole queen scored negative). 1e-4 was tried first and
+    # confirmed (via tools/tune_weight_decay.py against real archived data)
+    # too weak at this lr to net decay at all -- breakeven is ~0.0022. 0.03
+    # gives a ~33k-step time constant (vs ~100k at the 0.01 default), pulling
+    # absmax down within a realistic training run, with no measured loss cost
+    # up to 0.1 in the offline sweep.
+    optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.03)
+
+    if checkpoint is not None:
+        print(f"Loading existing weights from {checkpoint_path} (value head width {value_channels})...")
+        model.load_state_dict(checkpoint)
 
     # Path logic mirroring C++ output
     data_dir = "data/selfplay/"
@@ -214,6 +261,12 @@ def train():
     print(f"Watching directory for data: {data_dir}")
 
     dataset = ChessDataset(data_dir)
+
+    # Every export makes every self-play worker hot-reload the ~86MB ONNX
+    # session; exporting after each cycle (observed: every ~8.5s under load)
+    # taxes the whole fleet. Gate exports to a minimum interval instead.
+    export_interval_seconds = float(os.environ.get("EXPORT_INTERVAL_SECONDS", "60"))
+    last_export_time = 0.0
 
     while True:
         new_files = dataset.update()
@@ -245,6 +298,7 @@ def train():
 
             loss = policy_loss + value_loss
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
             optimizer.step()
 
             total_loss += loss.item()
@@ -252,6 +306,10 @@ def train():
 
         avg_loss = total_loss / max(1, batches_processed)
         print(f"Training cycle finished. Loss: {avg_loss:.4f} (over {batches_processed} batches)")
+
+        if time.time() - last_export_time < export_interval_seconds:
+            continue
+        last_export_time = time.time()
 
         # Export back to ONNX for C++ Engine atomically
         dummy_input = torch.randn(1, 14, 8, 8, device=device)
@@ -270,12 +328,30 @@ def train():
                           'policy': {0: 'batch_size'},
                           'value': {0: 'batch_size'}}
         )
-        while True:
-            try:
-                os.replace(onnx_tmp_path, onnx_path)
-                break
-            except PermissionError:
-                time.sleep(0.01)
+        # The engine builds its ONNX Runtime session from a memory buffer, so
+        # it cannot resolve external-data references — but PyTorch >= 2.9
+        # writes weights to a side-car .onnx.data by default, leaving a graph
+        # file of a few hundred KB that loads as nothing. Consolidate into one
+        # self-contained file BEFORE the atomic swap, so a model the engine
+        # cannot read never becomes the live one.
+        onnx.save_model(onnx.load(onnx_tmp_path), onnx_tmp_path, save_as_external_data=False)
+        sidecar = onnx_tmp_path + ".data"
+        if os.path.exists(sidecar):
+            os.remove(sidecar)
+
+        exported_mb = os.path.getsize(onnx_tmp_path) / (1024 * 1024)
+        if exported_mb < 10:
+            # Keep serving the previous model rather than a weightless one.
+            print(f"WARNING: ONNX export produced only {exported_mb:.1f} MB (weights missing); "
+                  f"keeping the previous {onnx_path}")
+            os.remove(onnx_tmp_path)
+        else:
+            while True:
+                try:
+                    os.replace(onnx_tmp_path, onnx_path)
+                    break
+                except PermissionError:
+                    time.sleep(0.01)
 
         # Save PyTorch checkpoint for resuming
         torch.save(model.state_dict(), "onnx/fenrir.pth")

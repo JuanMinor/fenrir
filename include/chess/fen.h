@@ -1,5 +1,5 @@
 /*
- *   Copyright (c) 2025 Juan Minor
+ *   Copyright (c) 2026 Juan Minor
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,43 +26,105 @@
 #include "include/logger/logger.h"
 #include "include/utils/utils.h"
 
-namespace fenrir
+namespace chess
 {
-	class Fen
-	{
-	private:
-		std::string placement;
-		std::string castling;
-		std::string en_passant;
-		uint8_t color;
-		uint32_t half_move_clock;
-		uint32_t full_moves;
+    class Fen
+    {
+    private:
+        std::string placement;
+        std::string castling;
+        std::string en_passant;
+        uint8_t color;
+        uint32_t half_move_clock;
+        uint32_t full_moves;
 
-		void split_string(const std::string &fen_string, const std::string &delimiters, std::vector<std::string> &tokens) const;
-		void validate_chess_rules(const std::string &placement_string) const;
-		void validate_placement(const std::string &placement_string) const;
-		void validate_pawn_placement(const std::vector<std::string> &ranks) const;
-		void validate_king_safety(const std::vector<std::string> &ranks) const;
+        void split_string(const std::string &fen_string, const std::string &delimiters, std::vector<std::string> &tokens) const;
+        void validate_chess_rules(const std::string &placement_string) const;
+        void validate_king_safety(const std::vector<std::string> &ranks) const;
+        void validate_pawn_placement(const std::vector<std::string> &ranks) const;
+        void validate_placement(const std::string &placement_string) const;
 
-	public:
-		Fen(const std::string &fen_string);
+    public:
+        Fen(const std::string &fen_string);
 
-		~Fen();
+        ~Fen();
 
-		std::string get_placement(void) const;
-		std::string get_castling(void) const;
-		std::string get_en_passant(void) const;
-		uint8_t get_color(void) const;
-		uint32_t get_half_move_clock(void) const;
-		uint32_t get_full_moves(void) const;
+        /**
+         * @brief Generate FEN string from current position state.
+         * @returns Complete FEN notation string.
+         */
+        std::string generate_fen(void) const;
 
-		void set_placement(const std::string &placement_string);
-		void set_castling(const std::string &castling_rights);
-		void set_en_passant(const std::string &en_passant_square);
-		void set_color(uint8_t color_value);
-		void set_half_move_clock(uint32_t half_move_clock_value);
-		void set_full_moves(uint32_t full_moves_value);
+        /**
+         * @brief Get castling rights string representation.
+         * @returns Castling rights (e.g., "KQkq", "-").
+         */
+        std::string get_castling(void) const;
 
-		std::string generate_fen(void) const;
-	};
+        /**
+         * @brief Get color (side to move).
+         * @returns Color value: 0 for white, 1 for black.
+         */
+        uint8_t get_color(void) const;
+
+        /**
+         * @brief Get en passant target square.
+         * @returns En passant square (e.g., "e3", "-").
+         */
+        std::string get_en_passant(void) const;
+
+        /**
+         * @brief Get full move number (increments each time black moves).
+         * @returns Full move count.
+         */
+        uint32_t get_full_moves(void) const;
+
+        /**
+         * @brief Get half-move clock (moves since last pawn move or capture).
+         * @returns Half-move clock value (0-50 for draw rule).
+         */
+        uint32_t get_half_move_clock(void) const;
+
+        /**
+         * @brief Get board placement string (the rank/file portion of FEN).
+         * @returns Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
+         */
+        std::string get_placement(void) const;
+
+        /**
+         * @brief Set castling rights.
+         * @param castling_rights Castling rights string (e.g., "KQkq", "-").
+         */
+        void set_castling(const std::string &castling_rights);
+
+        /**
+         * @brief Set color (side to move).
+         * @param color_value Color value: 0 for white, 1 for black.
+         */
+        void set_color(uint8_t color_value);
+
+        /**
+         * @brief Set en passant target square.
+         * @param en_passant_square En passant square (e.g., "e3", "-").
+         */
+        void set_en_passant(const std::string &en_passant_square);
+
+        /**
+         * @brief Set full move number (increments each time black moves).
+         * @param full_moves_value Full move count.
+         */
+        void set_full_moves(uint32_t full_moves_value);
+
+        /**
+         * @brief Set half-move clock (moves since last pawn move or capture).
+         * @param half_move_clock_value Half-move clock value (0-50 for draw rule).
+         */
+        void set_half_move_clock(uint32_t half_move_clock_value);
+
+        /**
+         * @brief Set board placement string (rank/file portion of FEN).
+         * @param placement_string Placement string (e.g., "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR").
+         */
+        void set_placement(const std::string &placement_string);
+    };
 }

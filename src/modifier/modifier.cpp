@@ -17,15 +17,27 @@
 
 #include "include/modifier/modifier.h"
 
-namespace color
+namespace modifier
 {
-	Modifier::Modifier(Color color_value) : color(color_value) {}
+    /**
+     * @brief Constructs an ANSI color modifier.
+     * @param color_value The Color enum representing the desired text or background color.
+     */
+    Modifier::Modifier(Color color_value) : color(color_value) {}
 
-	Modifier::~Modifier() {}
+    /**
+     * @brief Destroys the ANSI color modifier.
+     */
+    Modifier::~Modifier() {}
 
-	std::ostream &operator<<(std::ostream &os, const Modifier &modifier)
-	{
-		return os << "\033[" << static_cast<int>(modifier.color) << "m";
-
-	}
+    /**
+     * @brief Overloaded stream insertion operator to output ANSI escape codes.
+     * @param os The output stream.
+     * @param modifier The color modifier object.
+     * @returns The modified output stream.
+     */
+    std::ostream &operator<<(std::ostream &os, const Modifier &modifier)
+    {
+        return os << "\033[" << static_cast<int>(modifier.color) << "m";
+    }
 }

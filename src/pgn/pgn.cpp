@@ -19,83 +19,108 @@
 
 namespace io
 {
-	Pgn::Pgn()
-	{
-		logger::INFO("Portable Game Notation (PGN) initialized");
-	}
+    /**
+     * @brief Private constructor to enforce the Singleton pattern.
+     */
+    Pgn::Pgn()
+    {
+        logger::INFO("Portable Game Notation (PGN) initialized");
+    }
 
-	Pgn::~Pgn() {}
+    /**
+     * @brief Resets stream flags and seeks the output stream to the beginning of the file.
+     * @param os The output stream to modify.
+     */
+    void Pgn::clear_stream_flags(std::ostream &os) const
+    {
+        os.seekp(std::ios_base::beg);
+        os.clear();
+    }
 
-	Pgn &Pgn::get_instance()
-	{
-		static Pgn instance;
-		return instance;
-	}
+    /**
+     * @brief Writes standard PGN metadata tags to the output stream.
+     * @param os The output stream to write metadata to.
+     */
+    void Pgn::set_metadata(std::ostream &os) const
+    {
+        auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
+        this->clear_stream_flags(os);
+        os << "[Event \"User vs. Fenrir\"]\n"
+           << "[Site \"Remote server - atom\"]\n"
+           << "[Date \"" << date << "\"]\n"
+           << "[Round \"1\"]\n"
+           << "[White \"User\"]\n"
+           << "[Black \"Fenrir\"]\n"
+           << "[Result \"-\"]\n\n";
+    }
 
-	void Pgn::clear_stream_flags(std::ostream &os) const
-	{
-		os.seekp(std::ios_base::beg);
-		os.clear();
-	}
+    /**
+     * @brief Destructor for the Pgn class.
+     */
+    Pgn::~Pgn() {}
 
-	void Pgn::set_metadata(std::ostream &os) const
-	{
-		auto date = chrono::Chrono().get_time_with_format("%Y.%m.%d");
-		this->clear_stream_flags(os);
-		os << "[Event \"User vs. Fenrir\"]\n"
-		   << "[Site \"Remote server - atom\"]\n"
-		   << "[Date \"" << date << "\"]\n"
-		   << "[Round \"1\"]\n"
-		   << "[White \"User\"]\n"
-		   << "[Black \"Fenrir\"]\n"
-		   << "[Result \"-\"]\n\n";
-	}
+    /**
+     * @brief Reads all recorded moves from the store and generates a final formatted PGN file with metadata tags.
+     */
+    void Pgn::create(void) const
+    {
+        std::lock_guard<std::mutex> lock(pgn_mutex);
+        std::ifstream storeFile(PGN_FILE_STORE);
+        std::ofstream pgnFile(PGN_FILE);
 
-	void Pgn::record(const std::string &move) const
-	{
-		std::lock_guard<std::mutex> lock(pgn_mutex);
-		std::ofstream file(PGN_FILE_STORE, std::ios_base::app);
-		if (!file)
-		{
-			logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
-			return;
-		}
-		file << move << '\n';
-	}
+        if (!pgnFile)
+        {
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE) + "'");
+            return;
+        }
+        if (!storeFile)
+        {
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
+            return;
+        }
 
-	void Pgn::create(void) const
-	{
-		std::lock_guard<std::mutex> lock(pgn_mutex);
-		std::ifstream storeFile(PGN_FILE_STORE);
-		std::ofstream pgnFile(PGN_FILE);
+        this->set_metadata(pgnFile);
 
-		if (!pgnFile)
-		{
-			logger::ERROR("Cannot open file: '" + std::string(PGN_FILE) + "'");
-			return;
-		}
-		if (!storeFile)
-		{
-			logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
-			return;
-		}
+        std::string whiteMove, blackMove;
+        unsigned long long move_count = 1;
+        while (std::getline(storeFile, whiteMove))
+        {
+            pgnFile << move_count << ". " << whiteMove;
+            if (std::getline(storeFile, blackMove))
+            {
+                pgnFile << " " << blackMove << " ";
+            }
+            else
+            {
+                pgnFile << " ";
+            }
+            move_count++;
+        }
+    }
 
-		this->set_metadata(pgnFile);
+    /**
+     * @brief Retrieves the single global instance of the PGN recorder.
+     * @returns A reference to the Singleton Pgn instance.
+     */
+    Pgn &Pgn::get_instance()
+    {
+        static Pgn instance;
+        return instance;
+    }
 
-		std::string whiteMove, blackMove;
-		unsigned long long move_count = 1;
-		while (std::getline(storeFile, whiteMove))
-		{
-			pgnFile << move_count << ". " << whiteMove;
-			if (std::getline(storeFile, blackMove))
-			{
-				pgnFile << " " << blackMove << " ";
-			}
-			else
-			{
-				pgnFile << " ";
-			}
-			move_count++;
-		}
-	}
+    /**
+     * @brief Appends a single move to the temporary PGN move store file.
+     * @param move The move string to record.
+     */
+    void Pgn::record(const std::string &move) const
+    {
+        std::lock_guard<std::mutex> lock(pgn_mutex);
+        std::ofstream file(PGN_FILE_STORE, std::ios_base::app);
+        if (!file)
+        {
+            logger::ERROR("Cannot open file: '" + std::string(PGN_FILE_STORE) + "'");
+            return;
+        }
+        file << move << '\n';
+    }
 }
