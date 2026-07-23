@@ -241,13 +241,14 @@ otherwise `nodes`.
 
 ## Known Inconsistencies (not yet resolved, don't silently pick a side)
 
-- **License**: every source file's header in this repo declares
-  GPL-3.0-or-later (`Copyright (c) 2026 Juan Minor`), but the actual
-  root `LICENSE` file is MIT (`Copyright (c) 2023 IkeHammons`). This is
-  a real, unresolved conflict. Don't "fix" it by unilaterally changing
-  either side — flag it and let a human decide. New files added to this
-  repo have been using the GPL header style to match the majority
-  convention already established across existing source files.
+- **License — resolved.** The root `LICENSE` file used to be MIT
+  (`Copyright (c) 2023 IkeHammons`) while every source file's header
+  declared GPL-3.0-or-later (`Copyright (c) 2026 Juan Minor`) — a real
+  conflict. Resolved by replacing `LICENSE` with the verbatim, official
+  GPLv3 text (fetched from `gnu.org/licenses/gpl-3.0.txt`, unmodified),
+  matching what every source file header already claimed. If you ever
+  find MIT referenced anywhere in this repo again, that's stale and
+  should be corrected to GPL, not the other way around.
 - Git commit author history uses "Ike"/"IkeHammons"
   (`juanfminor@gmail.com`); source file copyright headers say "Juan
   Minor" (same email). Likely the same person under different display

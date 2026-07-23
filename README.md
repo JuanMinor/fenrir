@@ -10,7 +10,7 @@ produce and improve that network. It works with any standard chess GUI
 tooling for generating training data, training the network, and
 diagnosing/benchmarking the result.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![C++](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Build](https://img.shields.io/badge/Build-CMake-blue.svg)](https://cmake.org/)
 [![Testing](https://img.shields.io/badge/Testing-Google%20Test-red.svg)](https://github.com/google/googletest)
@@ -441,4 +441,4 @@ rm -rf build                                                        # Clean buil
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file.
+GNU General Public License v3.0 (or later) - see [LICENSE](LICENSE) file. Matches the license header already present in every source file in this repo.
