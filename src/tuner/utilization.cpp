@@ -20,6 +20,13 @@
 #include <algorithm>
 
 #ifdef _WIN32
+/* Without NOMINMAX, windows.h #defines max/min as macros, which mangles
+ * every std::max/std::min call in this file into a syntax error (MSVC
+ * C2589/C2059) since the preprocessor doesn't understand std:: scoping --
+ * it just sees the bare identifier "max" followed by "(" and expands it.
+ * nn.cpp hit the same class of windows.h macro-pollution problem with
+ * wingdi.h's ERROR macro (see its NOGDI comment). */
+#define NOMINMAX
 #include <windows.h>
 #else
 #include <dlfcn.h>
