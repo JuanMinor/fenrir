@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 #   Copyright (c) 2026 Juan Minor
-#   GPL-3.0-or-later (see repository LICENSE)
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Measure live self-play throughput (games/hour) and $/game, from the same
 worker-log game counter data_health.py uses.
@@ -15,8 +27,8 @@ Two modes:
                  data_health.py run -- and right now. Skips the wait.
 
 Usage:
-  python3 scripts/game_rate.py --interval 300 --cost-per-hour 2.776
-  python3 scripts/game_rate.py --since "2026-07-22 18:20:48" 129727 --cost-per-hour 2.776
+  python3 tools/game_rate.py --interval 300 --cost-per-hour 2.776
+  python3 tools/game_rate.py --since "2026-07-22 18:20:48" 129727 --cost-per-hour 2.776
 """
 
 import argparse

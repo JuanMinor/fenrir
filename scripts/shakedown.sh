@@ -29,7 +29,7 @@
 #   4. Is anything silently on CPU or misconfigured? (Log scan at the end.)
 #
 # Prerequisites (run from the repo root on the pod):
-#   - Release build exists:  ./run_selfplay.sh builds it, or build manually
+#   - Release build exists:  ./scripts/run_selfplay.sh builds it, or build manually
 #   - Auto-tuned config:     rm -f fenrir.cfg && CUDA_VISIBLE_DEVICES=0 ./bin/fenrir --auto-tune
 #   - Python deps:           pip install -r training/requirements.txt
 #
@@ -57,7 +57,7 @@ RUN_DIR="$ROOT/shakedown"
 cd "$ROOT"
 
 if [ ! -x "$ROOT/bin/fenrir" ]; then
-    echo "ERROR: $ROOT/bin/fenrir not found. Build first (see run_selfplay.sh)."
+    echo "ERROR: $ROOT/bin/fenrir not found. Build first (see scripts/run_selfplay.sh)."
     exit 1
 fi
 

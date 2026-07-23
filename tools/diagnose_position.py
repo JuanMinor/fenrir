@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 #   Copyright (c) 2026 Juan Minor
-#   GPL-3.0-or-later (see repository LICENSE)
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Diagnose why the engine chose a specific move at a specific position --
 built to investigate the arena-match stalemate finding (a crushing material
@@ -22,7 +34,7 @@ Two independent checks, either or both:
                       result needing 50000 nodes in tactics.py).
 
 Usage:
-  python3 scripts/diagnose_position.py \
+  python3 tools/diagnose_position.py \
       --fen "6n1/2p5/p1bp4/3k4/7q/8/r1r5/1n3K2 b - - 1 36" \
       --pth onnx/fenrir.pth \
       --model onnx/fenrir.onnx --nodes 800 5000 20000 50000

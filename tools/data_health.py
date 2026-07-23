@@ -26,8 +26,8 @@ Two data sources, two lifetimes:
     20) so this section can show trends over the whole run, ordered by
     file modification time.
 
-Usage: python3 scripts/data_health.py           # from the repo root
-       python3 scripts/data_health.py --recent 500
+Usage: python3 tools/data_health.py           # from the repo root
+       python3 tools/data_health.py --recent 500
 """
 
 import argparse

@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 #   Copyright (c) 2026 Juan Minor
-#   GPL-3.0-or-later (see repository LICENSE)
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Deep inspection of Fenrir models: .pth checkpoints, .onnx exports, and the
 trainer's loss history.
@@ -24,9 +36,9 @@ Sections produced (each independent; failures are isolated and reported):
   losses         parsed learning curve from the trainer's log
 
 Usage:
-  python3 scripts/inspect_model.py onnx/fenrir.pth
-  python3 scripts/inspect_model.py checkpoints/*.pth --train-log logs/train.log
-  python3 scripts/inspect_model.py onnx/fenrir.pth --onnx onnx/fenrir.onnx --all-tensors
+  python3 tools/inspect_model.py onnx/fenrir.pth
+  python3 tools/inspect_model.py checkpoints/*.pth --train-log logs/train.log
+  python3 tools/inspect_model.py onnx/fenrir.pth --onnx onnx/fenrir.onnx --all-tensors
 """
 
 import argparse
@@ -667,7 +679,7 @@ def report_losses(path):
         if abs(change) < 0.01:
             print("  -> plateaued. For self-play this is normal and NOT proof of stalled learning:")
             print("     the opponent improves alongside the net, so the data keeps getting harder.")
-            print("     Judge progress with scripts/arena.py, not the loss curve.")
+            print("     Judge progress with tools/arena.py, not the loss curve.")
         elif change < 0:
             print("  -> still descending")
         else:

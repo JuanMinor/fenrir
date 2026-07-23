@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 #   Copyright (c) 2026 Juan Minor
-#   GPL-3.0-or-later (see repository LICENSE)
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Estimate Fenrir's Elo by playing it against Stockfish at one or more
 calibrated strength settings (UCI_LimitStrength + UCI_Elo), which Stockfish
@@ -15,11 +27,11 @@ can watch how it went; pass --pgn to also save full games for replay in
 any chess GUI.
 
 Usage:
-  python3 scripts/elo_stockfish.py --model onnx/fenrir.onnx --nodes 800 \
+  python3 tools/elo_stockfish.py --model onnx/fenrir.onnx --nodes 800 \
       --elo 1400 1600 1800 2000 --games 20
 
   # single fixed opponent, quick look:
-  python3 scripts/elo_stockfish.py --model onnx/fenrir.onnx --nodes 800 \
+  python3 tools/elo_stockfish.py --model onnx/fenrir.onnx --nodes 800 \
       --elo 1500 --games 10 --pgn /tmp/fenrir_vs_sf.pgn
 """
 

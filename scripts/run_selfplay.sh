@@ -1,14 +1,36 @@
 #!/bin/bash
+
+#   Copyright (c) 2026 Juan Minor
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 # Production launcher for Fenrir training: self-play workers on every GPU
 # plus train.py co-located on GPU 0, with periodic weight checkpoints.
 #
 # Defaults follow the measured production shakedowns (3 instances x 4
 # threads per GPU at BatchTimeoutMs=4 won at ~3,300 games/hr per 4090).
 # Override via environment:
-#   SIMULATIONS=800 INSTANCES_PER_GPU=3 GPUS="0 1 2 3" ./run_selfplay.sh
+#   SIMULATIONS=800 INSTANCES_PER_GPU=3 GPUS="0 1 2 3" ./scripts/run_selfplay.sh
 #   SEARCH_THREADS=4         per-instance threads written into fenrir.cfg
 #   TRAIN=0                  skip launching train.py (self-play only)
 #   CHECKPOINT_INTERVAL=3600 seconds between fenrir.pth snapshots (0 = off)
+
+# CWD-independent, matching run.sh/test.sh/shakedown.sh: everything below
+# is written relative to the repo root, not wherever this was invoked from.
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+PROJECT_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
+cd "$PROJECT_ROOT"
 
 # Compile first to ensure we have the latest binary
 echo "Building Fenrir with GPU support..."

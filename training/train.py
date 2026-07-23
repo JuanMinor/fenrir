@@ -92,7 +92,7 @@ class ChessDataset(Dataset):
         self.samples = []
         self.buffer = self.samples
         # Archive every Nth consumed file (instead of deleting) so
-        # scripts/data_health.py can analyze policy quality over the whole
+        # tools/data_health.py can analyze policy quality over the whole
         # run; a 1-in-20 sample keeps disk use small. 0 disables archiving.
         self.archive_every = int(os.environ.get("ARCHIVE_EVERY", "20"))
         self.archive_dir = os.path.join(data_dir, "archive")
@@ -229,7 +229,7 @@ def train():
     # policy_fc.weight's absmax: 33 -> 45 across five checks, value head
     # weight norm 0.30 -> 1.00) until basic value calibration broke (a
     # position up a whole queen scored negative). 1e-4 was tried first and
-    # confirmed (via scripts/tune_weight_decay.py against real archived data)
+    # confirmed (via tools/tune_weight_decay.py against real archived data)
     # too weak at this lr to net decay at all -- breakeven is ~0.0022. 0.03
     # gives a ~33k-step time constant (vs ~100k at the 0.01 default), pulling
     # absmax down within a realistic training run, with no measured loss cost

@@ -392,7 +392,14 @@ namespace nn
                 }
                 catch (...)
                 {
-                    std::cerr << "Warning: Could not enable DirectML. Falling back to CPU.\n";
+                    std::string error = "Could not enable DirectML. Falling back to CPU.";
+                    std::cerr << "Warning: " << error << "\n";
+                    /* GUIs (Arena etc.) that launch Fenrir as a child process
+                     * typically don't surface stderr, so without this the
+                     * fallback was invisible -- logger:: persists to
+                     * logs/fenrir.log regardless of who owns the console,
+                     * matching the CUDA path below. */
+                    logger::CRITICAL(error);
                 }
 #else
                 try

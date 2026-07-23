@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 #   Copyright (c) 2026 Juan Minor
-#   GPL-3.0-or-later (see repository LICENSE)
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Estimate GPU compute consumed by self-play game generation alone (not
 training), from the network's own per-position FLOPs cost, the configured
@@ -13,8 +25,8 @@ position (checkmate/stalemate/draw, scored exactly per mcts.cpp) doesn't
 need a fresh forward pass -- so real usage is somewhat below this.
 
 Usage:
-  python3 scripts/selfplay_compute.py onnx/fenrir.pth --simulations 800
-  python3 scripts/selfplay_compute.py onnx/fenrir.pth --simulations 800 --games-per-hour 3780
+  python3 tools/selfplay_compute.py onnx/fenrir.pth --simulations 800
+  python3 tools/selfplay_compute.py onnx/fenrir.pth --simulations 800 --games-per-hour 3780
 """
 
 import argparse

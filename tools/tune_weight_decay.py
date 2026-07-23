@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 #   Copyright (c) 2026 Juan Minor
-#   GPL-3.0-or-later (see repository LICENSE)
+#
+#   This program is free software: you can redistribute it and/or modify
+#   it under the terms of the GNU General Public License as published by
+#   the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   This program is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 Find a weight_decay (and optionally an LR schedule) that actually arrests
 policy_fc.weight's magnitude growth -- offline, against real archived
@@ -24,7 +36,7 @@ consumed files -- fine for live training, dangerous for a diagnostic run
 pointed at your archive directory.
 
 Usage:
-  python3 scripts/tune_weight_decay.py \
+  python3 tools/tune_weight_decay.py \
       --checkpoint checkpoints/fenrir_20260720_0751.pth \
       --data-dir data/selfplay/archive \
       --steps 2000 --weight-decay 0 1e-4 3e-4 1e-3

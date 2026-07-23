@@ -23,12 +23,12 @@ in color-swapped pairs from a shared randomized opening so neither side
 benefits from opening luck.
 
 Usage (from the repo root, LD_LIBRARY_PATH already set as for self-play):
-  python3 scripts/arena.py --model-a checkpoints/fenrir_A.onnx \
+  python3 tools/arena.py --model-a checkpoints/fenrir_A.onnx \
                            --model-b checkpoints/fenrir_B.onnx \
                            --games 100 --nodes 800
 
 Smoke test (fast, tiny searches, adjudicates early):
-  python3 scripts/arena.py --model-a onnx/fenrir.onnx --model-b onnx/fenrir.onnx \
+  python3 tools/arena.py --model-a onnx/fenrir.onnx --model-b onnx/fenrir.onnx \
                            --games 2 --nodes 8 --max-plies 20
 """
 

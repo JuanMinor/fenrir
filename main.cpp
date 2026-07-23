@@ -50,8 +50,19 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_AUTOTUNE_FLAG
         else if (argc > 1 && std::strcmp(argv[1], "--auto-tune") == 0)
         {
+            double gpu_usage = 100.0;
+            double cpu_usage = 100.0;
+
+            for (int i = 2; i < argc; ++i) {
+                if (std::strcmp(argv[i], "--gpu-usage") == 0 && i + 1 < argc) {
+                    gpu_usage = std::stod(argv[++i]);
+                } else if (std::strcmp(argv[i], "--cpu-usage") == 0 && i + 1 < argc) {
+                    cpu_usage = std::stod(argv[++i]);
+                }
+            }
+
             tuner::TuningParameters baseline(false);
-            tuner::AutoTuner auto_tuner(baseline);
+            tuner::AutoTuner auto_tuner(baseline, gpu_usage, cpu_usage);
             auto_tuner.run();
         }
 #endif
