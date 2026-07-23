@@ -21,6 +21,15 @@
 #include <algorithm>
 
 #ifdef _WIN32
+/* NOMINMAX before windows.h: without it, windows.h #defines max/min as
+ * macros, which silently mangles any later std::max/std::min call in
+ * this translation unit into a syntax error (MSVC C2589/C2059) -- the
+ * preprocessor doesn't understand std:: scoping, it just sees a bare
+ * "max"/"min" identifier followed by "(" and expands the macro. No
+ * std::max/min in this file today, but this is exactly the bug
+ * utilization.cpp hit from the same missing guard -- fixing it here too
+ * before it bites the next person who adds one. */
+#define NOMINMAX
 #include <windows.h>
 #include <dxgi.h>
 #pragma comment(lib, "dxgi.lib")
